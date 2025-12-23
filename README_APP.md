@@ -1,0 +1,90 @@
+# Nexus (App Overview)
+
+Nexus is a personal life management app that helps you **capture, organize, and follow through** on the things you care about—without turning your system into a complicated project.
+
+It’s built to feel fast and reliable day‑to‑day: you can keep using it even when your device is offline, and it will catch up later when it can.
+
+## What Nexus is for
+
+- **One place for your life**: tasks, reminders, notes, habits, calendar view, and simple analytics.
+- **Less mental load**: capture quickly, organize lightly, and trust your system.
+- **Works anywhere**: designed for Android and Windows.
+
+## How it helps (in plain terms)
+
+- **Stop forgetting things**: reminders and due dates make sure important items come back at the right time.
+- **Stop losing ideas**: notes let you dump thoughts quickly and build them into something later.
+- **Stay consistent**: habit tracking turns “I should” into “I did”.
+- **See progress**: simple analytics help you notice patterns and improve.
+
+## Core features
+
+## Tasks
+
+- Create tasks with titles, details, due dates, and status.
+- Organize work and life in one list.
+- Add attachments (like images or voice notes) to keep everything related to a task together.
+
+## Reminders
+
+- Schedule reminders so your phone/PC nudges you at the right time.
+- Update or cancel reminders easily when plans change.
+
+## Notes
+
+- Write notes for ideas, plans, meeting notes, journaling, and more.
+- Add voice attachments when typing isn’t convenient.
+- Supports mixed-language notes (including Arabic text rendering nicely when used).
+
+## Habits
+
+- Track daily habits with a simple “done/not done” flow.
+- View streaks and momentum so you can keep consistency.
+
+## Calendar view
+
+- See your tasks and reminders in a timeline-like view.
+- Useful for planning your week and spotting overload early.
+
+## Analytics
+
+- Lightweight insights (not overwhelming dashboards).
+- Helps you understand what you’re doing consistently and what’s slipping.
+
+## Attachments and media
+
+Nexus can keep attachments on your device and (when configured) also store copies in a shared cloud folder so you can:
+
+- Keep important files connected to tasks/notes
+- Avoid losing recordings or images when switching devices
+
+## Offline-friendly by design
+
+Nexus is designed to keep working even if the internet is spotty:
+
+- Your changes are saved immediately on your device.
+- When the app can reach the cloud again, it syncs in the background.
+- The app automatically notifies you when your network connection is lost or restored, so you always know your sync status.
+- In Settings, you can check the connectivity status of Firebase (cloud sync), Hive (local storage), and Google Drive (attachments) at any time.
+
+## Who Nexus is great for
+
+- Students managing assignments, exams, and personal tasks
+- Busy professionals juggling projects and personal obligations
+- Anyone who wants a simple daily system: tasks + reminders + notes + habits in one place
+
+## A quick example workflow
+
+- Capture tasks as they appear (“Pay rent”, “Call dentist”, “Finish report”).
+- Add a reminder for time-sensitive items.
+- Attach a photo, screenshot, or voice note if it matters.
+- Review the calendar view to plan the next few days.
+- Check habits and streaks to stay consistent.
+
+## What Nexus is not trying to be
+
+- Not a complex project-management tool.
+- Not a social app.
+- Not a “setup-heavy” productivity system.
+
+The goal is **clarity and follow-through**, with minimal friction.

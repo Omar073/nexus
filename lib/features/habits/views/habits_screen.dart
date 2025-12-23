@@ -1,0 +1,34 @@
+import 'package:flutter/material.dart';
+import 'package:nexus/core/extensions/l10n_x.dart';
+import 'package:nexus/features/habits/controllers/habit_controller.dart';
+import 'package:nexus/features/habits/views/widgets/habit_create_dialog.dart';
+import 'package:nexus/features/habits/views/widgets/habit_tile.dart';
+import 'package:provider/provider.dart';
+
+class HabitsScreen extends StatelessWidget {
+  const HabitsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final controller = context.watch<HabitController>();
+    final habits = controller.habits;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.navHabits)),
+      body: habits.isEmpty
+          ? const Center(child: Text('No habits'))
+          : ListView.separated(
+              itemCount: habits.length,
+              separatorBuilder: (_, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                return HabitTile(habit: habits[index]);
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showHabitCreateDialog(context),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
