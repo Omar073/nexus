@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:nexus/app/router/app_router.dart';
 import 'package:nexus/app/services/app_services_composer.dart';
 import 'package:nexus/app/theme/app_theme.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/app/app_globals.dart';
-import 'package:nexus/l10n/app_localizations.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -73,13 +71,6 @@ class _AppState extends State<App> {
           child: wrapWithAppServices(context, child ?? const SizedBox.shrink()),
         );
       },
-      supportedLocales: const [Locale('en')],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
     );
   }
 }

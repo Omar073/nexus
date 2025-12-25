@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/views/widgets/nav_bar_builder.dart';
-import 'package:nexus/l10n/app_localizations.dart';
 
 void main() {
   Widget buildTestWidget(NavBarStyle style) {
     return MaterialApp(
-      supportedLocales: const [Locale('en')],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
       home: Scaffold(
         bottomNavigationBar: NavBarBuilder(
           style: style,
@@ -44,13 +35,6 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        supportedLocales: const [Locale('en')],
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
         home: Scaffold(
           bottomNavigationBar: NavBarBuilder(
             style: NavBarStyle.standard,

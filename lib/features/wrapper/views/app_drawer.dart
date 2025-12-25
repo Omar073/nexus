@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/features/wrapper/views/widgets/drawer_item.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -8,7 +7,6 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -49,7 +47,7 @@ class AppDrawer extends StatelessWidget {
           const SizedBox(height: 8),
           DrawerItem(
             icon: Icons.insights_outlined,
-            label: l10n.navHabits,
+            label: 'Habits',
             onTap: () {
               Navigator.pop(context);
               context.go('/habits');
@@ -57,7 +55,7 @@ class AppDrawer extends StatelessWidget {
           ),
           DrawerItem(
             icon: Icons.calendar_month_outlined,
-            label: l10n.navCalendar,
+            label: 'Calendar',
             onTap: () {
               Navigator.pop(context);
               context.go('/calendar');
@@ -65,7 +63,7 @@ class AppDrawer extends StatelessWidget {
           ),
           DrawerItem(
             icon: Icons.analytics_outlined,
-            label: l10n.navAnalytics,
+            label: 'Analytics',
             onTap: () {
               Navigator.pop(context);
               context.go('/analytics');

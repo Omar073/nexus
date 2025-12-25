@@ -1,6 +1,5 @@
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 
 /// Animated notch navigation bar wrapper using animated_notch_bottom_bar package.
 class AnimatedNotchNavBarWrapper extends StatefulWidget {
@@ -31,6 +30,7 @@ class _AnimatedNotchNavBarWrapperState
   @override
   void didUpdateWidget(AnimatedNotchNavBarWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Sync controller when external index changes
     if (oldWidget.selectedIndex != widget.selectedIndex) {
       _controller.jumpTo(widget.selectedIndex);
     }
@@ -46,68 +46,83 @@ class _AnimatedNotchNavBarWrapperState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
-    return AnimatedNotchBottomBar(
-      notchBottomBarController: _controller,
-      color: isDark ? colorScheme.surface : colorScheme.surfaceContainerHighest,
-      notchColor: colorScheme.primary,
-      showLabel: true,
-      showShadow: true,
-      showBlurBottomBar: false,
-      removeMargins: false,
-      bottomBarHeight: 62,
-      durationInMilliSeconds: 300,
-      kIconSize: 24,
-      kBottomRadius: 28,
-      itemLabelStyle: TextStyle(
-        fontSize: 10,
-        color: colorScheme.onSurfaceVariant,
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      child: AnimatedNotchBottomBar(
+        notchBottomBarController: _controller,
+        color: isDark
+            ? colorScheme.surface
+            : colorScheme.surfaceContainerHighest,
+        notchColor: colorScheme.primary,
+        showLabel: true,
+        textOverflow: TextOverflow.visible,
+        maxLine: 1,
+        shadowElevation: 0,
+        showShadow: false,
+        showBlurBottomBar: false,
+        removeMargins: true,
+        bottomBarWidth: MediaQuery.of(context).size.width,
+        bottomBarHeight: 62,
+        durationInMilliSeconds: 300,
+        kIconSize: 24.0,
+        kBottomRadius: 0,
+        elevation: 0,
+        itemLabelStyle: TextStyle(
+          fontSize: 10,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        bottomBarItems: [
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.dashboard_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            activeItem: Icon(Icons.dashboard, color: colorScheme.onPrimary),
+            itemLabel: 'Dashboard',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.checklist_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            activeItem: Icon(Icons.checklist, color: colorScheme.onPrimary),
+            itemLabel: 'Tasks',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.alarm_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            activeItem: Icon(Icons.alarm, color: colorScheme.onPrimary),
+            itemLabel: 'Reminders',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.note_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            activeItem: Icon(Icons.note, color: colorScheme.onPrimary),
+            itemLabel: 'Notes',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.settings_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            activeItem: Icon(Icons.settings, color: colorScheme.onPrimary),
+            itemLabel: 'Settings',
+          ),
+        ],
+        onTap: (index) {
+          // The animation happens internally via the controller
+          // We just need to notify the parent about the selection
+          widget.onDestinationSelected(index);
+        },
       ),
-      bottomBarItems: [
-        BottomBarItem(
-          inActiveItem: Icon(
-            Icons.dashboard_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          activeItem: Icon(Icons.dashboard, color: colorScheme.onPrimary),
-          itemLabel: l10n.navDashboard,
-        ),
-        BottomBarItem(
-          inActiveItem: Icon(
-            Icons.checklist_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          activeItem: Icon(Icons.checklist, color: colorScheme.onPrimary),
-          itemLabel: l10n.navTasks,
-        ),
-        BottomBarItem(
-          inActiveItem: Icon(
-            Icons.alarm_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          activeItem: Icon(Icons.alarm, color: colorScheme.onPrimary),
-          itemLabel: l10n.navReminders,
-        ),
-        BottomBarItem(
-          inActiveItem: Icon(
-            Icons.note_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          activeItem: Icon(Icons.note, color: colorScheme.onPrimary),
-          itemLabel: l10n.navNotes,
-        ),
-        BottomBarItem(
-          inActiveItem: Icon(
-            Icons.settings_outlined,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          activeItem: Icon(Icons.settings, color: colorScheme.onPrimary),
-          itemLabel: l10n.navSettings,
-        ),
-      ],
-      onTap: (index) => widget.onDestinationSelected(index),
     );
   }
 }

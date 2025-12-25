@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/connectivity_status_service.dart';
-import 'package:nexus/features/settings/views/connectivity_status_tile.dart';
+import 'package:nexus/features/settings/views/sections/widgets/connectivity_status_tile.dart';
 
 /// Connectivity status section showing Firebase, Hive, and Google Drive status
 class ConnectivityStatusSection extends StatelessWidget {

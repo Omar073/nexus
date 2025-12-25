@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/core/widgets/theme_toggle_button.dart';
 import 'package:nexus/features/dashboard/views/widgets/stat_card.dart';
 import 'package:nexus/features/sync/views/sync_status_widget.dart';
@@ -10,12 +9,16 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.navDashboard),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+          tooltip: 'Open menu',
+        ),
+        title: const Text('Dashboard'),
         actions: const [ThemeToggleButton(), SyncStatusWidget()],
       ),
       body: ListView(
@@ -50,25 +53,25 @@ class DashboardScreen extends StatelessWidget {
             children: [
               StatCard(
                 icon: Icons.checklist,
-                label: l10n.navTasks,
+                label: 'Tasks',
                 value: '0',
                 color: theme.colorScheme.primary,
               ),
               StatCard(
                 icon: Icons.alarm,
-                label: l10n.navReminders,
+                label: 'Reminders',
                 value: '0',
                 color: theme.colorScheme.secondary,
               ),
               StatCard(
                 icon: Icons.note,
-                label: l10n.navNotes,
+                label: 'Notes',
                 value: '0',
                 color: theme.colorScheme.tertiary,
               ),
               StatCard(
                 icon: Icons.insights,
-                label: l10n.navHabits,
+                label: 'Habits',
                 value: '0',
                 color: theme.colorScheme.error,
               ),

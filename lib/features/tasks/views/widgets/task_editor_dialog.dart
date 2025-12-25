@@ -1,35 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task.dart';
+import 'package:nexus/features/tasks/models/task_editor_result.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 import 'package:provider/provider.dart';
-
-/// Result class for the task editor dialog.
-class TaskEditorResult {
-  TaskEditorResult({
-    required this.title,
-    required this.description,
-    this.dueDate,
-    this.priority,
-    this.difficulty,
-    this.recurrence = TaskRecurrenceRule.none,
-  });
-
-  final String title;
-  final String description;
-  final DateTime? dueDate;
-  final TaskPriority? priority;
-  final TaskDifficulty? difficulty;
-  final TaskRecurrenceRule recurrence;
-}
 
 /// Shows a dialog for creating or editing a task.
 ///
 /// Returns void, handling the task creation/update internally.
 Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
   final controller = context.read<TaskController>();
-  final l10n = context.l10n;
   final titleController = TextEditingController(text: task?.title ?? '');
   final descController = TextEditingController(text: task?.description ?? '');
 
@@ -46,7 +26,7 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
       return StatefulBuilder(
         builder: (dialogContext, setState) {
           return AlertDialog(
-            title: Text(task == null ? l10n.addTask : l10n.editTask),
+            title: Text(task == null ? 'Add task' : 'Edit task'),
             content: SizedBox(
               width: 420,
               child: SingleChildScrollView(
@@ -58,9 +38,9 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
                     TextField(
                       controller: titleController,
                       autofocus: task == null,
-                      decoration: InputDecoration(
-                        labelText: l10n.title,
-                        border: const OutlineInputBorder(),
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -70,9 +50,9 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
                       controller: descController,
                       minLines: 2,
                       maxLines: 5,
-                      decoration: InputDecoration(
-                        labelText: l10n.description,
-                        border: const OutlineInputBorder(),
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -209,7 +189,7 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(l10n.cancel),
+                child: const Text('Cancel'),
               ),
               FilledButton(
                 onPressed: () {
@@ -224,7 +204,7 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
                     ),
                   );
                 },
-                child: Text(l10n.save),
+                child: const Text('Save'),
               ),
             ],
           );

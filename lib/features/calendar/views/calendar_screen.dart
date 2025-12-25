@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/features/calendar/controllers/calendar_controller.dart';
 import 'package:nexus/features/calendar/views/widgets/calendar_event_tile.dart';
 
@@ -20,13 +19,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final controller = context.watch<CalendarController>();
     final selected = _selectedDay ?? _focusedDay;
     final items = controller.itemsForDay(selected);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navCalendar)),
+      appBar: AppBar(title: const Text('Calendar')),
       body: Column(
         children: [
           TableCalendar(

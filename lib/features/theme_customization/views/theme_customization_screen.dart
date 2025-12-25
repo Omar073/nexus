@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/features/settings/models/custom_colors_store.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
-import 'package:nexus/features/theme_customization/views/widgets/preview/theme_preview_card.dart';
-import 'package:nexus/features/theme_customization/views/widgets/colors/color_option_grid.dart';
-import 'package:nexus/features/theme_customization/views/widgets/presets/preset_list_section.dart';
+import 'package:nexus/features/theme_customization/views/widgets/colors/color_section.dart';
 import 'package:nexus/features/theme_customization/views/widgets/presets/save_preset_dialog.dart';
-import 'package:nexus/features/theme_customization/views/widgets/nav_bar_styles/nav_bar_style_section.dart';
 
 /// Screen for customizing app theme colors
 class ThemeCustomizationScreen extends StatefulWidget {
@@ -20,14 +16,32 @@ class ThemeCustomizationScreen extends StatefulWidget {
 class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _initialTabSet = false;
-  int _currentTabIndex = 0;
+  late int _currentTabIndex;
+  bool _isControllerInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_onTabChanged);
+    // TabController will be created in didChangeDependencies
+    // when we have access to context
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize TabController only once with correct initial index
+    if (!_isControllerInitialized) {
+      final settings = context.read<SettingsController>();
+      final isDark = settings.themeMode == ThemeMode.dark;
+      _currentTabIndex = isDark ? 1 : 0;
+      _tabController = TabController(
+        length: 2,
+        vsync: this,
+        initialIndex: _currentTabIndex,
+      );
+      _tabController.addListener(_onTabChanged);
+      _isControllerInitialized = true;
+    }
   }
 
   void _onTabChanged() {
@@ -39,29 +53,11 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Set initial tab based on current theme mode (only once)
-    if (!_initialTabSet) {
-      _initialTabSet = true;
-      final settings = context.read<SettingsController>();
-      final isDark = settings.themeMode == ThemeMode.dark;
-      _currentTabIndex = isDark ? 1 : 0;
-      if (isDark && _tabController.index != 1) {
-        // Use addPostFrameCallback to avoid setState during build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _tabController.animateTo(1);
-          }
-        });
-      }
-    }
-  }
-
-  @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
+    if (_isControllerInitialized) {
+      _tabController.removeListener(_onTabChanged);
+      _tabController.dispose();
+    }
     super.dispose();
   }
 
@@ -162,14 +158,14 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildColorSection(
+              ColorSection(
                 brightness: Brightness.light,
                 currentPrimary: settings.lightColors.primary,
                 currentSecondary: settings.lightColors.secondary,
                 defaultPrimary: const Color(0xFF3F51B5),
                 defaultSecondary: const Color(0xFF009688),
               ),
-              _buildColorSection(
+              ColorSection(
                 brightness: Brightness.dark,
                 currentPrimary: settings.darkColors.primary,
                 currentSecondary: settings.darkColors.secondary,
@@ -216,101 +212,6 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildColorSection({
-    required Brightness brightness,
-    required Color? currentPrimary,
-    required Color? currentSecondary,
-    required Color defaultPrimary,
-    required Color defaultSecondary,
-  }) {
-    final isLight = brightness == Brightness.light;
-    final textColor = isLight ? Colors.black87 : Colors.white;
-    final bgColor = isLight ? const Color(0xFFF8FAFC) : const Color(0xFF000000);
-
-    return Container(
-      color: bgColor,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Preview Card
-          ThemePreviewCard(
-            primary: currentPrimary ?? defaultPrimary,
-            secondary: currentSecondary ?? defaultSecondary,
-            isLight: isLight,
-          ),
-          const SizedBox(height: 24),
-
-          // Saved Presets
-          PresetListSection(isLight: isLight),
-
-          // Primary Color Section
-          Text(
-            'Primary Color',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Used for buttons, highlights, and key elements',
-            style: TextStyle(
-              fontSize: 12,
-              color: textColor.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ColorOptionGrid(
-            options: CustomColorsStore.primaryOptions,
-            selectedColor: currentPrimary ?? defaultPrimary,
-            defaultColor: defaultPrimary,
-            onColorSelected: (color) {
-              context.read<SettingsController>().updatePrimaryColor(
-                brightness,
-                color,
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Secondary Color Section
-          Text(
-            'Secondary Color',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Used for accents and secondary actions',
-            style: TextStyle(
-              fontSize: 12,
-              color: textColor.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ColorOptionGrid(
-            options: CustomColorsStore.secondaryOptions,
-            selectedColor: currentSecondary ?? defaultSecondary,
-            defaultColor: defaultSecondary,
-            onColorSelected: (color) {
-              context.read<SettingsController>().updateSecondaryColor(
-                brightness,
-                color,
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-          NavBarStyleSection(isLight: isLight),
-          const SizedBox(height: 24),
-        ],
       ),
     );
   }

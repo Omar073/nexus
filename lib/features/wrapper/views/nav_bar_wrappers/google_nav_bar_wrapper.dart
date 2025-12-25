@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 
 /// Google-style navigation bar wrapper using google_nav_bar package.
 class GoogleNavBarWrapper extends StatelessWidget {
@@ -17,7 +16,6 @@ class GoogleNavBarWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = context.l10n;
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
@@ -43,12 +41,12 @@ class GoogleNavBarWrapper extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
             rippleColor: colorScheme.primary.withValues(alpha: 0.2),
             hoverColor: colorScheme.primary.withValues(alpha: 0.1),
-            tabs: [
-              GButton(icon: Icons.dashboard_outlined, text: l10n.navDashboard),
-              GButton(icon: Icons.checklist_outlined, text: l10n.navTasks),
-              GButton(icon: Icons.alarm_outlined, text: l10n.navReminders),
-              GButton(icon: Icons.note_outlined, text: l10n.navNotes),
-              GButton(icon: Icons.settings_outlined, text: l10n.navSettings),
+            tabs: const [
+              GButton(icon: Icons.dashboard_outlined, text: 'Dashboard'),
+              GButton(icon: Icons.checklist_outlined, text: 'Tasks'),
+              GButton(icon: Icons.alarm_outlined, text: 'Reminders'),
+              GButton(icon: Icons.note_outlined, text: 'Notes'),
+              GButton(icon: Icons.settings_outlined, text: 'Settings'),
             ],
             onTabChange: onDestinationSelected,
           ),

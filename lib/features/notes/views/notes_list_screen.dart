@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/features/notes/controllers/note_controller.dart';
 import 'package:nexus/features/notes/views/note_editor_screen.dart';
 import 'package:nexus/features/notes/views/widgets/note_tile.dart';
@@ -10,12 +9,11 @@ class NotesListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final controller = context.watch<NoteController>();
     final notes = controller.visibleNotes;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navNotes)),
+      appBar: AppBar(title: const Text('Notes')),
       body: Column(
         children: [
           Padding(
@@ -42,6 +40,7 @@ class NotesListScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'notes_fab',
         onPressed: () async {
           final note = await controller.createEmpty();
           if (!context.mounted) return;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:nexus/features/theme_customization/views/widgets/nav_bar_styles/nav_bar_style_card.dart';
+import 'package:nexus/features/theme_customization/views/widgets/nav_bar_styles/nav_bar_preview.dart';
 import 'package:provider/provider.dart';
 
 /// Widget section to select navigation bar style with visual previews.
@@ -49,6 +50,17 @@ class NavBarStyleSection extends StatelessWidget {
             );
           }).toList(),
         ),
+        const SizedBox(height: 24),
+        Text(
+          'Preview',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        NavBarPreview(style: selectedStyle, isLight: isLight),
       ],
     );
   }

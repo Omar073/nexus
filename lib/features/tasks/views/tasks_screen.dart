@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/core/widgets/theme_toggle_button.dart';
 import 'package:nexus/features/sync/views/sync_status_widget.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
@@ -13,19 +12,17 @@ class TasksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(l10n.navTasks),
+          title: const Text('Tasks'),
           actions: const [ThemeToggleButton(), SyncStatusWidget()],
-          bottom: TabBar(
+          bottom: const TabBar(
             tabs: [
-              Tab(text: l10n.tasksActive),
-              Tab(text: l10n.tasksPending),
-              Tab(text: l10n.tasksCompleted),
+              Tab(text: 'Active'),
+              Tab(text: 'Pending'),
+              Tab(text: 'Completed'),
             ],
           ),
         ),
@@ -44,6 +41,7 @@ class TasksScreen extends StatelessWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton(
+          heroTag: 'tasks_fab',
           onPressed: () => showTaskEditorDialog(context),
           child: const Icon(Icons.add),
         ),

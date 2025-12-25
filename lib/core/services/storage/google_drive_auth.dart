@@ -19,7 +19,14 @@ class GoogleDriveAuth {
 
   GoogleDriveAuth({DriveAuthStore? authStore, GoogleSignIn? googleSignIn})
     : _authStore = authStore ?? DriveAuthStore(),
-      _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: _driveScopes);
+      _googleSignIn =
+          googleSignIn ??
+          GoogleSignIn(
+            scopes: _driveScopes,
+            // Web Client ID from google-services.json (client_type: 3)
+            serverClientId:
+                '994254093528-nlecdt98kcoj6tevbnofjee9jhr6nk8u.apps.googleusercontent.com',
+          );
 
   /// Checks if the device is authenticated (password gate)
   Future<bool> isAuthenticated() => _authStore.isAuthenticated();

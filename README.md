@@ -5,19 +5,19 @@ Nexus is an **offline-first** personal life management app (Tasks, Reminders, No
 **Design principle:** Hive is the local source-of-truth. Every user action writes locally first and then syncs to the cloud when possible.
 
 - **Platforms**: Android + Windows
-- **UI language**: English-only
+- **UI language**: English-only (hardcoded strings)
 - **Arabic support**: user-entered content (Tasks/Notes) auto-renders RTL when text contains Arabic characters
 
 This README is meant to onboard developer contributors quickly: how the repo is structured, how data flows, and where to implement changes.
 
-If you’re looking for a **non-technical, end-user overview**, see `README_APP.md`.
+If you're looking for a **non-technical, end-user overview**, see `README_APP.md`.
 
 ## Getting started (step-by-step)
 
 ### 1) Install dependencies
 
 ```bash
-flutter pub get; flutter gen-l10n
+flutter pub get
 ```
 
 ### 2) Run static checks
@@ -36,11 +36,20 @@ flutter build apk; flutter build windows
 
 ### Offline-first data flow
 
-1) UI triggers an action on a controller (e.g., create task)\n2) Controller writes to **Hive** immediately (instant UX)\n3) Controller enqueues a **SyncOperation** (local queue)\n4) `SyncService` pushes queued ops to Firestore when online\n5) `SyncService` pulls remote changes and updates Hive\n6) Conflicts are surfaced via conflict dialogs (user chooses local vs remote)
+1) UI triggers an action on a controller (e.g., create task)
+2) Controller writes to **Hive** immediately (instant UX)
+3) Controller enqueues a **SyncOperation** (local queue)
+4) `SyncService` pushes queued ops to Firestore when online
+5) `SyncService` pulls remote changes and updates Hive
+6) Conflicts are surfaced via conflict dialogs (user chooses local vs remote)
 
 ### MVC + Provider
 
-- **Models**: Hive-backed classes (plus Firestore JSON mapping)\n- **Controllers**: `ChangeNotifier` (business logic)\n- **Views**: screens/widgets\n- **Services**: cross-cutting infrastructure\n
+- **Models**: Hive-backed classes (plus Firestore JSON mapping)
+- **Controllers**: `ChangeNotifier` (business logic)
+- **Views**: screens/widgets
+- **Services**: cross-cutting infrastructure
+
 Providers are initialized in `lib/main.dart` and injected app-wide.
 
 ### App services architecture
@@ -67,11 +76,22 @@ The app uses a **composer pattern** to manage widget wrappers and background ser
 
 ### App bootstrap / routing / UI shell
 
-- `lib/main.dart`: Firebase init, Hive init, Provider wiring\n- `lib/app/app.dart`: `StatefulWidget` with `MaterialApp.router`, themes, localization delegates, service lifecycle management\n- `lib/app/app_globals.dart`: Global `ScaffoldMessengerKey` for context-free snackbars\n- `lib/app/services/app_services_composer.dart`: Composes widget wrappers and manages background service initialization/disposal\n- `lib/app/router/app_router.dart`: `go_router` routes (bottom-nav shell)\n- `lib/features/shell/views/app_shell.dart`: bottom navigation UI\n- `lib/app/theme/app_theme.dart`: Material 3 themes\n- `lib/l10n/`: English-only app strings (generated via `flutter gen-l10n`)\n
+- `lib/main.dart`: Firebase init, Hive init, Provider wiring
+- `lib/app/app.dart`: `StatefulWidget` with `MaterialApp.router`, themes
+- `lib/app/app_globals.dart`: Global `ScaffoldMessengerKey` for context-free snackbars
+- `lib/app/services/app_services_composer.dart`: Composes widget wrappers and manages background service initialization/disposal
+- `lib/app/router/app_router.dart`: `go_router` routes (bottom-nav shell)
+- `lib/features/wrapper/views/app_wrapper.dart`: App shell with drawer and bottom navigation
+- `lib/features/wrapper/views/app_drawer.dart`: Navigation drawer
+- `lib/app/theme/app_theme.dart`: Material 3 themes
 
 ### Core data + infra
 
-- `lib/core/data/hive_type_ids.dart`: stable Hive type IDs (never reuse)\n- `lib/core/data/hive_boxes.dart`: Hive box names\n- `lib/core/data/hive_bootstrap.dart`: adapter registration + box opening\n- `lib/core/data/sync_queue.dart`: sync operation queue model\n- `lib/core/data/sync_metadata.dart`: last successful sync timestamp\n
+- `lib/core/data/hive_type_ids.dart`: stable Hive type IDs (never reuse)
+- `lib/core/data/hive_boxes.dart`: Hive box names
+- `lib/core/data/hive_bootstrap.dart`: adapter registration + box opening
+- `lib/core/data/sync_queue.dart`: sync operation queue model
+- `lib/core/data/sync_metadata.dart`: last successful sync timestamp
 
 Core services were reorganized into subfolders under `lib/core/services/`:
 
@@ -139,7 +159,8 @@ git check-ignore lib/firebase_setup/apiKeys.dart
 
 ### Firestore collections used
 
-- `tasks/{taskId}`: task docs\n- `notes/{noteId}`: note docs\n
+- `tasks/{taskId}`: task docs
+- `notes/{noteId}`: note docs
 
 ### Firestore rules (no authentication)
 
@@ -161,7 +182,9 @@ Attachments are stored locally first, then **best-effort uploaded to Google Driv
 
 ### Configure Google Drive API
 
-- Enable **Google Drive API**\n- Configure **OAuth consent screen**\n- Create **OAuth Client ID (Android)** matching `applicationId` in `android/app/build.gradle.kts`\n
+- Enable **Google Drive API**
+- Configure **OAuth consent screen**
+- Create **OAuth Client ID (Android)** matching `applicationId` in `android/app/build.gradle.kts`
 
 ### Current auth behavior (what contributors should know)
 
@@ -219,72 +242,130 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ### Key files
 
-- Models: `lib/features/tasks/models/task.dart`, `task_attachment.dart`, `task_enums.dart`\n- Local storage: `lib/features/tasks/data/task_local_datasource.dart`\n- Repository: `lib/features/tasks/repositories/task_repository.dart`\n- Controller: `lib/features/tasks/controllers/task_controller.dart`\n- UI: `lib/features/tasks/views/tasks_screen.dart`\n
+- Models: `lib/features/tasks/models/task.dart`, `task_attachment.dart`, `task_enums.dart`, `task_editor_result.dart`
+- Local storage: `lib/features/tasks/data/task_local_datasource.dart`
+- Repository: `lib/features/tasks/repositories/task_repository.dart`
+- Controller: `lib/features/tasks/controllers/task_controller.dart`
+- UI: `lib/features/tasks/views/tasks_screen.dart`
+- Widgets:
+  - `lib/features/tasks/views/widgets/task_tile.dart`
+  - `lib/features/tasks/views/widgets/task_search_bar.dart`
+  - `lib/features/tasks/views/widgets/task_filter_sheet.dart`
+  - `lib/features/tasks/views/widgets/task_editor_dialog.dart`
+  - `lib/features/tasks/views/widgets/task_detail_sheet/` (modular task detail components)
+- Utils: `lib/features/tasks/views/utils/attachment_picker_utils.dart`
 
 ### How it works
 
-- CRUD writes to Hive first.\n- Each write sets `isDirty=true` and enqueues a `SyncOperation(entityType: 'task')`.\n- Attachments (images/voice) are stored locally and best-effort uploaded to Drive.\n- A sync status icon in the Tasks app bar shows queue/sync/conflict state.\n
+- CRUD writes to Hive first.
+- Each write sets `isDirty=true` and enqueues a `SyncOperation(entityType: 'task')`.
+- Attachments (images/voice) are stored locally and best-effort uploaded to Drive.
+- A sync status icon in the Tasks app bar shows queue/sync/conflict state.
 
 ## Reminders
 
 ### Key files
 
-- Models: `lib/features/reminders/models/reminder.dart`\n- Controller: `lib/features/reminders/controllers/reminder_controller.dart`\n- UI: `lib/features/reminders/views/reminders_screen.dart`\n- Notification scheduling: `lib/core/services/notifications/notification_service.dart`\n
+- Models: `lib/features/reminders/models/reminder.dart`
+- Controller: `lib/features/reminders/controllers/reminder_controller.dart`
+- UI: `lib/features/reminders/views/reminders_screen.dart`
+- Notification scheduling: `lib/core/services/notifications/notification_service.dart`
 
 ### How it works
 
-- Creating/updating schedules a local notification.\n- Completing/deleting cancels the scheduled notification.\n
+- Creating/updating schedules a local notification.
+- Completing/deleting cancels the scheduled notification.
 
 ## Sync + conflict handling
 
 ### Key files
 
-- Queue model: `lib/core/data/sync_queue.dart`\n- Sync engine: `lib/core/services/sync/sync_service.dart`\n- UI state: `lib/features/sync/controllers/sync_controller.dart`\n- Sync icon: `lib/features/sync/views/sync_status_widget.dart`\n- Task conflicts: `lib/features/sync/views/conflict_resolution_dialog.dart`\n- Note conflicts: `lib/features/notes/views/note_conflict_resolution_dialog.dart`\n
+- Queue model: `lib/core/data/sync_queue.dart`
+- Sync engine: `lib/core/services/sync/sync_service.dart`
+- UI state: `lib/features/sync/controllers/sync_controller.dart`
+- Sync icon: `lib/features/sync/views/sync_status_widget.dart`
+- Task conflicts: `lib/features/sync/views/conflict_resolution_dialog.dart`
+- Note conflicts: `lib/features/notes/views/note_conflict_resolution_dialog.dart`
 
 ### How it works
 
-- Controllers enqueue `SyncOperation` entries.\n- `SyncService` pushes ops to Firestore, then pulls changes since last sync.\n- Conflicts occur when local is dirty and remote updated after local last sync.\n- User resolves by choosing **Keep Local** or **Keep Remote**.\n
+- Controllers enqueue `SyncOperation` entries.
+- `SyncService` pushes ops to Firestore, then pulls changes since last sync.
+- Conflicts occur when local is dirty and remote updated after local last sync.
+- User resolves by choosing **Keep Local** or **Keep Remote**.
 
 ## Notes (Rich text + inline voice notes)
 
 ### Key files
 
-- Models: `lib/features/notes/models/note.dart`, `note_attachment.dart`\n- Controller: `lib/features/notes/controllers/note_controller.dart`\n- UI: `lib/features/notes/views/notes_list_screen.dart`, `note_editor_screen.dart`\n- RTL helper: `lib/features/notes/views/widgets/rtl_aware_text.dart`\n- Voice helper: `lib/core/services/note_embed_service.dart`\n
+- Models: `lib/features/notes/models/note.dart`, `note_attachment.dart`
+- Controller: `lib/features/notes/controllers/note_controller.dart`
+- UI: `lib/features/notes/views/notes_list_screen.dart`, `note_editor_screen.dart`
+- RTL helper: `lib/features/notes/views/widgets/rtl_aware_text.dart`
+- Voice helper: `lib/core/services/note_embed_service.dart`
 
 ### Storage format
 
-- `Note.contentDeltaJson` stores Quill Delta JSON as a String.\n- Voice notes are stored as `NoteAttachment` entries referencing local file paths (and Drive ids when uploaded).\n
+- `Note.contentDeltaJson` stores Quill Delta JSON as a String.
+- Voice notes are stored as `NoteAttachment` entries referencing local file paths (and Drive ids when uploaded).
 
 ## Habits
 
 ### Key files
 
-- Models: `lib/features/habits/models/habit.dart`, `habit_log.dart`\n- Controller: `lib/features/habits/controllers/habit_controller.dart`\n- UI: `lib/features/habits/views/habits_screen.dart`, `habit_details_screen.dart`\n
+- Models: `lib/features/habits/models/habit.dart`, `habit_log.dart`
+- Controller: `lib/features/habits/controllers/habit_controller.dart`
+- UI: `lib/features/habits/views/habits_screen.dart`, `habit_details_screen.dart`
 
 ### How streaks work
 
-- Each completion is a `HabitLog` keyed by local `YYYY-MM-DD`.\n- Streak is computed by counting consecutive completed days back from today.\n
+- Each completion is a `HabitLog` keyed by local `YYYY-MM-DD`.
+- Streak is computed by counting consecutive completed days back from today.
 
 ## Analytics
 
 ### Key files
 
-- Controller: `lib/features/analytics/controllers/analytics_controller.dart`\n- UI: `lib/features/analytics/views/analytics_screen.dart`\n
-Provides basic KPIs and a simple pie chart.\n
+- Controller: `lib/features/analytics/controllers/analytics_controller.dart`
+- UI: `lib/features/analytics/views/analytics_screen.dart`
+- Utils: `lib/features/analytics/utils/analytics_utils.dart`
+- Widgets:
+  - `lib/features/analytics/views/widgets/tasks_pie_chart.dart`
+  - `lib/features/analytics/views/widgets/habits_progress_circle.dart`
+  - `lib/features/analytics/views/widgets/legend_item.dart`
+  - `lib/features/analytics/views/widgets/quick_stat_tile.dart`
+
+Provides basic KPIs and a simple pie chart.
 
 ## Calendar
 
 ### Key files
 
-- Controller: `lib/features/calendar/controllers/calendar_controller.dart`\n- UI: `lib/features/calendar/views/calendar_screen.dart`\n- Device calendar wrapper: `lib/core/services/device_calendar_service.dart`\n
-Calendar overlays tasks (due dates) and reminders (scheduled times).\n
+- Controller: `lib/features/calendar/controllers/calendar_controller.dart`
+- UI: `lib/features/calendar/views/calendar_screen.dart`
+- Device calendar wrapper: `lib/core/services/device_calendar_service.dart`
+
+Calendar overlays tasks (due dates) and reminders (scheduled times).
 
 ## Settings
 
 ### Key files
 
-- Controller: `lib/features/settings/controllers/settings_controller.dart`\n- UI: `lib/features/settings/views/settings_screen.dart`\n
-Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.\n
+- Controller: `lib/features/settings/controllers/settings_controller.dart`
+- Connectivity Helper: `lib/features/settings/controllers/settings_connectivity_helper.dart`
+- Connectivity Utils: `lib/features/settings/controllers/connectivity_status_utils.dart`
+- State Mixin: `lib/features/settings/controllers/settings_connectivity_mixin.dart`
+- UI: `lib/features/settings/views/settings_screen.dart`
+- Sections (organized under `views/sections/`):
+  - `theme_section.dart`
+  - `task_management_section.dart`
+  - `sync_section.dart`
+  - `connectivity_status_section.dart`
+  - `drive_access_section.dart`
+  - `permissions_section.dart`
+- Section Widgets: `views/sections/widgets/connectivity_status_tile.dart`
+
+Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.
 
 ## Testing + CI
 
@@ -298,17 +379,30 @@ flutter test
 
 ### CI
 
-GitHub Actions workflow is at `.github/workflows/flutter.yml`:\n- `flutter pub get; flutter analyze; flutter test`\n
+GitHub Actions workflow is at `.github/workflows/flutter.yml`:
+- `flutter pub get; flutter analyze; flutter test`
 
 ## Contributor workflow
 
 ### Adding a new feature module (recommended approach)
 
-1) Add models to `lib/features/<feature>/models/` (with Hive adapter)\n2) Add datasources/repositories in `data/` and `repositories/`\n3) Add controller in `controllers/` (`ChangeNotifier`)\n4) Add views in `views/`\n5) Register adapters/open boxes in `lib/core/data/hive_bootstrap.dart`\n6) Wire routes in `lib/app/router/app_router.dart`\n7) Add/extend tests in `test/`\n
+1) Add models to `lib/features/<feature>/models/` (with Hive adapter)
+2) Add datasources/repositories in `data/` and `repositories/`
+3) Add controller in `controllers/` (`ChangeNotifier`)
+4) Add views in `views/`
+5) Register adapters/open boxes in `lib/core/data/hive_bootstrap.dart`
+6) Wire routes in `lib/app/router/app_router.dart`
+7) Add/extend tests in `test/`
 
 ### Project command conventions
 
 ```bash
-flutter pub get; flutter gen-l10n; flutter analyze; flutter test
+flutter pub get; flutter analyze; flutter test
 flutter build apk; flutter build windows
 ```
+
+## Localization (Removed)
+
+The app previously used Flutter's l10n infrastructure with ARB files. This has been **removed** in favor of hardcoded English strings for simplicity. All UI text is now directly in the Dart code.
+
+If you need to add/modify UI text, simply edit the string literals in the relevant widget files.

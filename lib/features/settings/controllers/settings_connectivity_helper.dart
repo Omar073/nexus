@@ -5,52 +5,7 @@ import 'package:nexus/core/widgets/common_snackbar.dart';
 import 'package:nexus/core/widgets/drive_password_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// Utility functions for connectivity status display
-class ConnectivityStatusUtils {
-  /// Returns the text representation of a connectivity status
-  static String getStatusText(ConnectivityStatus? status) {
-    if (status == null) return 'Checking...';
-    switch (status) {
-      case ConnectivityStatus.connected:
-        return 'Connected';
-      case ConnectivityStatus.disconnected:
-        return 'Disconnected';
-      case ConnectivityStatus.unknown:
-        return 'Unknown';
-    }
-  }
-
-  /// Returns the icon for a connectivity status
-  static IconData getStatusIcon(ConnectivityStatus? status) {
-    if (status == null) return Icons.hourglass_empty;
-    switch (status) {
-      case ConnectivityStatus.connected:
-        return Icons.check_circle;
-      case ConnectivityStatus.disconnected:
-        return Icons.error;
-      case ConnectivityStatus.unknown:
-        return Icons.help_outline;
-    }
-  }
-
-  /// Returns the color for a connectivity status
-  static Color? getStatusColor(
-    ConnectivityStatus? status,
-    BuildContext context,
-  ) {
-    if (status == null) return null;
-    switch (status) {
-      case ConnectivityStatus.connected:
-        return Colors.green;
-      case ConnectivityStatus.disconnected:
-        return Theme.of(context).colorScheme.error;
-      case ConnectivityStatus.unknown:
-        return Colors.orange;
-    }
-  }
-}
-
-/// Helper class for managing connectivity and Drive operations in settings screen
+/// Helper class for managing connectivity and Drive operations in settings screen.
 class SettingsConnectivityHelper {
   final BuildContext context;
   final ConnectivityStatusService connectivityStatusService;
@@ -214,5 +169,66 @@ class SettingsConnectivityHelper {
       if (!context.mounted) return;
       context.showSnackbar('Failed to check Google Drive: $e', Colors.red);
     }
+  }
+
+  /// Handles Google Sign-In flow with callbacks for state updates.
+  Future<void> handleGoogleSignIn({
+    required VoidCallback onSigningInStart,
+    required ValueChanged<bool> onSignInComplete,
+    required VoidCallback onRefreshStatus,
+  }) async {
+    final drive = context.read<GoogleDriveService>();
+
+    onSigningInStart();
+
+    try {
+      final success = await drive.signIn();
+      if (!context.mounted) return;
+
+      onSignInComplete(success);
+
+      if (success) {
+        onRefreshStatus();
+        context.showSnackbar('Connected to Google Drive', Colors.green);
+      } else {
+        context.showSnackbar('Failed to connect to Google Drive', Colors.red);
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      onSignInComplete(false);
+      context.showSnackbar('Error connecting: $e', Colors.red);
+    }
+  }
+
+  /// Handles Google Sign-Out flow with callbacks for state updates.
+  Future<void> handleGoogleSignOut({
+    required VoidCallback onSignOutComplete,
+    required VoidCallback onRefreshStatus,
+  }) async {
+    final drive = context.read<GoogleDriveService>();
+    await drive.signOut();
+
+    if (!context.mounted) return;
+
+    onSignOutComplete();
+    onRefreshStatus();
+    context.showSnackbar('Disconnected from Google Drive', Colors.orange);
+  }
+
+  /// Handles revoking Drive authentication.
+  Future<void> handleRevoke({
+    required Future<void> Function() onRefreshDriveStatus,
+  }) async {
+    final drive = context.read<GoogleDriveService>();
+    await drive.revokeAuthentication();
+    await onRefreshDriveStatus();
+  }
+
+  /// Refreshes Drive status including password auth and Google Sign-In.
+  Future<({bool authenticated, bool signedIn})> refreshDriveStatus() async {
+    final drive = context.read<GoogleDriveService>();
+    final authenticated = await refreshDrive();
+    final signedIn = await drive.isSignedIn();
+    return (authenticated: authenticated, signedIn: signedIn);
   }
 }

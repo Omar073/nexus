@@ -1,0 +1,299 @@
+Now here are three options for the cursor prompt
+I want you to mix and match between these three prompts and merge the output so that we would have a final complete prompt containing the best of all three
+
+
+option 1
+# Project Specification: Nexus (Personal Life Management App)
+
+**Role:** You are a Staff Flutter Engineer and System Architect specializing in "Offline-First" architecture.
+
+**Goal:** Build a comprehensive life management application called **Nexus**. This app serves as the central hub for the user's tasks, daily habits, notes, and life organization.
+
+**Core Philosophy:** The app acts as a "Second Brain." It must be reliable, work perfectly offline, and sync seamlessly when online.
+
+---
+
+### 1. Technical Stack & Architecture
+
+* **Framework:** Flutter (Latest Stable).
+* **Architecture Pattern:** **MVC (Model-View-Controller)**.
+    * **Model:** Data classes (Isar entities & Firestore models).
+    * **View:** UI Widgets (Screens, Dialogs, Drawers).
+    * **Controller:** Business logic and State Management classes (extending `ChangeNotifier`).
+* **State Management:** `Provider`.
+* **Local Database:** `Isar` (NoSQL). This is the "Source of Truth."
+* **Cloud Backend:** Firebase (Firestore, Storage, Auth).
+* **Notifications:** `flutter_local_notifications` (Strictly Local Scheduling).
+* **Localization:** English (LTR) and Arabic (RTL).
+* **UI:** Material 3, supporting Light/Dark modes (system default).
+
+---
+
+### 2. Feature Implementation Details
+
+#### A. Offline-First Synchronization (The "Nexus" Engine)
+* **Logic:** The app **always** reads and writes to the local Isar database first to ensure instant UI updates.
+* **Sync Service:** A background service monitors network connectivity.
+    * *Offline:* Changes are marked with an `isDirty` flag in Isar.
+    * *Online:* The service pushes `isDirty` records to Firestore and pulls remote changes to update Isar.
+
+#### B. Task Management (MVC Structure)
+* **Views:**
+    * Three tabs controlled by a toolbar: **Active**, **Pending**, **Completed**.
+    * **Drawer:** Fast navigation to Categories and Subcategories.
+    * **Task List:** Tasks display a checkbox (left), title, and edit button.
+* **Controller Logic:**
+    * Tapping a checkbox toggles the status immediately.
+    * **Retention Policy:** "Standard Tasks" are kept for 30 days after completion. "Daily Tasks" are reset/deleted at 00:00.
+    * **Editing:** Long-press a Category/Subcategory to rename (inline). Tapping a task body opens a Detailed Popup (Description + Attachments).
+    * **Structure** A task can have optional priority level and difficulty level and the priority level is used to display the highest priority tasks in order inside the main menu dashboard
+
+#### C. Notification System (Crucial Requirement)
+* **Constraint:** Do NOT use Firebase Cloud Functions for scheduling.
+* **Implementation:** Use **Local Scheduling**.
+* **Logic:** When a user creates a task with a deadline or a Daily Task with a set time, the `NotificationController` must schedule a notification locally on the Android OS using `flutter_local_notifications`.
+* **Reliability:** The Android OS holds this schedule even if the app is killed or backgrounded.
+
+#### D. Attachments (Voice & Image)
+* **Storage Strategy:**
+    1.  Save the file (image/audio) to the local device directory (`path_provider`).
+    2.  Save this local path string in the Isar database.
+    3.  Since we can't use firebase storage since it isn't available in the spark plan we will need to figure out an alternative that contains the shared app data maybe a google drive shared folder or something else.
+    4.  Once uploaded, update the database with the remote URL, but keep the local file for offline access.
+* **Voice Notes:** Use `record` package for recording and `audioplayers` for playback.
+
+#### E. Note Taking
+* **UI:** A rich-text style interface that supports standard text mixed with inline Voice Note widgets.
+* **Language:** Auto-detect alignment. If user types Arabic, align Right-to-Left.
+
+---
+
+### 3. Proposed Directory Structure (MVC)
+
+```text
+lib/
+├── main.dart
+├── core/
+│   ├── services/ (SyncService, NotificationService, AudioService)
+│   ├── constants/
+│   └── theme/
+├── models/
+│   ├── task_model.dart (Isar & Firestore logic)
+│   ├── category_model.dart
+│   └── note_model.dart
+├── views/
+│   ├── tasks/ (TaskScreen, TaskItemWidget, TaskDetailPopup)
+│   ├── notes/
+│   └── shared/ (NavDrawer, CommonWidgets)
+└── controllers/ (Providers)
+    ├── task_controller.dart
+    ├── note_controller.dart
+    └── theme_controller.dart
+
+--------------------------------------------------------------------------------------------
+
+option 2
+**Prompt for Building a Flutter App: Comprehensive Life Management Tool**
+
+You are an expert Flutter developer tasked with building a complete, production-ready Flutter app called "Nexus". This app is a personalized life management tool that handles tasks, reminders, notes, and more, acting as a central hub for organizing every aspect of daily life. It must be cross-platform (Android/windows), offline-first with cloud syncing, and feature a clean, intuitive UI.
+
+**Key Goals:**
+- Focus on seamless user experience: Fast, responsive, and adaptable to light/dark modes.
+- Prioritize data persistence: Use local storage for offline access and Firebase for syncing.
+- Handle background operations ethically and efficiently, avoiding paid Firebase tiers where possible (only use features in the spark plan).
+- Build modularly for easy future expansions.
+
+**Tech Stack Requirements:**
+- Flutter version: Latest stable.
+- State Management: Use Provider for efficient, scalable state handling (e.g., for tasks, notes, themes).
+- Database: Local - SQflite or Hive for structured data (tasks, notes). Cloud - Firebase Firestore for syncing (free Spark plan compatible; no Cloud Functions).
+- Notifications/Reminders: Use flutter_local_notifications for local push notifications and alarms. For background tracking, use WorkManager (Android) to check deadlines and trigger alerts even when the app is closed/backgrounded—not relying on cloud services.
+- Attachments: Support images and voice notes. Storage options: Local file paths (using path_provider) for device-only access; optional Google Drive integration via googleapis_auth if needed.
+- Other Packages: intl for date formatting, audioplayers for voice notes playback, image_picker for attachments, shared_preferences for settings, flutter_slidable for swipe actions, table_calendar or similar for calendar views, charts_flutter or fl_chart for simple visualizations, and provider for state.
+- Themes: Dynamic light/dark mode using ThemeMode.system as default, with manual toggle.
+- Languages: Support English and Arabic, with automatic text alignment (RTL for Arabic using Directionality widget).
+
+**Core Features (Must Implement):**
+1. **Synced To-Do Tasks System:**
+   - Tasks with categories and subcategories (e.g., Work > Projects > Task1).
+   - Three tabs: Active (ongoing), Pending (future/scheduled), Completed (done).
+   - Side drawer for quick navigation to main categories/subcategories.
+   - Each task includes: Name, description, deadline (date/time) (optional), priority (low/medium/high) (optional), difficulty (low/medium/high) (optional), checkboxes for completion.
+   - UI: Collapsible/expandable categories/subcategories (using ExpansionTile). Long-press on category/subcategory enters rename mode. Edit button next to each task; tapping the task opens a popup (Dialog or BottomSheet) with detailed view, including description and attachments.
+   - Completion: Small checkboxes on the left of tasks to toggle done status. Completed tasks move to Completed tab within 10 seconds.
+   - Retention: Save completed tasks for up to 30 days (auto-delete after); manual delete option. Daily reminders delete at end of day if completed and move onto the next day daily tasks if not completed.
+   - Adding Tasks: Floating Action Button opens a popup for input: Task name, category/subcategory (dropdown or searchable) and there is also a smaller add button next to each category and sub-category that when pressed automatically sets the category and sub-category fields in the new task popup. description, deadline, priority, attachments (image/voice note picker).
+   - Syncing: Offline edits saved locally; sync to Firebase when online (use ConnectivityPlus to detect network and queue changes). Enhance local database logic to handle sync conflicts (e.g., last-modified timestamp wins).
+   - Recurring Tasks: Support daily/weekly recurring tasks that auto-regenerate upon completion (e.g., "daily azkar").
+   - Search and Filtering: Global search bar to find tasks by keywords, dates, or categories. Include filters in task views like "by priority" or "overdue".
+
+2. **Daily Quick Reminders:**
+   - Separate section for simple, category-less reminders (e.g., "Take out trash at 5 PM").
+   - Set time-based alerts with alarms.
+   - Background Service: Use WorkManager/AlarmManager for Android to monitor deadlines and trigger local notifications even if app is closed/backgrounded. No Firebase Cloud Functions—keep it local and free.
+   - Push Notifications: Via flutter_local_notifications for reminders and deadlines.
+
+3. **Synced Note-Taking:**
+   - Rich text notes supporting English and Arabic (auto-detect and switch alignment: LTR/RTL).
+   - Inline voice notes: Record and embed audio clips within notes (using flutter_sound or similar).
+   - Syncing: Same as tasks—local first, Firebase sync.
+   - UI: List view with search, edit, and delete options.
+   - Search: Integrate with global search bar for notes by keywords or dates.
+
+4. **Habits and Analytics:**
+   - Habit Tracker: Dedicated section for habits (tied to recurring tasks) with streak tracking and progress visualizations (e.g., simple line charts showing daily/weekly streaks).
+   - Productivity Analytics: A dashboard screen showing upcoming task deadlines and tasks with hight priorities and active tasks and current daily tasks and should also show stats like completed tasks per week, average completion time, or category breakdowns. Use simple charts (e.g., pie charts for priority distribution) via charts_flutter.
+
+5. **Calendar Integration:**
+   - Monthly/weekly calendar view (using table_calendar or similar) that overlays tasks, deadlines, and reminders.
+   - Integrate with device calendars (Google Calendar/Samsung Calendar) for exporting and importing some events that the user chooses (use flutter_calendar or similar packages).
+
+6. **General App Structure:**
+   - Tasks screen: TabBar at top for switching between Active/Pending/Completed tasks.
+   - Navigation: BottomNavigationBar for main sections (Tasks, Reminders, Notes, Habits/Analytics, Calendar, Settings).
+   - Settings: Theme toggle, notification preferences, backup options, language switch.
+
+**UI/UX Guidelines:**
+- Modern, minimalistic design: Use Material 3 components for consistency.
+- Seamless and user-friendly: Smooth animations (e.g., for popups, expansions), intuitive gestures (swipe to delete/archive).
+- Light/Dark Mode: Default to device theme; adaptive colors/icons.
+- Error Handling: Graceful offline messages (e.g., "Changes will sync when online"), loading indicators.
+- Performance: Optimize for large task lists (e.g., use ListView.builder).
+- Internationalization: Full support for English/Arabic, including date formats.
+- Handle android layout sizing and windows layout sizing
+
+**Development Instructions:**
+- Architecture: Use MVC (Model-View-Controller) pattern for structuring the app—separate models for data, views for UI, and controllers for business logic.
+- Structure the code: Separate folders for models, views, controllers, providers, screens, widgets, services (e.g., db_service.dart for local/cloud ops).
+- Handle Permissions: Request storage, microphone, notifications, calendar access at runtime.
+- Testing: Include unit tests for core logic (e.g., task syncing, notifications, conflict resolution). Simulate offline mode.
+- Build Targets: Android APK; provide setup instructions for Firebase config.
+- Documentation: Add comments in code; generate a README.md with setup, features, and usage.
+- Edge Cases: Handle no internet, device changes, large attachments, Arabic text wrapping, recurring task regeneration, chart data limits.
+
+Generate the full project structure, code, and any necessary assets. Start by outlining the file structure, then implement step-by-step. If anything is unclear, assume best practices for a polished app.
+
+------------------------------------------------------------------------------------------------------
+option 3
+
+Project: "Nexus" — Personal Life Hub (Flutter app)
+
+Goal
+-----
+Build a cross-platform Flutter app (Android + Windows) called **Nexus** that acts as your personal life hub: tasks/todos with categories & subcategories, natural language quick entry, deadlines, priorities, notes (English + Arabic with RTL handling), attachments (images/audio), offline-first sync with Firebase + local store, scheduled/local + push notifications, and a friendly theme-aware UI. Use **MVC architecture** (Models, Views, Controllers) for the app structure.
+
+High-level requirements
+-----------------------
+- Flutter app (Dart), using the current stable Flutter SDK.
+- Architecture: **MVC** (models/ views/ controllers). Controllers handle business logic, call repositories/services, and update Views. Use controller-driven state updates (controllers may internally use lightweight state notifiers).
+- Persistent local DB: **Hive** for fast binary storage and metadata for attachments.
+- Remote sync: **Firebase Cloud Firestore** (primary), **Google drive Storage or an alternative** (attachments), **FCM** for push notifications.
+- Offline behavior: app must work offline, queue local changes, and sync when connection returns.
+- Background reminders/alarms: reliable scheduled local notifications when app is inactive; FCM for cross-device pushes when available.
+- Multi-language: English and Arabic support with automatic alignment.
+
+Core features (exact behavior)
+------------------------------
+1. Tasks & Todos
+   - Task model fields: id, title, description (optional), categoryId, subcategoryId (note that not all categories must have sub-categories), dueDate (optional), priority (low/medium/high)(optional), difficulty (low/medium/high)(optional), status (active/pending/completed), createdAt, updatedAt, attachments[], recurringRule (optional), lastModifiedByDevice.
+   - UI: three top tabs or segmented control: Active | Pending | Completed. Each task row has a small checkbox on the left to toggle done/undone. Tapping a task opens a modal popup showing details and attachments. Each row also has an Edit icon that opens the edit view.
+   - Categories/subcategories: hierarchical list in a side drawer (collapsible/expandable). Long-press on a category/subcategory enters rename mode. Drawer shows quick counts (active/overdue).
+   - Completed tasks retention: configurable default 30 days; daily quick reminders that are completed may auto-delete at midnight if completed (configurable).
+
+3. Add / Edit Task flow
+   - FAB opens a modal Add Task view with fields: title, select category/subcategory, description, due date/time, priority, recurrence, add attachments (image, audio), and option to schedule immediate reminder.
+   - Attachments: camera/gallery for images, record voice notes for audio. When offline, store attachments locally and mark as `uploaded=false`; upload when next sync occurs.
+
+4. Daily Quick Reminders
+   - Light-weight tasks for quick reminders: title + time + optional snooze. Display in “Daily” area and in notifications. Option to auto-delete at day-end if completed.
+
+5. Notifications & Scheduling
+   - Local scheduled notifications for reminders: use `flutter_local_notifications` + `workmanager` or `android_alarm_manager_plus` for reliable scheduling on Android.
+   - Push notifications (FCM) for cross-device reminders when user is signed-in on multiple devices. Server-side scheduling only if the app owner upgrades to Blaze (see Technical Recommendations).
+
+6. Notes
+   - Rich text plain notes supporting English & Arabic, auto-align by detected language direction. Inline voice notes supported within notes.
+   - Notes sync to Firestore and store a local copy in Hive.
+
+7. Sync & Conflict handling
+   - Local-first UI: show local data instantly. Maintain an operation queue for create/update/delete operations.
+   - Conflict policy: store `updatedAt` on both client and server. If both changed after last sync, present a conflict resolution UI to the user. For non-trivial conflicts, surface both versions and let user choose; for simple fields use last-writer-wins as fallback.
+   - Retry strategy: exponential backoff on sync failures. Show sync status and queued operation list in Settings.
+
+Data model & Firestore layout (examples)
+---------------------------------------
+- categories/{categoryId} : { id, name, parentId?, order }
+- tasks/{taskId} : {
+    id, title, description, categoryId, subcategoryId, dueDate: timestamp, priority, status,
+    attachments: [{ id, storagePath, mimeType, localUri?, uploaded: bool }],
+    recurringRule, createdAt, updatedAt, lastModifiedByDevice
+  }
+- /notes/{noteId}
+
+Attachment handling
+-------------------
+- Store attachments locally in app file storage with metadata stored in Hive (localUri, mimeType, uploaded flag).
+- On sync: upload to Firebase Storage path `attachments/{taskId}/{uuid}` and update Firestore metadata with storagePath and `uploaded=true`.
+- Provide alternate toggle: local-only attachments (device-specific) or Google Drive integration(requires internet).
+
+Architecture & file structure (MVC)
+-----------------------------------
+- lib/
+  - main.dart
+  - app.dart (theme, localization)
+  - models/ (task.dart, category.dart, note.dart, attachment.dart)
+  - views/ (home_view.dart, task_list_view.dart, task_edit_view.dart, task_details_popup.dart, notes_view.dart, settings_view.dart)
+  - controllers/ (task_controller.dart, sync_controller.dart, auth_controller.dart, notification_controller.dart, nlp_controller.dart)
+  - repositories/ (task_repository.dart)
+  - data/ (local/hive_service.dart, remote/firestore_service.dart, storage/firebase_storage_service.dart)
+  - services/ (notification_service.dart, background_service.dart, connectivity_service.dart, audio_service.dart, nlp_service.dart)
+  - utils/ (date_utils.dart, rlt_detector.dart, sync_queue.dart)
+  - tests/
+
+Technical recommendations & specifics
+-------------------------------------
+- **Firestore vs Realtime DB:** prefer Cloud Firestore for structured queries, offline persistence, and scaling. Enable Firestore offline persistence on client.
+- **Local DB:** Hive (fast, binary, good for complex objects) + store metadata for attachments in Hive; attachments themselves in app file storage until uploaded.
+- **Sync queue:** operation log with optimistic UI. Keep op ordering and retry with exponential backoff.
+- **Notifications:** use `flutter_local_notifications` + `workmanager`/`android_alarm_manager_plus` for Android scheduling. Use FCM for push across devices.
+- **Conflict resolution:** store `updatedAt` on both server & client. If both changed after last sync, present a conflict resolution screen. For simplicity, implement last-writer-wins for fields that are unlikely to conflict and surface conflicts for whole-document edits.
+- **Attachments:** store local URI + metadata; on sync upload to Firebase Storage into path `attachments/{taskId}/{uuid}`. Set public/private rules accordingly.
+
+Background scheduling & reliability notes
+-----------------------------------------
+- On Android use `android_alarm_manager_plus` or WorkManager integration with `flutter_local_notifications` so alarms fire reliably even when the app is killed.
+
+Testing, CI, and quality
+-----------------------
+- **Unit tests:** controllers, repositories, sync queue, and NLP parsing.
+- **Integration tests:** core user flows (add task, edit, offline add + reconnect sync, notification scheduling).
+- **Linting:** `dart analyze`, `flutter_lints` or `pedantic`.
+- **CI:** GitHub Actions to run `flutter analyze` and `flutter test`, and optionally build a debug APK.
+- **Release process:** document signing keys and Firebase config in README.
+
+Acceptance checklist (copy to Cursor as verification)
+-----------------------------------------------------
+- App builds for Android without missing packages.
+- Core flows work: add/edit/delete task; offline add & sync after reconnect; add attachment offline & upload after reconnect.
+- Notifications fire at scheduled times while app is backgrounded on Android.
+- Controller classes have unit tests with >= 70% coverage for core logic.
+- README contains Firebase setup steps, local dev instructions, and how to configure notifications.
+
+Deliverables
+------------
+- Full Flutter project with MVC structure, readable code and comments.
+- Implemented natural language quick entry and confirmation UI.
+- Local-first sync layer with operation queue, retry/backoff, and conflict handling UI.
+- Attachment handling with local storage + Firebase Storage sync.
+- Local scheduled notifications and FCM push integration hooks.
+- Unit & integration tests as listed.
+- README: setup, Firebase steps, how to run emulator, notification setup, build steps.
+
+End of brief for Cursor — Nexus.
+
+------------------------------------------------------------------------------------------------
+
+
+
+can you add Each task should have a createdAt and completedAt attributes
+and also remove the part where we delete completed tasks after 30 days we can just leave them

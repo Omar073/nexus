@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/extensions/l10n_x.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +8,6 @@ class TaskManagementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final controller = context.watch<SettingsController>();
 
     return Column(
@@ -27,7 +25,7 @@ class TaskManagementSection extends StatelessWidget {
         if (controller.autoDeleteCompletedTasks) ...[
           const SizedBox(height: 8),
           Text(
-            l10n.retentionDays,
+            'Completed retention (days)',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),

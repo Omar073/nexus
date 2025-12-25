@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/connectivity_status_service.dart';
-import 'package:nexus/features/settings/controllers/settings_connectivity_utils.dart';
+import 'package:nexus/features/settings/controllers/connectivity_status_utils.dart';
 
 class ConnectivityStatusTile extends StatelessWidget {
   final ConnectivityStatus? status;
