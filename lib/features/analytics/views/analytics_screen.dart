@@ -1,88 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/nexus_card.dart';
+import 'package:nexus/core/widgets/section_header.dart';
 import 'package:nexus/features/analytics/controllers/analytics_controller.dart';
 import 'package:nexus/features/analytics/utils/analytics_utils.dart';
 import 'package:nexus/features/analytics/views/widgets/habits_progress_circle.dart';
-import 'package:nexus/features/analytics/views/widgets/quick_stat_tile.dart';
 import 'package:nexus/features/analytics/views/widgets/tasks_pie_chart.dart';
-import 'package:nexus/features/dashboard/views/widgets/stat_card.dart';
 import 'package:provider/provider.dart';
 
+/// Analytics screen following Nexus design system.
+/// Features drawer button, overview stats cards, charts, and insights.
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<AnalyticsController>();
     final s = controller.snapshot;
-    final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Open menu',
+          ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.date_range),
+            onPressed: () {
+              showDateRangePicker(
+                context: context,
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now(),
+                initialDateRange: DateTimeRange(
+                  start: DateTime.now().subtract(const Duration(days: 30)),
+                  end: DateTime.now(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(bottom: 100),
         children: [
-          // Overview Cards
-          Text(
-            'Overview',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Analytics',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Your productivity insights',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.4,
-            children: [
-              StatCard(
-                icon: Icons.checklist,
-                label: 'Active Tasks',
-                value: s.activeTasks.toString(),
-                color: colorScheme.primary,
-              ),
-              StatCard(
-                icon: Icons.check_circle,
-                label: 'Completed',
-                value: s.completedTasks.toString(),
-                color: Colors.green,
-              ),
-              StatCard(
-                icon: Icons.warning,
-                label: 'Overdue',
-                value: s.overdueTasks.toString(),
-                color: Colors.orange,
-              ),
-              StatCard(
-                icon: Icons.alarm,
-                label: 'Reminders',
-                value: s.upcomingReminders.toString(),
-                color: colorScheme.secondary,
-              ),
-            ],
+
+          // Overview Stats Grid
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.5,
+              children: [
+                _StatCard(
+                  icon: Icons.checklist_rounded,
+                  label: 'Active Tasks',
+                  value: s.activeTasks.toString(),
+                  color: colorScheme.primary,
+                  isDark: isDark,
+                ),
+                _StatCard(
+                  icon: Icons.check_circle_outline,
+                  label: 'Completed',
+                  value: s.completedTasks.toString(),
+                  color: Colors.green,
+                  isDark: isDark,
+                ),
+                _StatCard(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'Overdue',
+                  value: s.overdueTasks.toString(),
+                  color: Colors.orange,
+                  isDark: isDark,
+                ),
+                _StatCard(
+                  icon: Icons.alarm,
+                  label: 'Reminders',
+                  value: s.upcomingReminders.toString(),
+                  color: Colors.blue,
+                  isDark: isDark,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
-          // Tasks Status Pie Chart
-          Text(
-            'Tasks Status',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Tasks Status Section
+          SectionHeader(
+            title: 'Tasks Status',
+            padding: const EdgeInsets.symmetric(horizontal: 24),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: NexusCard(
+              padding: const EdgeInsets.all(20),
+              borderRadius: 16,
               child: SizedBox(
                 height: 200,
                 child: TasksPieChart(snapshot: s, colorScheme: colorScheme),
@@ -91,57 +136,75 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Habits Progress
-          Text(
-            'Habits Progress',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Habits Progress Section
+          SectionHeader(
+            title: 'Habits Today',
+            padding: const EdgeInsets.symmetric(horizontal: 24),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: NexusCard(
+              padding: const EdgeInsets.all(20),
+              borderRadius: 16,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Today\'s Progress',
-                            style: theme.textTheme.bodyMedium,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Today's Progress",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${s.habitsDoneToday}/${s.totalHabits} habits',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${s.habitsDoneToday}/${s.totalHabits}',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'habits completed',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Progress bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: s.totalHabits > 0
+                                ? s.habitsDoneToday / s.totalHabits
+                                : 0,
+                            minHeight: 10,
+                            backgroundColor: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.grey.shade200,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              getProgressColor(
+                                s.habitsDoneToday,
+                                s.totalHabits,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                      HabitsProgressCircle(
-                        snapshot: s,
-                        colorScheme: colorScheme,
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: s.totalHabits > 0
-                          ? s.habitsDoneToday / s.totalHabits
-                          : 0,
-                      minHeight: 12,
-                      backgroundColor: colorScheme.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        getProgressColor(s.habitsDoneToday, s.totalHabits),
-                      ),
+                  const SizedBox(width: 24),
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: HabitsProgressCircle(
+                      snapshot: s,
+                      colorScheme: colorScheme,
                     ),
                   ),
                 ],
@@ -150,41 +213,170 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Quick Stats
-          Text(
-            'Quick Stats',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Quick Stats Section
+          SectionHeader(
+            title: 'Performance',
+            padding: const EdgeInsets.symmetric(horizontal: 24),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                QuickStatTile(
-                  icon: Icons.trending_up,
-                  label: 'Completion Rate',
-                  value: getCompletionRate(s.completedTasks, s.activeTasks),
-                  iconColor: Colors.green,
-                ),
-                const Divider(height: 1),
-                QuickStatTile(
-                  icon: Icons.schedule,
-                  label: 'On-time Rate',
-                  value: getOnTimeRate(s.overdueTasks, s.activeTasks),
-                  iconColor: Colors.blue,
-                ),
-                const Divider(height: 1),
-                QuickStatTile(
-                  icon: Icons.insights,
-                  label: 'Active Habits',
-                  value: '${s.totalHabits} habits',
-                  iconColor: Colors.purple,
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: NexusCard(
+              padding: EdgeInsets.zero,
+              borderRadius: 16,
+              child: Column(
+                children: [
+                  _QuickStatRow(
+                    icon: Icons.trending_up,
+                    label: 'Completion Rate',
+                    value: getCompletionRate(s.completedTasks, s.activeTasks),
+                    color: Colors.green,
+                    isDark: isDark,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.shade200,
+                  ),
+                  _QuickStatRow(
+                    icon: Icons.schedule,
+                    label: 'On-time Rate',
+                    value: getOnTimeRate(s.overdueTasks, s.activeTasks),
+                    color: Colors.blue,
+                    isDark: isDark,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.shade200,
+                  ),
+                  _QuickStatRow(
+                    icon: Icons.loop,
+                    label: 'Active Habits',
+                    value: '${s.totalHabits} habits',
+                    color: Colors.purple,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stat card widget for the overview grid
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : theme.colorScheme.outline,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: isDark ? 0.2 : 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              Text(
+                value,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Quick stat row widget
+class _QuickStatRow extends StatelessWidget {
+  const _QuickStatRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: isDark ? 0.2 : 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

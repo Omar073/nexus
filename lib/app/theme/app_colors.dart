@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Dark theme palette options
+enum DarkPalette {
+  /// Navy Dark theme with #101a22 background
+  navy,
+
+  /// Pure AMOLED black theme with #000000 background
+  amoled,
+}
+
 /// Centralized color definitions for the Nexus app.
 /// Access colors via [AppColors.of(context)] for theme-aware colors.
 abstract class AppColors {
@@ -123,31 +132,50 @@ abstract class AppColors {
   Color get shadow;
 
   /// Get theme-aware colors from context
-  static AppColors of(BuildContext context) {
+  static AppColors of(BuildContext context, {DarkPalette? palette}) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark ? dark : light;
+    if (brightness == Brightness.dark) {
+      return getDark(palette ?? DarkPalette.navy);
+    }
+    return light;
+  }
+
+  /// Get dark theme colors for a specific palette
+  static AppColors getDark(DarkPalette palette) {
+    switch (palette) {
+      case DarkPalette.navy:
+        return darkNavy;
+      case DarkPalette.amoled:
+        return darkAmoled;
+    }
   }
 
   /// Light theme colors
   static const AppColors light = AppColorsLight();
 
-  /// Dark theme colors
-  static const AppColors dark = AppColorsDark();
+  /// Dark theme colors (Navy - default)
+  static const AppColors darkNavy = AppColorsDarkNavy();
+
+  /// Dark theme colors (AMOLED Black)
+  static const AppColors darkAmoled = AppColorsDarkAmoled();
+
+  /// Legacy accessor for dark theme (uses Navy by default)
+  static const AppColors dark = AppColorsDarkNavy();
 }
 
-/// Light theme color implementation
+/// Light theme color implementation - Nexus Design System
 class AppColorsLight implements AppColors {
   const AppColorsLight();
 
-  // Primary - Deep Indigo
+  // Primary - Nexus Blue
   @override
-  Color get primary => const Color(0xFF3F51B5);
+  Color get primary => const Color(0xFF1392EC);
   @override
-  Color get primaryContainer => const Color(0xFFC5CAE9);
+  Color get primaryContainer => const Color(0xFFD3EAFD);
   @override
   Color get onPrimary => const Color(0xFFFFFFFF);
   @override
-  Color get onPrimaryContainer => const Color(0xFF1A237E);
+  Color get onPrimaryContainer => const Color(0xFF0A4D7A);
 
   // Secondary - Teal
   @override
@@ -159,7 +187,7 @@ class AppColorsLight implements AppColors {
   @override
   Color get onSecondaryContainer => const Color(0xFF00695C);
 
-  // Tertiary - Amber
+  // Tertiary - Amber/Orange
   @override
   Color get tertiary => const Color(0xFFFF8F00);
   @override
@@ -169,82 +197,83 @@ class AppColorsLight implements AppColors {
   @override
   Color get onTertiaryContainer => const Color(0xFFE65100);
 
-  // Surface
+  // Surface - Pure white cards on light gray background
   @override
   Color get surface => const Color(0xFFFFFFFF);
   @override
-  Color get surfaceContainer => const Color(0xFFF5F5F5);
+  Color get surfaceContainer => const Color(0xFFF6F7F8);
   @override
   Color get surfaceContainerHigh => const Color(0xFFEEEEEE);
   @override
   Color get surfaceContainerHighest => const Color(0xFFE0E0E0);
   @override
-  Color get onSurface => const Color(0xFF1C1B1F);
+  Color get onSurface => const Color(0xFF0F172A);
   @override
-  Color get onSurfaceVariant => const Color(0xFF49454F);
+  Color get onSurfaceVariant => const Color(0xFF64748B);
 
-  // Background
+  // Background - Light gray (inspiration: #f6f7f8)
   @override
-  Color get background => const Color(0xFFFAFAFA);
+  Color get background => const Color(0xFFF6F7F8);
   @override
-  Color get onBackground => const Color(0xFF1C1B1F);
+  Color get onBackground => const Color(0xFF0F172A);
 
   // Error
   @override
-  Color get error => const Color(0xFFB00020);
+  Color get error => const Color(0xFFDC2626);
   @override
-  Color get errorContainer => const Color(0xFFFFDAD6);
+  Color get errorContainer => const Color(0xFFFEE2E2);
   @override
   Color get onError => const Color(0xFFFFFFFF);
   @override
-  Color get onErrorContainer => const Color(0xFF410002);
+  Color get onErrorContainer => const Color(0xFF7F1D1D);
 
   // Semantic
   @override
-  Color get success => const Color(0xFF4CAF50);
+  Color get success => const Color(0xFF10B981);
   @override
-  Color get successContainer => const Color(0xFFC8E6C9);
+  Color get successContainer => const Color(0xFFD1FAE5);
   @override
-  Color get warning => const Color(0xFFFFC107);
+  Color get warning => const Color(0xFFF59E0B);
   @override
-  Color get warningContainer => const Color(0xFFFFF8E1);
+  Color get warningContainer => const Color(0xFFFEF3C7);
   @override
-  Color get info => const Color(0xFF2196F3);
+  Color get info => const Color(0xFF3B82F6);
   @override
-  Color get infoContainer => const Color(0xFFBBDEFB);
+  Color get infoContainer => const Color(0xFFDBEAFE);
 
   // Outline
   @override
-  Color get outline => const Color(0xFF79747E);
+  Color get outline => const Color(0xFFE2E8F0);
   @override
-  Color get outlineVariant => const Color(0xFFCAC4D0);
+  Color get outlineVariant => const Color(0xFFCBD5E1);
 
   // Other
   @override
-  Color get inverseSurface => const Color(0xFF313033);
+  Color get inverseSurface => const Color(0xFF1E293B);
   @override
-  Color get onInverseSurface => const Color(0xFFF4EFF4);
+  Color get onInverseSurface => const Color(0xFFF1F5F9);
   @override
-  Color get inversePrimary => const Color(0xFF9FA8DA);
+  Color get inversePrimary => const Color(0xFF60A5FA);
   @override
   Color get scrim => const Color(0xFF000000);
   @override
   Color get shadow => const Color(0xFF000000);
 }
 
-/// Dark theme color implementation
-class AppColorsDark implements AppColors {
-  const AppColorsDark();
+/// Dark theme color implementation - Navy palette
+/// Background: #101a22, Surface: #1c2227
+class AppColorsDarkNavy implements AppColors {
+  const AppColorsDarkNavy();
 
-  // Primary - Light Indigo
+  // Primary - Nexus Blue
   @override
-  Color get primary => const Color(0xFF9FA8DA);
+  Color get primary => const Color(0xFF1392EC);
   @override
-  Color get primaryContainer => const Color(0xFF303F9F);
+  Color get primaryContainer => const Color(0xFF0A4D7A);
   @override
-  Color get onPrimary => const Color(0xFF1A237E);
+  Color get onPrimary => const Color(0xFFFFFFFF);
   @override
-  Color get onPrimaryContainer => const Color(0xFFC5CAE9);
+  Color get onPrimaryContainer => const Color(0xFFD3EAFD);
 
   // Secondary - Teal Light
   @override
@@ -266,63 +295,161 @@ class AppColorsDark implements AppColors {
   @override
   Color get onTertiaryContainer => const Color(0xFFFFE082);
 
-  // Surface - Dark grays
+  // Surface - Navy dark tones
   @override
-  Color get surface => const Color(0xFF1E1E1E);
+  Color get surface => const Color(0xFF1C2227);
   @override
-  Color get surfaceContainer => const Color(0xFF252525);
+  Color get surfaceContainer => const Color(0xFF283239);
   @override
-  Color get surfaceContainerHigh => const Color(0xFF2D2D2D);
+  Color get surfaceContainerHigh => const Color(0xFF323E47);
   @override
-  Color get surfaceContainerHighest => const Color(0xFF363636);
+  Color get surfaceContainerHighest => const Color(0xFF3D4A54);
   @override
-  Color get onSurface => const Color(0xFFE6E1E5);
+  Color get onSurface => const Color(0xFFFFFFFF);
   @override
-  Color get onSurfaceVariant => const Color(0xFFCAC4D0);
+  Color get onSurfaceVariant => const Color(0xFF9DADB9);
 
-  // Background
+  // Background - Deep navy (#101a22)
   @override
-  Color get background => const Color(0xFF121212);
+  Color get background => const Color(0xFF101A22);
   @override
-  Color get onBackground => const Color(0xFFE6E1E5);
+  Color get onBackground => const Color(0xFFFFFFFF);
 
   // Error
   @override
-  Color get error => const Color(0xFFCF6679);
+  Color get error => const Color(0xFFF87171);
   @override
-  Color get errorContainer => const Color(0xFF93000A);
+  Color get errorContainer => const Color(0xFF7F1D1D);
   @override
-  Color get onError => const Color(0xFF690005);
+  Color get onError => const Color(0xFF450A0A);
   @override
-  Color get onErrorContainer => const Color(0xFFFFDAD6);
+  Color get onErrorContainer => const Color(0xFFFECACA);
 
   // Semantic
   @override
-  Color get success => const Color(0xFF81C784);
+  Color get success => const Color(0xFF34D399);
   @override
-  Color get successContainer => const Color(0xFF2E7D32);
+  Color get successContainer => const Color(0xFF065F46);
   @override
-  Color get warning => const Color(0xFFFFD54F);
+  Color get warning => const Color(0xFFFBBF24);
   @override
-  Color get warningContainer => const Color(0xFFF57F17);
+  Color get warningContainer => const Color(0xFF92400E);
   @override
-  Color get info => const Color(0xFF64B5F6);
+  Color get info => const Color(0xFF60A5FA);
   @override
-  Color get infoContainer => const Color(0xFF1565C0);
+  Color get infoContainer => const Color(0xFF1E40AF);
 
-  // Outline
+  // Outline - Subtle white borders
   @override
-  Color get outline => const Color(0xFF938F99);
+  Color get outline => const Color(0xFF3B4954);
   @override
-  Color get outlineVariant => const Color(0xFF49454F);
+  Color get outlineVariant => const Color(0xFF283239);
 
   // Other
   @override
-  Color get inverseSurface => const Color(0xFFE6E1E5);
+  Color get inverseSurface => const Color(0xFFE2E8F0);
   @override
-  Color get onInverseSurface => const Color(0xFF313033);
+  Color get onInverseSurface => const Color(0xFF1E293B);
   @override
-  Color get inversePrimary => const Color(0xFF3F51B5);
+  Color get inversePrimary => const Color(0xFF0369A1);
+  @override
+  Color get scrim => const Color(0xFF000000);
+  @override
+  Color get shadow => const Color(0xFF000000);
+}
+
+/// Dark theme color implementation - AMOLED Black palette
+/// Background: #000000, Surface: #121212
+class AppColorsDarkAmoled implements AppColors {
+  const AppColorsDarkAmoled();
+
+  // Primary - Vibrant Blue for AMOLED contrast
+  @override
+  Color get primary => const Color(0xFF3B82F6);
+  @override
+  Color get primaryContainer => const Color(0xFF1E40AF);
+  @override
+  Color get onPrimary => const Color(0xFFFFFFFF);
+  @override
+  Color get onPrimaryContainer => const Color(0xFFDBEAFE);
+
+  // Secondary - Teal Light
+  @override
+  Color get secondary => const Color(0xFF5EEAD4);
+  @override
+  Color get secondaryContainer => const Color(0xFF115E59);
+  @override
+  Color get onSecondary => const Color(0xFF042F2E);
+  @override
+  Color get onSecondaryContainer => const Color(0xFFCCFBF1);
+
+  // Tertiary - Amber Light
+  @override
+  Color get tertiary => const Color(0xFFFCD34D);
+  @override
+  Color get tertiaryContainer => const Color(0xFF92400E);
+  @override
+  Color get onTertiary => const Color(0xFF451A03);
+  @override
+  Color get onTertiaryContainer => const Color(0xFFFEF3C7);
+
+  // Surface - Pure black with dark gray cards
+  @override
+  Color get surface => const Color(0xFF121212);
+  @override
+  Color get surfaceContainer => const Color(0xFF1C1C1E);
+  @override
+  Color get surfaceContainerHigh => const Color(0xFF252528);
+  @override
+  Color get surfaceContainerHighest => const Color(0xFF2C2C2E);
+  @override
+  Color get onSurface => const Color(0xFFFFFFFF);
+  @override
+  Color get onSurfaceVariant => const Color(0xFFA1A1AA);
+
+  // Background - True black (#000000)
+  @override
+  Color get background => const Color(0xFF000000);
+  @override
+  Color get onBackground => const Color(0xFFFFFFFF);
+
+  // Error
+  @override
+  Color get error => const Color(0xFFF87171);
+  @override
+  Color get errorContainer => const Color(0xFF7F1D1D);
+  @override
+  Color get onError => const Color(0xFF450A0A);
+  @override
+  Color get onErrorContainer => const Color(0xFFFECACA);
+
+  // Semantic
+  @override
+  Color get success => const Color(0xFF34D399);
+  @override
+  Color get successContainer => const Color(0xFF065F46);
+  @override
+  Color get warning => const Color(0xFFFBBF24);
+  @override
+  Color get warningContainer => const Color(0xFF92400E);
+  @override
+  Color get info => const Color(0xFF60A5FA);
+  @override
+  Color get infoContainer => const Color(0xFF1E40AF);
+
+  // Outline - Zinc borders for AMOLED
+  @override
+  Color get outline => const Color(0xFF27272A);
+  @override
+  Color get outlineVariant => const Color(0xFF3F3F46);
+
+  // Other
+  @override
+  Color get inverseSurface => const Color(0xFFFAFAFA);
+  @override
+  Color get onInverseSurface => const Color(0xFF18181B);
+  @override
+  Color get inversePrimary => const Color(0xFF1D4ED8);
   @override
   Color get scrim => const Color(0xFF000000);
   @override

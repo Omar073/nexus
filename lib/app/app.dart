@@ -43,6 +43,7 @@ class _AppState extends State<App> {
         ? AppTheme.dark(
             customPrimary: settings.darkColors.primary,
             customSecondary: settings.darkColors.secondary,
+            palette: settings.darkPalette,
           )
         : AppTheme.light(
             customPrimary: settings.lightColors.primary,
@@ -60,6 +61,7 @@ class _AppState extends State<App> {
       darkTheme: AppTheme.dark(
         customPrimary: settings.darkColors.primary,
         customSecondary: settings.darkColors.secondary,
+        palette: settings.darkPalette,
       ),
       themeMode: settings.themeMode,
       routerConfig: _router,

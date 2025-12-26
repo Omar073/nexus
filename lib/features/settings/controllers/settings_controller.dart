@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/models/settings_store.dart';
 import 'package:nexus/features/settings/models/custom_colors_store.dart';
 import 'package:nexus/features/settings/models/color_preset.dart';
@@ -40,6 +41,10 @@ class SettingsController extends ChangeNotifier {
   NavBarStyle _navBarStyle = NavBarStyle.standard;
   NavBarStyle get navBarStyle => _navBarStyle;
 
+  // Dark theme palette (Navy or AMOLED)
+  DarkPalette _darkPalette = DarkPalette.navy;
+  DarkPalette get darkPalette => _darkPalette;
+
   Future<void> load() async {
     _themeMode = await _store.loadThemeMode();
     _completedRetentionDays = await _store.loadCompletedRetentionDays();
@@ -54,6 +59,9 @@ class SettingsController extends ChangeNotifier {
 
     // Load nav bar style
     _navBarStyle = await _store.loadNavBarStyle();
+
+    // Load dark palette preference
+    _darkPalette = await _store.loadDarkPalette();
 
     notifyListeners();
   }
@@ -82,6 +90,13 @@ class SettingsController extends ChangeNotifier {
     _navBarStyle = style;
     notifyListeners();
     await _store.saveNavBarStyle(style);
+  }
+
+  /// Set dark theme palette (Navy or AMOLED)
+  Future<void> setDarkPalette(DarkPalette palette) async {
+    _darkPalette = palette;
+    notifyListeners();
+    await _store.saveDarkPalette(palette);
   }
 
   /// Reload custom colors (called after customization screen saves)
@@ -137,10 +152,10 @@ class SettingsController extends ChangeNotifier {
   // Preset Management
   // ============================================================================
 
-  /// Default colors for presets
-  static const Color _defaultLightPrimary = Color(0xFF3F51B5);
+  /// Default colors for presets - Updated to Nexus design system
+  static const Color _defaultLightPrimary = Color(0xFF1392EC);
   static const Color _defaultLightSecondary = Color(0xFF009688);
-  static const Color _defaultDarkPrimary = Color(0xFF9FA8DA);
+  static const Color _defaultDarkPrimary = Color(0xFF1392EC);
   static const Color _defaultDarkSecondary = Color(0xFF80CBC4);
 
   /// Save current colors as a new preset
