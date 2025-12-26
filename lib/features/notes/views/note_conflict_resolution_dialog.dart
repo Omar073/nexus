@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/notes/models/note.dart';
@@ -16,10 +16,12 @@ class NoteConflictResolutionDialog extends StatefulWidget {
   const NoteConflictResolutionDialog({super.key});
 
   @override
-  State<NoteConflictResolutionDialog> createState() => _NoteConflictResolutionDialogState();
+  State<NoteConflictResolutionDialog> createState() =>
+      _NoteConflictResolutionDialogState();
 }
 
-class _NoteConflictResolutionDialogState extends State<NoteConflictResolutionDialog> {
+class _NoteConflictResolutionDialogState
+    extends State<NoteConflictResolutionDialog> {
   int _index = 0;
   static const _uuid = Uuid();
 
@@ -33,7 +35,10 @@ class _NoteConflictResolutionDialogState extends State<NoteConflictResolutionDia
         title: const Text('Note conflicts'),
         content: const Text('No note conflicts.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
         ],
       );
     }
@@ -73,23 +78,39 @@ class _NoteConflictResolutionDialogState extends State<NoteConflictResolutionDia
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _NoteSnapshotCard(title: 'Local', note: local)),
+                Expanded(
+                  child: _NoteSnapshotCard(title: 'Local', note: local),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _NoteSnapshotCard(title: 'Remote', note: remote)),
+                Expanded(
+                  child: _NoteSnapshotCard(title: 'Remote', note: remote),
+                ),
               ],
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        TextButton(onPressed: () => _keepRemote(context, selected), child: const Text('Keep Remote')),
-        FilledButton(onPressed: () => _keepLocal(context, selected), child: const Text('Keep Local')),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => _keepRemote(context, selected),
+          child: const Text('Keep Remote'),
+        ),
+        FilledButton(
+          onPressed: () => _keepLocal(context, selected),
+          child: const Text('Keep Local'),
+        ),
       ],
     );
   }
 
-  Future<void> _keepRemote(BuildContext context, SyncConflict<Note> conflict) async {
+  Future<void> _keepRemote(
+    BuildContext context,
+    SyncConflict<Note> conflict,
+  ) async {
     final notesBox = Hive.box<Note>(HiveBoxes.notes);
     final remote = conflict.remote;
     remote.isDirty = false;
@@ -100,7 +121,10 @@ class _NoteConflictResolutionDialogState extends State<NoteConflictResolutionDia
     _removeConflict(context, conflict.entityId);
   }
 
-  Future<void> _keepLocal(BuildContext context, SyncConflict<Note> conflict) async {
+  Future<void> _keepLocal(
+    BuildContext context,
+    SyncConflict<Note> conflict,
+  ) async {
     final syncService = context.read<SyncService>();
     final local = conflict.local;
     local.isDirty = true;
@@ -123,7 +147,9 @@ class _NoteConflictResolutionDialogState extends State<NoteConflictResolutionDia
 
   void _removeConflict(BuildContext context, String entityId) {
     final sync = context.read<SyncController>();
-    final remaining = sync.noteConflicts.where((c) => c.entityId != entityId).toList();
+    final remaining = sync.noteConflicts
+        .where((c) => c.entityId != entityId)
+        .toList();
     sync.replaceNoteConflicts(remaining);
     if (remaining.isEmpty && context.mounted) Navigator.of(context).pop();
   }
@@ -140,9 +166,13 @@ class _NoteSnapshotCard extends StatelessWidget {
     String preview(Note n) {
       try {
         final decoded = jsonDecode(n.contentDeltaJson);
-        final doc = quill.Document.fromJson((decoded as List).cast<Map<String, dynamic>>());
+        final doc = quill.Document.fromJson(
+          (decoded as List).cast<Map<String, dynamic>>(),
+        );
         final t = doc.toPlainText().trim();
-        return t.isEmpty ? '—' : (t.length > 400 ? '${t.substring(0, 400)}…' : t);
+        return t.isEmpty
+            ? '—'
+            : (t.length > 400 ? '${t.substring(0, 400)}…' : t);
       } catch (_) {
         return '—';
       }
@@ -156,7 +186,10 @@ class _NoteSnapshotCard extends StatelessWidget {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(note.title ?? 'Untitled', style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              note.title ?? 'Untitled',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             const SizedBox(height: 8),
             Text(preview(note), style: Theme.of(context).textTheme.bodySmall),
           ],
@@ -165,5 +198,3 @@ class _NoteSnapshotCard extends StatelessWidget {
     );
   }
 }
-
-

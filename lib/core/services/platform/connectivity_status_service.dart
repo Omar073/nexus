@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 

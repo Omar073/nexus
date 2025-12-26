@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/sync/controllers/sync_controller.dart';
@@ -14,7 +14,8 @@ class ConflictResolutionDialog extends StatefulWidget {
   const ConflictResolutionDialog({super.key});
 
   @override
-  State<ConflictResolutionDialog> createState() => _ConflictResolutionDialogState();
+  State<ConflictResolutionDialog> createState() =>
+      _ConflictResolutionDialogState();
 }
 
 class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
@@ -31,7 +32,10 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
         title: const Text('Conflicts'),
         content: const Text('No conflicts.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
         ],
       );
     }
@@ -71,9 +75,21 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _TaskSnapshotCard(title: 'Local', task: local, other: remote)),
+                Expanded(
+                  child: _TaskSnapshotCard(
+                    title: 'Local',
+                    task: local,
+                    other: remote,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _TaskSnapshotCard(title: 'Remote', task: remote, other: local)),
+                Expanded(
+                  child: _TaskSnapshotCard(
+                    title: 'Remote',
+                    task: remote,
+                    other: local,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -104,7 +120,10 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     );
   }
 
-  Future<void> _keepRemote(BuildContext context, SyncConflict<Task> conflict) async {
+  Future<void> _keepRemote(
+    BuildContext context,
+    SyncConflict<Task> conflict,
+  ) async {
     final tasksBox = Hive.box<Task>(HiveBoxes.tasks);
     final remote = conflict.remote;
     remote.isDirty = false;
@@ -116,7 +135,10 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     _removeConflict(context, conflict.entityId);
   }
 
-  Future<void> _keepLocal(BuildContext context, SyncConflict<Task> conflict) async {
+  Future<void> _keepLocal(
+    BuildContext context,
+    SyncConflict<Task> conflict,
+  ) async {
     final syncService = context.read<SyncService>();
     final local = conflict.local;
     local.syncStatusEnum = SyncStatus.idle;
@@ -140,14 +162,20 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
 
   void _removeConflict(BuildContext context, String entityId) {
     final sync = context.read<SyncController>();
-    final remaining = sync.conflicts.where((c) => c.entityId != entityId).toList();
+    final remaining = sync.conflicts
+        .where((c) => c.entityId != entityId)
+        .toList();
     sync.replaceConflicts(remaining);
     if (remaining.isEmpty && context.mounted) Navigator.of(context).pop();
   }
 }
 
 class _TaskSnapshotCard extends StatelessWidget {
-  const _TaskSnapshotCard({required this.title, required this.task, required this.other});
+  const _TaskSnapshotCard({
+    required this.title,
+    required this.task,
+    required this.other,
+  });
 
   final String title;
   final Task task;
@@ -163,13 +191,18 @@ class _TaskSnapshotCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 120, child: Text(label, style: theme.textTheme.bodySmall)),
+            SizedBox(
+              width: 120,
+              child: Text(label, style: theme.textTheme.bodySmall),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 value,
                 style: diff
-                    ? theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)
+                    ? theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      )
                     : theme.textTheme.bodyMedium,
               ),
             ),
@@ -178,7 +211,8 @@ class _TaskSnapshotCard extends StatelessWidget {
       );
     }
 
-    String fmtDate(DateTime? d) => d == null ? '—' : DateFormat.yMMMd().add_Hm().format(d);
+    String fmtDate(DateTime? d) =>
+        d == null ? '—' : DateFormat.yMMMd().add_Hm().format(d);
 
     return Card(
       child: Padding(
@@ -189,16 +223,36 @@ class _TaskSnapshotCard extends StatelessWidget {
             Text(title, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             row('Title', task.title, diff: task.title != other.title),
-            row('Description', task.description ?? '—', diff: (task.description ?? '') != (other.description ?? '')),
-            row('Due', fmtDate(task.dueDate), diff: (task.dueDate?.millisecondsSinceEpoch ?? 0) != (other.dueDate?.millisecondsSinceEpoch ?? 0)),
-            row('Status', task.statusEnum.name, diff: task.status != other.status),
-            row('Priority', task.priorityEnum?.name ?? '—', diff: (task.priority ?? -1) != (other.priority ?? -1)),
-            row('Updated', fmtDate(task.updatedAt), diff: task.updatedAt != other.updatedAt),
+            row(
+              'Description',
+              task.description ?? '—',
+              diff: (task.description ?? '') != (other.description ?? ''),
+            ),
+            row(
+              'Due',
+              fmtDate(task.dueDate),
+              diff:
+                  (task.dueDate?.millisecondsSinceEpoch ?? 0) !=
+                  (other.dueDate?.millisecondsSinceEpoch ?? 0),
+            ),
+            row(
+              'Status',
+              task.statusEnum.name,
+              diff: task.status != other.status,
+            ),
+            row(
+              'Priority',
+              task.priorityEnum?.name ?? '—',
+              diff: (task.priority ?? -1) != (other.priority ?? -1),
+            ),
+            row(
+              'Updated',
+              fmtDate(task.updatedAt),
+              diff: task.updatedAt != other.updatedAt,
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-

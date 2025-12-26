@@ -97,7 +97,6 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
                         ],
                       ),
                     ),
-                    const Divider(),
 
                     // Priority
                     DropdownButtonFormField<TaskPriority?>(

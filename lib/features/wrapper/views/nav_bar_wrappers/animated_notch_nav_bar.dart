@@ -20,19 +20,26 @@ class AnimatedNotchNavBarWrapper extends StatefulWidget {
 class _AnimatedNotchNavBarWrapperState
     extends State<AnimatedNotchNavBarWrapper> {
   late NotchBottomBarController _controller;
+  int _internalIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _internalIndex = widget.selectedIndex;
     _controller = NotchBottomBarController(index: widget.selectedIndex);
   }
 
   @override
   void didUpdateWidget(AnimatedNotchNavBarWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Sync controller when external index changes
-    if (oldWidget.selectedIndex != widget.selectedIndex) {
-      _controller.jumpTo(widget.selectedIndex);
+    if (oldWidget.selectedIndex != widget.selectedIndex &&
+        widget.selectedIndex != _internalIndex) {
+      _internalIndex = widget.selectedIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _controller.index = widget.selectedIndex;
+        }
+      });
     }
   }
 
@@ -40,6 +47,24 @@ class _AnimatedNotchNavBarWrapperState
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Widget _buildAnimatedIcon({
+    required IconData icon,
+    required Color color,
+    required bool isActive,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.8, end: isActive ? 1.2 : 1.0),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutBack,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: Icon(icon, color: color),
+        );
+      },
+    );
   }
 
   @override
@@ -66,8 +91,8 @@ class _AnimatedNotchNavBarWrapperState
         showBlurBottomBar: false,
         removeMargins: true,
         bottomBarWidth: MediaQuery.of(context).size.width,
-        bottomBarHeight: 62,
-        durationInMilliSeconds: 300,
+        bottomBarHeight: 56,
+        durationInMilliSeconds: 200,
         kIconSize: 24.0,
         kBottomRadius: 0,
         elevation: 0,
@@ -81,7 +106,11 @@ class _AnimatedNotchNavBarWrapperState
               Icons.dashboard_outlined,
               color: colorScheme.onSurfaceVariant,
             ),
-            activeItem: Icon(Icons.dashboard, color: colorScheme.onPrimary),
+            activeItem: _buildAnimatedIcon(
+              icon: Icons.dashboard,
+              color: colorScheme.onPrimary,
+              isActive: _internalIndex == 0,
+            ),
             itemLabel: 'Dashboard',
           ),
           BottomBarItem(
@@ -89,7 +118,11 @@ class _AnimatedNotchNavBarWrapperState
               Icons.checklist_outlined,
               color: colorScheme.onSurfaceVariant,
             ),
-            activeItem: Icon(Icons.checklist, color: colorScheme.onPrimary),
+            activeItem: _buildAnimatedIcon(
+              icon: Icons.checklist,
+              color: colorScheme.onPrimary,
+              isActive: _internalIndex == 1,
+            ),
             itemLabel: 'Tasks',
           ),
           BottomBarItem(
@@ -97,7 +130,11 @@ class _AnimatedNotchNavBarWrapperState
               Icons.alarm_outlined,
               color: colorScheme.onSurfaceVariant,
             ),
-            activeItem: Icon(Icons.alarm, color: colorScheme.onPrimary),
+            activeItem: _buildAnimatedIcon(
+              icon: Icons.alarm,
+              color: colorScheme.onPrimary,
+              isActive: _internalIndex == 2,
+            ),
             itemLabel: 'Reminders',
           ),
           BottomBarItem(
@@ -105,7 +142,11 @@ class _AnimatedNotchNavBarWrapperState
               Icons.note_outlined,
               color: colorScheme.onSurfaceVariant,
             ),
-            activeItem: Icon(Icons.note, color: colorScheme.onPrimary),
+            activeItem: _buildAnimatedIcon(
+              icon: Icons.note,
+              color: colorScheme.onPrimary,
+              isActive: _internalIndex == 3,
+            ),
             itemLabel: 'Notes',
           ),
           BottomBarItem(
@@ -113,13 +154,18 @@ class _AnimatedNotchNavBarWrapperState
               Icons.settings_outlined,
               color: colorScheme.onSurfaceVariant,
             ),
-            activeItem: Icon(Icons.settings, color: colorScheme.onPrimary),
+            activeItem: _buildAnimatedIcon(
+              icon: Icons.settings,
+              color: colorScheme.onPrimary,
+              isActive: _internalIndex == 4,
+            ),
             itemLabel: 'Settings',
           ),
         ],
         onTap: (index) {
-          // The animation happens internally via the controller
-          // We just need to notify the parent about the selection
+          setState(() {
+            _internalIndex = index;
+          });
           widget.onDestinationSelected(index);
         },
       ),

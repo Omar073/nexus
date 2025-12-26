@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_metadata.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
@@ -10,15 +10,22 @@ import 'package:nexus/features/notes/models/note.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 
 class SyncController extends ChangeNotifier {
-  SyncController({required SyncService syncService}) : _syncService = syncService {
-    _syncOpsListenable = Hive.box<SyncOperation>(HiveBoxes.syncOps).listenable();
-    _metaListenable = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata).listenable();
+  SyncController({required SyncService syncService})
+    : _syncService = syncService {
+    _syncOpsListenable = Hive.box<SyncOperation>(
+      HiveBoxes.syncOps,
+    ).listenable();
+    _metaListenable = Hive.box<SyncMetadata>(
+      HiveBoxes.syncMetadata,
+    ).listenable();
 
     _syncOpsListenable.addListener(_refresh);
     _metaListenable.addListener(_refresh);
 
     _confSub = _syncService.conflictsStream.listen(replaceConflicts);
-    _noteConfSub = _syncService.noteConflictsStream.listen(replaceNoteConflicts);
+    _noteConfSub = _syncService.noteConflictsStream.listen(
+      replaceNoteConflicts,
+    );
 
     unawaited(_syncService.startAutoSync());
     _refresh();
@@ -53,7 +60,8 @@ class SyncController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get hasAnyConflicts => _conflicts.isNotEmpty || _noteConflicts.isNotEmpty;
+  bool get hasAnyConflicts =>
+      _conflicts.isNotEmpty || _noteConflicts.isNotEmpty;
 
   bool get isSyncing => _syncService.isSyncing;
 
@@ -82,5 +90,3 @@ class SyncController extends ChangeNotifier {
     super.dispose();
   }
 }
-
-

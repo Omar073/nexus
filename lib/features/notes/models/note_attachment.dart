@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.noteAttachment)
 class NoteAttachment extends HiveObject {
@@ -31,13 +31,13 @@ class NoteAttachment extends HiveObject {
   final DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'mimeType': mimeType,
-        'localUri': localUri,
-        'driveFileId': driveFileId,
-        'uploaded': uploaded,
-        'createdAt': createdAt.millisecondsSinceEpoch,
-      };
+    'id': id,
+    'mimeType': mimeType,
+    'localUri': localUri,
+    'driveFileId': driveFileId,
+    'uploaded': uploaded,
+    'createdAt': createdAt.millisecondsSinceEpoch,
+  };
 
   static NoteAttachment fromJson(Map<String, dynamic> json) {
     return NoteAttachment(
@@ -93,5 +93,3 @@ class NoteAttachmentAdapter extends TypeAdapter<NoteAttachment> {
       ..write(obj.createdAt);
   }
 }
-
-

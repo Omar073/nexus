@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/features/notes/models/note_attachment.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 
@@ -55,14 +55,14 @@ class Note extends HiveObject {
   set syncStatusEnum(SyncStatus v) => syncStatus = v.index;
 
   Map<String, dynamic> toFirestoreJson() => {
-        'id': id,
-        'title': title,
-        'contentDeltaJson': contentDeltaJson,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'updatedAt': Timestamp.fromDate(updatedAt),
-        'lastModifiedByDevice': lastModifiedByDevice,
-        'attachments': attachments.map((a) => a.toJson()).toList(),
-      };
+    'id': id,
+    'title': title,
+    'contentDeltaJson': contentDeltaJson,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'updatedAt': Timestamp.fromDate(updatedAt),
+    'lastModifiedByDevice': lastModifiedByDevice,
+    'attachments': attachments.map((a) => a.toJson()).toList(),
+  };
 
   static Note fromFirestoreJson(Map<String, dynamic> json) {
     DateTime? ts(dynamic v) => v is Timestamp ? v.toDate() : null;
@@ -72,7 +72,8 @@ class Note extends HiveObject {
       contentDeltaJson: (json['contentDeltaJson'] as String?) ?? '[]',
       createdAt: ts(json['createdAt']) ?? DateTime.now(),
       updatedAt: ts(json['updatedAt']) ?? DateTime.now(),
-      lastModifiedByDevice: (json['lastModifiedByDevice'] as String?) ?? 'unknown',
+      lastModifiedByDevice:
+          (json['lastModifiedByDevice'] as String?) ?? 'unknown',
       attachments: ((json['attachments'] as List?) ?? const [])
           .whereType<Map>()
           .map((e) => NoteAttachment.fromJson(e.cast<String, dynamic>()))
@@ -103,7 +104,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       createdAt: fields[3] as DateTime,
       updatedAt: fields[4] as DateTime,
       lastModifiedByDevice: fields[5] as String,
-      attachments: (fields[6] as List?)?.cast<NoteAttachment>() ?? <NoteAttachment>[],
+      attachments:
+          (fields[6] as List?)?.cast<NoteAttachment>() ?? <NoteAttachment>[],
       isDirty: (fields[7] as bool?) ?? true,
       lastSyncedAt: fields[8] as DateTime?,
       syncStatus: (fields[9] as int?) ?? 0,
@@ -136,5 +138,3 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..write(obj.syncStatus);
   }
 }
-
-

@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.habitLog)
 class HabitLog extends HiveObject {
@@ -66,5 +66,3 @@ class HabitLogAdapter extends TypeAdapter<HabitLog> {
       ..write(obj.createdAt);
   }
 }
-
-

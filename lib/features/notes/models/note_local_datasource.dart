@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/notes/models/note.dart';
 
 class NoteLocalDatasource {
@@ -16,5 +16,3 @@ class NoteLocalDatasource {
 
   ValueListenable<Box<Note>> listenable() => _box.listenable();
 }
-
-

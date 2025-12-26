@@ -15,10 +15,40 @@ class ReminderTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.read<ReminderController>();
     final done = reminder.completedAt != null;
+    final theme = Theme.of(context);
 
     return ListTile(
-      leading: Icon(done ? Icons.check_circle : Icons.alarm),
-      title: Text(reminder.title),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      horizontalTitleGap: 8,
+      leading: GestureDetector(
+        onTap: () => controller.complete(reminder),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: done
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
+              width: 2,
+            ),
+            color: done ? theme.colorScheme.primary : Colors.transparent,
+          ),
+          child: done
+              ? Icon(Icons.check, size: 18, color: theme.colorScheme.onPrimary)
+              : null,
+        ),
+      ),
+      title: Text(
+        reminder.title,
+        style: done
+            ? TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: theme.colorScheme.outline,
+              )
+            : null,
+      ),
       subtitle: Text(DateFormat.yMMMd().add_Hm().format(reminder.time)),
       trailing: PopupMenuButton<String>(
         onSelected: (v) {

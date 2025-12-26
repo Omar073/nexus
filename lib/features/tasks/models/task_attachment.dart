@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.taskAttachment)
 class TaskAttachment extends HiveObject {
@@ -35,14 +35,14 @@ class TaskAttachment extends HiveObject {
   final DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'storagePath': storagePath,
-        'mimeType': mimeType,
-        'localUri': localUri,
-        'uploaded': uploaded,
-        'driveFileId': driveFileId,
-        'createdAt': createdAt.millisecondsSinceEpoch,
-      };
+    'id': id,
+    'storagePath': storagePath,
+    'mimeType': mimeType,
+    'localUri': localUri,
+    'uploaded': uploaded,
+    'driveFileId': driveFileId,
+    'createdAt': createdAt.millisecondsSinceEpoch,
+  };
 
   static TaskAttachment fromJson(Map<String, dynamic> json) {
     return TaskAttachment(
@@ -102,5 +102,3 @@ class TaskAttachmentAdapter extends TypeAdapter<TaskAttachment> {
       ..write(obj.createdAt);
   }
 }
-
-

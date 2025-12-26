@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/features/tasks/models/task_attachment.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 
@@ -105,22 +105,24 @@ class Task extends HiveObject {
   set syncStatusEnum(SyncStatus v) => syncStatus = v.index;
 
   Map<String, dynamic> toFirestoreJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'categoryId': categoryId,
-        'subcategoryId': subcategoryId,
-        'dueDate': dueDate == null ? null : Timestamp.fromDate(dueDate!),
-        'priority': priority,
-        'difficulty': difficulty,
-        'status': status,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'updatedAt': Timestamp.fromDate(updatedAt),
-        'completedAt': completedAt == null ? null : Timestamp.fromDate(completedAt!),
-        'recurringRule': recurringRule,
-        'attachments': attachments.map((a) => a.toJson()).toList(),
-        'lastModifiedByDevice': lastModifiedByDevice,
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'categoryId': categoryId,
+    'subcategoryId': subcategoryId,
+    'dueDate': dueDate == null ? null : Timestamp.fromDate(dueDate!),
+    'priority': priority,
+    'difficulty': difficulty,
+    'status': status,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'updatedAt': Timestamp.fromDate(updatedAt),
+    'completedAt': completedAt == null
+        ? null
+        : Timestamp.fromDate(completedAt!),
+    'recurringRule': recurringRule,
+    'attachments': attachments.map((a) => a.toJson()).toList(),
+    'lastModifiedByDevice': lastModifiedByDevice,
+  };
 
   static Task fromFirestoreJson(Map<String, dynamic> json) {
     DateTime? ts(dynamic v) {
@@ -142,12 +144,14 @@ class Task extends HiveObject {
       createdAt: ts(json['createdAt']) ?? DateTime.now(),
       updatedAt: ts(json['updatedAt']) ?? DateTime.now(),
       completedAt: ts(json['completedAt']),
-      recurringRule: (json['recurringRule'] as int?) ?? TaskRecurrenceRule.none.index,
+      recurringRule:
+          (json['recurringRule'] as int?) ?? TaskRecurrenceRule.none.index,
       attachments: ((json['attachments'] as List?) ?? const [])
           .whereType<Map>()
           .map((e) => TaskAttachment.fromJson(e.cast<String, dynamic>()))
           .toList(),
-      lastModifiedByDevice: (json['lastModifiedByDevice'] as String?) ?? 'unknown',
+      lastModifiedByDevice:
+          (json['lastModifiedByDevice'] as String?) ?? 'unknown',
       isDirty: false,
       lastSyncedAt: DateTime.now(),
       syncStatus: SyncStatus.synced.index,
@@ -181,7 +185,8 @@ class TaskAdapter extends TypeAdapter<Task> {
       updatedAt: fields[10] as DateTime,
       completedAt: fields[11] as DateTime?,
       recurringRule: (fields[12] as int?) ?? TaskRecurrenceRule.none.index,
-      attachments: (fields[13] as List?)?.cast<TaskAttachment>() ?? <TaskAttachment>[],
+      attachments:
+          (fields[13] as List?)?.cast<TaskAttachment>() ?? <TaskAttachment>[],
       isDirty: (fields[14] as bool?) ?? true,
       lastSyncedAt: fields[15] as DateTime?,
       syncStatus: (fields[16] as int?) ?? SyncStatus.idle.index,
@@ -231,5 +236,3 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..write(obj.lastModifiedByDevice);
   }
 }
-
-

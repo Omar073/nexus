@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_metadata.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
@@ -13,7 +13,11 @@ import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 
 class SyncConflict<T> {
-  SyncConflict({required this.entityId, required this.local, required this.remote});
+  SyncConflict({
+    required this.entityId,
+    required this.local,
+    required this.remote,
+  });
   final String entityId;
   final T local;
   final T remote;
@@ -24,25 +28,31 @@ class SyncService {
     required FirebaseFirestore firestore,
     required ConnectivityService connectivity,
     required String deviceId,
-  })  : _firestore = firestore,
-        _connectivity = connectivity,
-        _deviceId = deviceId;
+  }) : _firestore = firestore,
+       _connectivity = connectivity,
+       _deviceId = deviceId;
 
   final FirebaseFirestore _firestore;
   final ConnectivityService _connectivity;
   final String _deviceId;
 
-  final _conflictsController = StreamController<List<SyncConflict<Task>>>.broadcast();
-  Stream<List<SyncConflict<Task>>> get conflictsStream => _conflictsController.stream;
+  final _conflictsController =
+      StreamController<List<SyncConflict<Task>>>.broadcast();
+  Stream<List<SyncConflict<Task>>> get conflictsStream =>
+      _conflictsController.stream;
 
-  final _noteConflictsController = StreamController<List<SyncConflict<Note>>>.broadcast();
-  Stream<List<SyncConflict<Note>>> get noteConflictsStream => _noteConflictsController.stream;
+  final _noteConflictsController =
+      StreamController<List<SyncConflict<Note>>>.broadcast();
+  Stream<List<SyncConflict<Note>>> get noteConflictsStream =>
+      _noteConflictsController.stream;
 
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  CollectionReference<Map<String, dynamic>> get _tasksCol => _firestore.collection('tasks');
-  CollectionReference<Map<String, dynamic>> get _notesCol => _firestore.collection('notes');
+  CollectionReference<Map<String, dynamic>> get _tasksCol =>
+      _firestore.collection('tasks');
+  CollectionReference<Map<String, dynamic>> get _notesCol =>
+      _firestore.collection('notes');
 
   Future<void> startAutoSync() async {
     _connectivity.onlineStream().listen((online) {
@@ -74,10 +84,11 @@ class SyncService {
 
   Future<void> _pushQueue() async {
     final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
-    final ops = box.values
-        .where((o) => o.status != SyncOperationStatus.completed.index)
-        .toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final ops =
+        box.values
+            .where((o) => o.status != SyncOperationStatus.completed.index)
+            .toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     for (final op in ops) {
       if (!await _connectivity.isOnline) return;
@@ -120,7 +131,8 @@ class SyncService {
     switch (type) {
       case SyncOperationType.create:
       case SyncOperationType.update:
-        final data = (op.data ?? <String, dynamic>{})..['lastModifiedByDevice'] = _deviceId;
+        final data = (op.data ?? <String, dynamic>{})
+          ..['lastModifiedByDevice'] = _deviceId;
         await doc.set(data, SetOptions(merge: true));
       case SyncOperationType.delete:
         await doc.delete();
@@ -133,7 +145,8 @@ class SyncService {
     switch (type) {
       case SyncOperationType.create:
       case SyncOperationType.update:
-        final data = (op.data ?? <String, dynamic>{})..['lastModifiedByDevice'] = _deviceId;
+        final data = (op.data ?? <String, dynamic>{})
+          ..['lastModifiedByDevice'] = _deviceId;
         await doc.set(data, SetOptions(merge: true));
       case SyncOperationType.delete:
         await doc.delete();
@@ -167,7 +180,9 @@ class SyncService {
       if (TaskConflictDetector.hasConflict(local: local, remote: remote)) {
         local.syncStatusEnum = SyncStatus.conflict;
         await local.save();
-        conflicts.add(SyncConflict(entityId: remote.id, local: local, remote: remote));
+        conflicts.add(
+          SyncConflict(entityId: remote.id, local: local, remote: remote),
+        );
         continue;
       }
 
@@ -211,7 +226,9 @@ class SyncService {
       if (localDirty && remoteNewerThanLocalSync) {
         local.syncStatusEnum = SyncStatus.conflict;
         await local.save();
-        conflicts.add(SyncConflict(entityId: remote.id, local: local, remote: remote));
+        conflicts.add(
+          SyncConflict(entityId: remote.id, local: local, remote: remote),
+        );
         continue;
       }
 
@@ -227,11 +244,13 @@ class SyncService {
     final metaBox = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata);
     final existing = metaBox.get('default');
     if (existing == null) {
-      await metaBox.put('default', SyncMetadata(id: 'default', lastSuccessfulSyncAt: DateTime.now()));
+      await metaBox.put(
+        'default',
+        SyncMetadata(id: 'default', lastSuccessfulSyncAt: DateTime.now()),
+      );
     } else {
       existing.lastSuccessfulSyncAt = DateTime.now();
       await existing.save();
     }
   }
 }
-

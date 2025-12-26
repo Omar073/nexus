@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/habits/models/habit_log.dart';
 
 class HabitLogLocalDatasource {
@@ -14,5 +14,3 @@ class HabitLogLocalDatasource {
 
   ValueListenable<Box<HabitLog>> listenable() => _box.listenable();
 }
-
-

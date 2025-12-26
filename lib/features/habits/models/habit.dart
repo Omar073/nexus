@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.habit)
 class Habit extends HiveObject {
@@ -71,5 +71,3 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..write(obj.updatedAt);
   }
 }
-
-

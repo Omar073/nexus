@@ -12,5 +12,3 @@ class HiveTypeIds {
   static const int habit = 8;
   static const int habitLog = 9;
 }
-
-

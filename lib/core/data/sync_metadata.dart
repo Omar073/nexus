@@ -1,12 +1,9 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.syncMetadata)
 class SyncMetadata extends HiveObject {
-  SyncMetadata({
-    required this.id,
-    this.lastSuccessfulSyncAt,
-  });
+  SyncMetadata({required this.id, this.lastSuccessfulSyncAt});
 
   @HiveField(0)
   final String id;
@@ -43,5 +40,3 @@ class SyncMetadataAdapter extends TypeAdapter<SyncMetadata> {
       ..write(obj.lastSuccessfulSyncAt);
   }
 }
-
-

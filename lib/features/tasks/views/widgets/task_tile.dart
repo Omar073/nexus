@@ -18,16 +18,18 @@ class TaskTile extends StatelessWidget {
     final completed = task.statusEnum == TaskStatus.completed;
 
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      horizontalTitleGap: 4,
       leading: Checkbox(
         value: completed,
         onChanged: (v) => controller.toggleCompleted(task, v ?? false),
       ),
-      title: Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(task.title, maxLines: 3, overflow: TextOverflow.ellipsis),
       subtitle: task.description == null
           ? null
           : Text(
               task.description!,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
       trailing: IconButton(

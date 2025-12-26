@@ -1,13 +1,9 @@
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 @HiveType(typeId: HiveTypeIds.category)
 class Category extends HiveObject {
-  Category({
-    required this.id,
-    required this.name,
-    this.parentId,
-  });
+  Category({required this.id, required this.name, this.parentId});
 
   @HiveField(0)
   final String id;
@@ -50,5 +46,3 @@ class CategoryAdapter extends TypeAdapter<Category> {
       ..write(obj.parentId);
   }
 }
-
-

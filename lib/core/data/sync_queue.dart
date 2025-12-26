@@ -1,5 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:nexus/core/data/hive_type_ids.dart';
+import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
 enum SyncOperationType { create, update, delete }
 
@@ -75,8 +76,25 @@ class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
     );
   }
 
+  /// Recursively converts Firestore Timestamps to DateTime for Hive storage.
+  dynamic _convertTimestamps(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is Map) {
+      return value.map((k, v) => MapEntry(k, _convertTimestamps(v)));
+    } else if (value is List) {
+      return value.map(_convertTimestamps).toList();
+    }
+    return value;
+  }
+
   @override
   void write(BinaryWriter writer, SyncOperation obj) {
+    // Convert any Timestamps in data to DateTime before writing
+    final sanitizedData = obj.data != null
+        ? _convertTimestamps(obj.data) as Map<String, dynamic>?
+        : null;
+
     writer
       ..writeByte(9)
       ..writeByte(0)
@@ -88,7 +106,7 @@ class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
       ..writeByte(3)
       ..write(obj.entityId)
       ..writeByte(4)
-      ..write(obj.data)
+      ..write(sanitizedData)
       ..writeByte(5)
       ..write(obj.retryCount)
       ..writeByte(6)
@@ -99,5 +117,3 @@ class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
       ..write(obj.status);
   }
 }
-
-

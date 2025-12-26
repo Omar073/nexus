@@ -8,5 +8,3 @@ class HiveBoxes {
   static const String syncOps = 'sync_ops';
   static const String syncMetadata = 'sync_metadata';
 }
-
-

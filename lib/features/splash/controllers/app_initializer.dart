@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/device_id_store.dart';
-import 'package:nexus/core/data/hive_bootstrap.dart';
+import 'package:nexus/core/data/hive/hive_bootstrap.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/core/services/notifications/notification_service.dart';
