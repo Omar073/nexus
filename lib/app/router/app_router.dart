@@ -19,12 +19,15 @@ class AppRouter {
       navigatorKey: rootNavigatorKey,
       initialLocation: AppRoute.dashboard.path,
       routes: [
-        StatefulShellRoute.indexedStack(
-          builder: (context, state, navigationShell) {
-            return AppWrapper(navigationShell: navigationShell);
+        StatefulShellRoute(
+          builder: (context, state, navigationShell) => navigationShell,
+          navigatorContainerBuilder: (context, navigationShell, children) {
+            return AppWrapper(
+              navigationShell: navigationShell,
+              children: children,
+            );
           },
           branches: [
-            // Bottom nav items (5 items max)
             StatefulShellBranch(
               routes: [
                 GoRoute(

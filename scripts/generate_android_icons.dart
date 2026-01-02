@@ -51,7 +51,7 @@ void main() async {
     final outputBytes = img.encodePng(resized);
     await outputFile.writeAsBytes(outputBytes);
 
-    mPrint('Generated ${outputFile.path} (${size}x${size})');
+    mPrint('Generated ${outputFile.path} (${size}x$size)');
   }
 
   mPrint('All Android icons generated successfully!');

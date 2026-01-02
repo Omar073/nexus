@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 /// Curved navigation bar wrapper using curved_labeled_navigation_bar package.
 class CurvedNavBarWrapper extends StatelessWidget {
+  static const double height = 65.0;
+
   const CurvedNavBarWrapper({
     super.key,
     required this.selectedIndex,
@@ -22,7 +24,7 @@ class CurvedNavBarWrapper extends StatelessWidget {
     return SafeArea(
       child: CurvedNavigationBar(
         index: selectedIndex,
-        height: 65,
+        height: height,
         backgroundColor: Colors.transparent,
         color: isDark
             ? colorScheme.surface

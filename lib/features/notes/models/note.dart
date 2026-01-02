@@ -17,6 +17,7 @@ class Note extends HiveObject {
     this.isDirty = true,
     this.lastSyncedAt,
     this.syncStatus = 0,
+    this.categoryId,
   });
 
   @HiveField(0)
@@ -51,6 +52,9 @@ class Note extends HiveObject {
   @HiveField(9)
   int syncStatus;
 
+  @HiveField(10)
+  String? categoryId;
+
   SyncStatus get syncStatusEnum => SyncStatus.values[syncStatus];
   set syncStatusEnum(SyncStatus v) => syncStatus = v.index;
 
@@ -62,6 +66,7 @@ class Note extends HiveObject {
     'updatedAt': Timestamp.fromDate(updatedAt),
     'lastModifiedByDevice': lastModifiedByDevice,
     'attachments': attachments.map((a) => a.toJson()).toList(),
+    'categoryId': categoryId,
   };
 
   static Note fromFirestoreJson(Map<String, dynamic> json) {
@@ -81,6 +86,7 @@ class Note extends HiveObject {
       isDirty: false,
       lastSyncedAt: DateTime.now(),
       syncStatus: SyncStatus.synced.index,
+      categoryId: json['categoryId'] as String?,
     );
   }
 }
@@ -109,6 +115,7 @@ class NoteAdapter extends TypeAdapter<Note> {
       isDirty: (fields[7] as bool?) ?? true,
       lastSyncedAt: fields[8] as DateTime?,
       syncStatus: (fields[9] as int?) ?? 0,
+      categoryId: fields[10] as String?,
     );
   }
 
@@ -135,6 +142,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(8)
       ..write(obj.lastSyncedAt)
       ..writeByte(9)
-      ..write(obj.syncStatus);
+      ..write(obj.syncStatus)
+      ..writeByte(10)
+      ..write(obj.categoryId);
   }
 }

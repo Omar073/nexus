@@ -38,6 +38,9 @@ class NoteController extends ChangeNotifier {
   String _query = '';
   String get query => _query;
 
+  String? _categoryIdFilter;
+  String? get categoryIdFilter => _categoryIdFilter;
+
   void _onLocalChanged() => notifyListeners();
 
   @override
@@ -51,26 +54,45 @@ class NoteController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCategoryFilter(String? id) {
+    _categoryIdFilter = id;
+    notifyListeners();
+  }
+
   List<Note> get visibleNotes {
     final all = _repo.getAll().toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    if (_query.isEmpty) return all;
-    final q = _query.toLowerCase();
+
     return all.where((n) {
+      if (_categoryIdFilter != null && n.categoryId != _categoryIdFilter) {
+        return false;
+      }
+      if (_query.isEmpty) return true;
+
+      final q = _query.toLowerCase();
       final t = (n.title ?? '').toLowerCase();
       final plain = _plainText(n).toLowerCase();
       return t.contains(q) || plain.contains(q);
     }).toList();
   }
 
+  Future<void> updateCategory(Note note, String? categoryId) async {
+    note.categoryId = categoryId;
+    note.updatedAt = DateTime.now();
+    note.lastModifiedByDevice = _deviceId;
+    note.isDirty = true;
+    note.syncStatusEnum = SyncStatus.idle;
+    await note.save();
+    await _enqueueUpsert(note, isCreate: false);
+  }
+
   Note? byId(String id) => _repo.getById(id);
 
-  Future<Note> createEmpty() async {
+  Future<Note> createEmpty({String? categoryId}) async {
     final now = DateTime.now();
     final note = Note(
       id: _uuid.v4(),
       title: null,
-      // Minimal Quill Delta JSON: insert newline.
       contentDeltaJson: jsonEncode([
         {'insert': '\n'},
       ]),
@@ -80,6 +102,7 @@ class NoteController extends ChangeNotifier {
       attachments: const [],
       isDirty: true,
       syncStatus: SyncStatus.idle.index,
+      categoryId: categoryId ?? _categoryIdFilter,
     );
     await _repo.upsert(note);
     await _enqueueUpsert(note, isCreate: true);

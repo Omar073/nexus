@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:nexus/core/widgets/circular_checkbox.dart';
+import 'package:nexus/core/widgets/nexus_card.dart';
 import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
 import 'package:nexus/features/reminders/models/reminder.dart';
 import 'package:nexus/features/reminders/views/widgets/reminder_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// A list tile for displaying a reminder with actions.
+/// A premium list tile for displaying a reminder with actions.
 class ReminderTile extends StatelessWidget {
   const ReminderTile({super.key, required this.reminder});
 
@@ -17,57 +19,78 @@ class ReminderTile extends StatelessWidget {
     final done = reminder.completedAt != null;
     final theme = Theme.of(context);
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      horizontalTitleGap: 8,
-      leading: GestureDetector(
-        onTap: () => controller.complete(reminder),
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: done
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
-              width: 2,
-            ),
-            color: done ? theme.colorScheme.primary : Colors.transparent,
+    return NexusCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      borderRadius: 16,
+      child: Row(
+        children: [
+          // Interactive Checkbox
+          CircularCheckbox(
+            value: done,
+            onChanged: (value) {
+              if (value) {
+                controller.complete(reminder);
+              } else {
+                controller.uncomplete(reminder);
+              }
+            },
           ),
-          child: done
-              ? Icon(Icons.check, size: 18, color: theme.colorScheme.onPrimary)
-              : null,
-        ),
-      ),
-      title: Text(
-        reminder.title,
-        style: done
-            ? TextStyle(
-                decoration: TextDecoration.lineThrough,
-                color: theme.colorScheme.outline,
-              )
-            : null,
-      ),
-      subtitle: Text(DateFormat.yMMMd().add_Hm().format(reminder.time)),
-      trailing: PopupMenuButton<String>(
-        onSelected: (v) {
-          switch (v) {
-            case 'edit':
-              showReminderEditorDialog(context, reminder: reminder);
-            case 'complete':
-              controller.complete(reminder);
-            case 'snooze':
-              controller.snooze(reminder);
-            case 'delete':
-              controller.delete(reminder);
-          }
-        },
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
-          const PopupMenuItem(value: 'complete', child: Text('Complete')),
-          const PopupMenuItem(value: 'snooze', child: Text('Snooze 5m')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          const SizedBox(width: 16),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  reminder.title,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    decoration: done ? TextDecoration.lineThrough : null,
+                    color: done
+                        ? theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          )
+                        : theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  DateFormat.jm().format(reminder.time),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: done
+                        ? theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          )
+                        : theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Menu
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            onSelected: (v) {
+              switch (v) {
+                case 'edit':
+                  showReminderEditorDialog(context, reminder: reminder);
+                case 'snooze':
+                  controller.snooze(reminder);
+                case 'delete':
+                  controller.delete(reminder);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(value: 'snooze', child: Text('Snooze 5m')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
+          ),
         ],
       ),
     );

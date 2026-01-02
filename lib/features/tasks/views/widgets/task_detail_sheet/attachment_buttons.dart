@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:nexus/core/services/storage/attachment_storage_service.dart';
+import 'package:nexus/features/tasks/controllers/attachment_helper.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/views/utils/attachment_picker_utils.dart';
@@ -11,13 +11,13 @@ class AttachmentButtons extends StatelessWidget {
     super.key,
     required this.task,
     required this.controller,
-    required this.storage,
+    required this.attachmentHelper,
     required this.picker,
   });
 
   final Task task;
   final TaskController controller;
-  final AttachmentStorageService storage;
+  final AttachmentHelper attachmentHelper;
   final ImagePicker picker;
 
   @override
@@ -31,7 +31,7 @@ class AttachmentButtons extends StatelessWidget {
             context: context,
             task: task,
             controller: controller,
-            storage: storage,
+            attachmentHelper: attachmentHelper,
             picker: picker,
           ),
           icon: const Icon(Icons.image_outlined),
@@ -42,7 +42,7 @@ class AttachmentButtons extends StatelessWidget {
             context: context,
             task: task,
             controller: controller,
-            storage: storage,
+            attachmentHelper: attachmentHelper,
           ),
           icon: const Icon(Icons.mic_none),
           label: const Text('Add voice'),

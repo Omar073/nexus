@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
@@ -28,6 +31,12 @@ class GoogleDriveAuth {
                 '994254093528-nlecdt98kcoj6tevbnofjee9jhr6nk8u.apps.googleusercontent.com',
           );
 
+  /// Returns true if the current platform supports Google Sign-In
+  bool get _isGoogleSignInSupported {
+    if (kIsWeb) return true;
+    return Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+  }
+
   /// Checks if the device is authenticated (password gate)
   Future<bool> isAuthenticated() => _authStore.isAuthenticated();
 
@@ -40,12 +49,22 @@ class GoogleDriveAuth {
 
   /// Checks if user is signed in to Google
   Future<bool> isSignedIn() async {
-    return await _googleSignIn.isSignedIn();
+    if (!_isGoogleSignInSupported) return false;
+    try {
+      return await _googleSignIn.isSignedIn();
+    } catch (e) {
+      mPrint('Google Sign-In isSignedIn error: $e');
+      return false;
+    }
   }
 
   /// Signs in to Google account for Drive API access
   /// Returns true if sign-in was successful
   Future<bool> signIn() async {
+    if (!_isGoogleSignInSupported) {
+      mPrint('Google Sign-In not supported on this platform');
+      return false;
+    }
     try {
       final account = await _googleSignIn.signIn();
       return account != null;

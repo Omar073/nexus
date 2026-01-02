@@ -16,6 +16,7 @@ import 'package:nexus/features/reminders/models/reminder_repository.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:nexus/features/sync/controllers/sync_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
+import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
 import 'package:nexus/features/splash/models/initialization_results.dart';
 import 'package:provider/provider.dart';
@@ -126,6 +127,8 @@ class AppProviderFactory {
     AppInitializationResult? fullResult,
   ) {
     return [
+      // CategoryController - simple provider, no dependencies
+      ChangeNotifierProvider(create: (_) => CategoryController()),
       _createTaskControllerProvider(
         settings,
         connectivity,
