@@ -45,56 +45,51 @@ class _TasksScreenState extends State<TasksScreen>
     final keyStr = '${_tabController.index}:$categoryId';
     final key = _categoryKeys[keyStr];
 
+    // Early exit if no valid context
+    if (key?.currentContext == null) return;
+
+    // Capture references before async gap
+    final targetContext = key!.currentContext!;
+    final scrollable = Scrollable.maybeOf(targetContext);
+    if (scrollable == null) return;
+
+    final targetRenderObject = targetContext.findRenderObject() as RenderBox?;
+    final scrollableRenderObject =
+        scrollable.context.findRenderObject() as RenderBox?;
+    if (targetRenderObject == null || scrollableRenderObject == null) return;
+
+    final scrollPosition = scrollable.position;
+
     // Use post-frame callback to ensure scroll happens after bottom sheet closes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (key?.currentContext != null && mounted) {
-          final targetContext = key!.currentContext!;
+        if (!mounted) return;
 
-          // Find the scrollable ancestor and its context
-          final scrollable = Scrollable.maybeOf(targetContext);
-          if (scrollable != null) {
-            final scrollPosition = scrollable.position;
+        // Calculate the target's position relative to the scrollable viewport
+        final targetOffset = targetRenderObject.localToGlobal(
+          Offset.zero,
+          ancestor: scrollableRenderObject,
+        );
 
-            // Get the target render object
-            final targetRenderObject =
-                targetContext.findRenderObject() as RenderBox?;
-            if (targetRenderObject == null) return;
+        // Calculate the new scroll offset
+        final currentOffset = scrollPosition.pixels;
+        final headerOffset = 48.0;
+        final targetScrollOffset =
+            currentOffset + targetOffset.dy - headerOffset;
 
-            // Get the scrollable render object
-            final scrollableRenderObject =
-                scrollable.context.findRenderObject() as RenderBox?;
-            if (scrollableRenderObject == null) return;
+        // Clamp to valid scroll range
+        final clampedOffset = targetScrollOffset.clamp(
+          scrollPosition.minScrollExtent,
+          scrollPosition.maxScrollExtent,
+        );
 
-            // Calculate the target's position relative to the scrollable viewport
-            final targetOffset = targetRenderObject.localToGlobal(
-              Offset.zero,
-              ancestor: scrollableRenderObject,
-            );
-
-            // Calculate the new scroll offset
-            // Subtract offset to keep the full category header visible
-            final currentOffset = scrollPosition.pixels;
-            final headerOffset =
-                48.0; // Enough space to show full category header
-            final targetScrollOffset =
-                currentOffset + targetOffset.dy - headerOffset;
-
-            // Clamp to valid scroll range
-            final clampedOffset = targetScrollOffset.clamp(
-              scrollPosition.minScrollExtent,
-              scrollPosition.maxScrollExtent,
-            );
-
-            // Animate to the target position
-            // ignore: unawaited_futures
-            scrollPosition.animateTo(
-              clampedOffset,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
-          }
-        }
+        // Animate to the target position
+        // ignore: unawaited_futures
+        scrollPosition.animateTo(
+          clampedOffset,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
       });
     });
   }

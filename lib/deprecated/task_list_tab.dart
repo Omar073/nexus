@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
-import 'package:nexus/features/tasks/views/widgets/task_tile.dart';
+import 'task_tile.dart';
 import 'package:provider/provider.dart';
 
 /// A tab that displays a list of tasks filtered by status.
