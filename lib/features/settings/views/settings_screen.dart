@@ -10,6 +10,8 @@ import 'package:nexus/features/settings/views/sections/sync_section.dart';
 import 'package:nexus/features/settings/views/sections/connectivity_status_section.dart';
 import 'package:nexus/features/settings/views/sections/drive_access_section.dart';
 import 'package:nexus/features/settings/views/sections/permissions_section.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
+
 import 'package:provider/provider.dart';
 
 /// Settings screen following Nexus design system.
@@ -42,15 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
-          ),
-        ),
-      ),
+      appBar: AppBar(leading: const AppDrawerButton()),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 100),
         children: [

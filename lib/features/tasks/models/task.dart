@@ -16,6 +16,7 @@ class Task extends HiveObject {
     this.description,
     this.categoryId,
     this.subcategoryId,
+    this.startDate,
     this.dueDate,
     this.priority,
     this.difficulty,
@@ -86,6 +87,9 @@ class Task extends HiveObject {
   @HiveField(17)
   String lastModifiedByDevice;
 
+  @HiveField(18)
+  DateTime? startDate;
+
   TaskStatus get statusEnum => TaskStatus.values[status];
   set statusEnum(TaskStatus v) => status = v.index;
 
@@ -110,6 +114,7 @@ class Task extends HiveObject {
     'description': description,
     'categoryId': categoryId,
     'subcategoryId': subcategoryId,
+    'startDate': startDate == null ? null : Timestamp.fromDate(startDate!),
     'dueDate': dueDate == null ? null : Timestamp.fromDate(dueDate!),
     'priority': priority,
     'difficulty': difficulty,
@@ -137,6 +142,7 @@ class Task extends HiveObject {
       description: json['description'] as String?,
       categoryId: json['categoryId'] as String?,
       subcategoryId: json['subcategoryId'] as String?,
+      startDate: ts(json['startDate']),
       dueDate: ts(json['dueDate']),
       priority: json['priority'] as int?,
       difficulty: json['difficulty'] as int?,
@@ -191,13 +197,14 @@ class TaskAdapter extends TypeAdapter<Task> {
       lastSyncedAt: fields[15] as DateTime?,
       syncStatus: (fields[16] as int?) ?? SyncStatus.idle.index,
       lastModifiedByDevice: (fields[17] as String?) ?? 'unknown',
+      startDate: fields[18] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -233,6 +240,8 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(16)
       ..write(obj.syncStatus)
       ..writeByte(17)
-      ..write(obj.lastModifiedByDevice);
+      ..write(obj.lastModifiedByDevice)
+      ..writeByte(18)
+      ..write(obj.startDate);
   }
 }

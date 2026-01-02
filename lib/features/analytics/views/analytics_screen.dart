@@ -4,7 +4,11 @@ import 'package:nexus/core/widgets/section_header.dart';
 import 'package:nexus/features/analytics/controllers/analytics_controller.dart';
 import 'package:nexus/features/analytics/utils/analytics_utils.dart';
 import 'package:nexus/features/analytics/views/widgets/habits_progress_circle.dart';
+import 'package:nexus/features/analytics/views/widgets/habit_heatmap.dart';
+import 'package:nexus/features/analytics/views/widgets/task_velocity_chart.dart';
 import 'package:nexus/features/analytics/views/widgets/tasks_pie_chart.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
+import 'package:nexus/features/wrapper/views/app_drawer.dart';
 import 'package:provider/provider.dart';
 
 /// Analytics screen following Nexus design system.
@@ -21,14 +25,9 @@ class AnalyticsScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
-          ),
-        ),
+        leading: const AppDrawerButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.date_range),
@@ -117,20 +116,48 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Tasks Status Section
+          // Tasks Status Section (Pie)
           SectionHeader(
-            title: 'Tasks Status',
+            title: 'Tasks Overview',
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: NexusCard(
+                    padding: const EdgeInsets.all(20),
+                    borderRadius: 16,
+                    child: SizedBox(
+                      height: 180,
+                      child: TasksPieChart(
+                        snapshot: s,
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Task Velocity Section
+          SectionHeader(
+            title: 'Task Velocity',
             padding: const EdgeInsets.symmetric(horizontal: 24),
           ),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: NexusCard(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               borderRadius: 16,
               child: SizedBox(
                 height: 200,
-                child: TasksPieChart(snapshot: s, colorScheme: colorScheme),
+                child: TaskVelocityChart(snapshot: s, colorScheme: colorScheme),
               ),
             ),
           ),
@@ -209,6 +236,22 @@ class AnalyticsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Habit Consistency Heatmap
+          SectionHeader(
+            title: 'Habit Consistency',
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: NexusCard(
+              padding: const EdgeInsets.all(20),
+              borderRadius: 16,
+              child: HabitHeatmap(colorScheme: colorScheme),
             ),
           ),
           const SizedBox(height: 24),

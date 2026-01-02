@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
@@ -91,16 +92,18 @@ class NoteTile extends StatelessWidget {
 
   /// Simple extraction of text from Quill Delta JSON
   String _extractPreview(String deltaJson) {
-    // Basic extraction - look for "insert" text segments
     try {
       if (deltaJson.isEmpty || deltaJson == '[]') return '';
-      // Simple regex to extract text from delta format
-      final insertPattern = RegExp(r'"insert"\s*:\s*"([^"]*)"');
-      final matches = insertPattern.allMatches(deltaJson);
+      final decoded = jsonDecode(deltaJson);
+      if (decoded is! List) return '';
+
       final buffer = StringBuffer();
-      for (final match in matches) {
-        if (match.groupCount > 0) {
-          buffer.write(match.group(1));
+      for (final op in decoded) {
+        if (op is Map<String, dynamic> && op.containsKey('insert')) {
+          final insert = op['insert'];
+          if (insert is String) {
+            buffer.write(insert);
+          }
         }
       }
       return buffer.toString().trim().replaceAll(RegExp(r'\s+'), ' ');

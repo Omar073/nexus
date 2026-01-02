@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
-import 'package:nexus/features/tasks/models/task.dart';
+
+import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/tasks/models/category_sort_option.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
-import 'package:nexus/features/tasks/views/widgets/daily_focus_card.dart';
-import 'package:nexus/features/tasks/views/widgets/daily_task_item.dart';
-import 'package:nexus/features/tasks/views/widgets/date_strip.dart';
+import 'package:nexus/features/tasks/views/widgets/helpers/sliver_tab_bar_delegate.dart';
+import 'package:nexus/features/tasks/views/widgets/lists/grouped_task_list.dart';
+import 'package:nexus/features/tasks/views/widgets/navigation/category_drawer.dart';
+
+import 'package:nexus/features/tasks/views/widgets/sections/tasks_header.dart';
+import 'package:nexus/features/wrapper/views/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/tasks/views/widgets/task_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// Main tasks screen following new Nexus design.
-/// Features Today header, date strip, daily focus, and grouped task sections.
+/// Main tasks screen with tab-based filtering and category grouping.
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -18,296 +22,229 @@ class TasksScreen extends StatefulWidget {
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
-class _TasksScreenState extends State<TasksScreen> {
-  DateTime _selectedDate = DateTime.now();
-  bool _showCompleted = true;
+class _TasksScreenState extends State<TasksScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // Keys for each category section (keyed by "tabIndex:categoryId")
+  final Map<String, GlobalKey> _categoryKeys = {};
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final taskController = context.watch<TaskController>();
-    final now = DateTime.now();
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
 
-    // Filter tasks for selected date
-    final allTasks = [
-      ...taskController.tasksForStatus(TaskStatus.active),
-      ...taskController.tasksForStatus(TaskStatus.pending),
-    ];
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-    final completedTasks = taskController.tasksForStatus(TaskStatus.completed);
+  void _scrollToCategory(String? categoryId) {
+    final keyStr = '${_tabController.index}:$categoryId';
+    final key = _categoryKeys[keyStr];
 
-    // Separate overdue and upcoming
-    final overdueTasks = <Task>[];
-    final upcomingTasks = <Task>[];
+    // Use post-frame callback to ensure scroll happens after bottom sheet closes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (key?.currentContext != null && mounted) {
+          final targetContext = key!.currentContext!;
 
-    for (final task in allTasks) {
-      if (task.dueDate != null && task.dueDate!.isBefore(now)) {
-        overdueTasks.add(task);
-      } else {
-        upcomingTasks.add(task);
-      }
-    }
+          // Find the scrollable ancestor and its context
+          final scrollable = Scrollable.maybeOf(targetContext);
+          if (scrollable != null) {
+            final scrollPosition = scrollable.position;
 
-    // Sort by due date
-    overdueTasks.sort((a, b) => (a.dueDate ?? now).compareTo(b.dueDate ?? now));
-    upcomingTasks.sort(
-      (a, b) => (a.dueDate ?? now).compareTo(b.dueDate ?? now),
-    );
+            // Get the target render object
+            final targetRenderObject =
+                targetContext.findRenderObject() as RenderBox?;
+            if (targetRenderObject == null) return;
 
-    final tasksRemaining = overdueTasks.length + upcomingTasks.length;
+            // Get the scrollable render object
+            final scrollableRenderObject =
+                scrollable.context.findRenderObject() as RenderBox?;
+            if (scrollableRenderObject == null) return;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 100),
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Today',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        DateFormat(
-                          'MMMM d',
-                        ).format(_selectedDate).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Profile button
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Date Strip
-            DateStrip(
-              selectedDate: _selectedDate,
-              onDateSelected: (date) {
-                setState(() => _selectedDate = date);
-              },
-            ),
-            const SizedBox(height: 20),
-            // Daily Focus Card
-            DailyFocusCard(tasksRemaining: tasksRemaining),
-            const SizedBox(height: 24),
-            // Overdue Section
-            if (overdueTasks.isNotEmpty) ...[
-              _buildSectionHeader(
-                context,
-                title: 'Overdue',
-                color: Colors.red,
-                count: overdueTasks.length,
-              ),
-              const SizedBox(height: 12),
-              ...overdueTasks.map(
-                (task) => Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: DailyTaskItem(
-                    task: task,
-                    isOverdue: true,
-                    onToggle: (value) {
-                      taskController.toggleCompleted(task, value);
-                    },
-                    onSnooze: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Snooze coming soon')),
-                      );
-                    },
-                    onTap: () => showTaskEditorDialog(context, task: task),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            // Upcoming Section
-            _buildSectionHeader(
-              context,
-              title: 'Upcoming',
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 12),
-            if (upcomingTasks.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.task_alt,
-                        size: 32,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No upcoming tasks',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ...upcomingTasks.map(
-                (task) => Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: DailyTaskItem(
-                    task: task,
-                    onToggle: (value) {
-                      taskController.toggleCompleted(task, value);
-                    },
-                    onSnooze: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Snooze coming soon')),
-                      );
-                    },
-                    onTap: () => showTaskEditorDialog(context, task: task),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 12),
-            // Completed Section
-            if (completedTasks.isNotEmpty) ...[
-              GestureDetector(
-                onTap: () => setState(() => _showCompleted = !_showCompleted),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Completed (${completedTasks.length})',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        _showCompleted ? Icons.expand_less : Icons.expand_more,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_showCompleted)
-                Opacity(
-                  opacity: 0.7,
-                  child: Column(
-                    children: completedTasks
-                        .take(5)
-                        .map(
-                          (task) => Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                            child: DailyTaskItem(
-                              task: task,
-                              isCompleted: true,
-                              onToggle: (value) {
-                                // Toggle back to active
-                                taskController.toggleCompleted(task, !value);
-                              },
-                              onTap: () =>
-                                  showTaskEditorDialog(context, task: task),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-            ],
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'tasks_fab',
-        onPressed: () => showTaskEditorDialog(context),
-        child: const Icon(Icons.add),
+            // Calculate the target's position relative to the scrollable viewport
+            final targetOffset = targetRenderObject.localToGlobal(
+              Offset.zero,
+              ancestor: scrollableRenderObject,
+            );
+
+            // Calculate the new scroll offset
+            // Subtract offset to keep the full category header visible
+            final currentOffset = scrollPosition.pixels;
+            final headerOffset =
+                48.0; // Enough space to show full category header
+            final targetScrollOffset =
+                currentOffset + targetOffset.dy - headerOffset;
+
+            // Clamp to valid scroll range
+            final clampedOffset = targetScrollOffset.clamp(
+              scrollPosition.minScrollExtent,
+              scrollPosition.maxScrollExtent,
+            );
+
+            // Animate to the target position
+            // ignore: unawaited_futures
+            scrollPosition.animateTo(
+              clampedOffset,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
+      });
+    });
+  }
+
+  void _showCategoryDrawer(Map<String?, int> taskCounts) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CategoryDrawer(
+        onCategorySelected: _scrollToCategory,
+        taskCountByCategory: taskCounts,
       ),
     );
   }
 
-  Widget _buildSectionHeader(
-    BuildContext context, {
-    required String title,
-    required Color color,
-    int? count,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: color,
-            ),
-          ),
-          if (count != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final taskController = context.watch<TaskController>();
+    final categoryController = context.watch<CategoryController>();
+
+    final categorySort = context.select<SettingsController, CategorySortOption>(
+      (s) => s.categorySortOption,
+    );
+
+    // Get tasks for each tab
+    final pendingTasks = [
+      ...taskController.tasksForStatus(TaskStatus.active),
+      ...taskController.tasksForStatus(TaskStatus.pending),
+    ];
+    final completedTasks = taskController.tasksForStatus(TaskStatus.completed);
+    final allTasks = [...pendingTasks, ...completedTasks];
+
+    // Sort categories
+    var categories = categoryController.rootCategories;
+    if (categorySort != CategorySortOption.defaultOrder) {
+      categories = List.of(categories); // Create copy to sort
+      switch (categorySort) {
+        case CategorySortOption.defaultOrder:
+          break; // Already insertion order
+        case CategorySortOption.alphabeticalAsc:
+          categories.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+        case CategorySortOption.alphabeticalDesc:
+          categories.sort(
+            (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+          );
+        case CategorySortOption.recentlyModified:
+          // Calculate max updated time for each category
+          final lastUpdates = <String, DateTime>{};
+          for (final task in allTasks) {
+            if (task.categoryId != null) {
+              final updated = task.updatedAt;
+              final time = updated;
+              final current = lastUpdates[task.categoryId!];
+              if (current == null || time.isAfter(current)) {
+                lastUpdates[task.categoryId!] = time;
+              }
+            }
+          }
+          categories.sort((a, b) {
+            final timeA =
+                lastUpdates[a.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final timeB =
+                lastUpdates[b.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return timeB.compareTo(timeA); // Descending (newest first)
+          });
+      }
+    }
+
+    return Scaffold(
+      body: SafeArea(
+        child: NestedScrollView(
+          floatHeaderSlivers: true,
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            // Header section - scrolls away
+            const SliverToBoxAdapter(child: TasksHeader()),
+            // TabBar - pinned
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: SliverTabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                  indicatorColor: theme.colorScheme.primary,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabs: [
+                    Tab(text: 'Pending (${pendingTasks.length})'),
+                    Tab(text: 'All (${allTasks.length})'),
+                    Tab(text: 'Completed (${completedTasks.length})'),
+                  ],
                 ),
+                backgroundColor: theme.scaffoldBackgroundColor,
               ),
             ),
           ],
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(height: 1, color: color.withValues(alpha: 0.2)),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              GroupedTaskList(
+                tabIndex: 0,
+                tasks: pendingTasks,
+                categories: categories,
+                taskController: taskController,
+                categoryKeys: _categoryKeys,
+                onShowDrawer: _showCategoryDrawer,
+                emptyMessage: 'No pending tasks',
+                emptyIcon: Icons.check_circle_outline,
+                animateExit: true,
+              ),
+              GroupedTaskList(
+                tabIndex: 1,
+                tasks: allTasks,
+                categories: categories,
+                taskController: taskController,
+                categoryKeys: _categoryKeys,
+                onShowDrawer: _showCategoryDrawer,
+                emptyMessage: 'No tasks yet',
+                emptyIcon: Icons.task_alt,
+              ),
+              GroupedTaskList(
+                tabIndex: 2,
+                tasks: completedTasks,
+                categories: categories,
+                taskController: taskController,
+                categoryKeys: _categoryKeys,
+                onShowDrawer: _showCategoryDrawer,
+                emptyMessage: 'No completed tasks',
+                emptyIcon: Icons.done_all,
+                isCompletedTab: true,
+                animateExit: true,
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: CurvedNavBarWrapper.height + 50),
+        child: FloatingActionButton(
+          heroTag: 'tasks_fab',
+          onPressed: () => showTaskEditorDialog(context),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

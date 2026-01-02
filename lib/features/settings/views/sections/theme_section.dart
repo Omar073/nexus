@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:nexus/features/theme_customization/views/theme_customization_screen.dart';
 import 'package:provider/provider.dart';
@@ -10,23 +11,54 @@ class ThemeSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SettingsController>();
+    final isDark = controller.themeMode == ThemeMode.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Theme', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SegmentedButton<ThemeMode>(
-          segments: const [
-            ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-            ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Theme Mode', style: Theme.of(context).textTheme.bodyMedium),
+            SegmentedButton<ThemeMode>(
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                padding: WidgetStateProperty.all(EdgeInsets.zero),
+              ),
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode, size: 18),
+                  label: Text('Light'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode, size: 18),
+                  label: Text('Dark'),
+                ),
+              ],
+              selected: {controller.themeMode},
+              onSelectionChanged: (value) {
+                final mode = value.first;
+                controller.setThemeMode(mode);
+              },
+            ),
           ],
-          selected: {controller.themeMode},
-          onSelectionChanged: (value) {
-            final mode = value.first;
-            controller.setThemeMode(mode);
-          },
         ),
+        if (isDark) ...[
+          const SizedBox(height: 16),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('True Black (AMOLED)'),
+            subtitle: const Text('Use pure black background for OLED screens'),
+            value: controller.darkPalette == DarkPalette.amoled,
+            onChanged: (value) {
+              controller.setDarkPalette(
+                value ? DarkPalette.amoled : DarkPalette.navy,
+              );
+            },
+          ),
+        ],
         const SizedBox(height: 12),
         ListTile(
           contentPadding: EdgeInsets.zero,
@@ -35,9 +67,7 @@ class ThemeSection extends StatelessWidget {
           subtitle: const Text('Colors and navigation bar style'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {
-            // Capture the controller before pushing to root navigator
             final settingsController = context.read<SettingsController>();
-            // Use rootNavigator to push above the shell's bottom nav bar
             Navigator.of(context, rootNavigator: true).push(
               MaterialPageRoute(
                 builder: (context) => ChangeNotifierProvider.value(

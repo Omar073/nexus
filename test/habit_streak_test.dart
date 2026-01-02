@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
-import 'package:nexus/core/data/hive_boxes.dart';
+import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/habits/controllers/habit_controller.dart';
 import 'package:nexus/features/habits/models/habit.dart';
 import 'package:nexus/features/habits/models/habit_log.dart';

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nexus/app/router/app_routes.dart';
 import 'package:nexus/core/widgets/habit_pill.dart';
 import 'package:nexus/core/widgets/section_header.dart';
 import 'package:nexus/features/dashboard/views/widgets/daily_progress_card.dart';
 import 'package:nexus/features/dashboard/views/widgets/quick_reminder_card.dart';
 import 'package:nexus/features/dashboard/views/widgets/upcoming_task_card.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
+
 import 'package:nexus/features/habits/controllers/habit_controller.dart';
 import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
@@ -56,13 +60,7 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
-          ),
-        ),
+        leading: const AppDrawerButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -148,7 +146,7 @@ class DashboardScreen extends StatelessWidget {
               title: 'Habits',
               padding: const EdgeInsets.symmetric(horizontal: 24),
               onViewAll: () {
-                Navigator.of(context).pushNamed('/habits');
+                context.push(AppRoute.habits.path);
               },
             ),
             const SizedBox(height: 12),

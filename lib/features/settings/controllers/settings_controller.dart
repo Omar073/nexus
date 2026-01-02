@@ -4,6 +4,8 @@ import 'package:nexus/features/settings/models/settings_store.dart';
 import 'package:nexus/features/settings/models/custom_colors_store.dart';
 import 'package:nexus/features/settings/models/color_preset.dart';
 import 'package:nexus/features/settings/models/nav_bar_style.dart';
+import 'package:nexus/features/tasks/models/task_sort_option.dart';
+import 'package:nexus/features/tasks/models/category_sort_option.dart';
 
 class SettingsController extends ChangeNotifier {
   SettingsController({SettingsStore? store, CustomColorsStore? colorsStore})
@@ -45,6 +47,10 @@ class SettingsController extends ChangeNotifier {
   DarkPalette _darkPalette = DarkPalette.navy;
   DarkPalette get darkPalette => _darkPalette;
 
+  // Task sort option
+  TaskSortOption _taskSortOption = TaskSortOption.recentlyModified;
+  TaskSortOption get taskSortOption => _taskSortOption;
+
   Future<void> load() async {
     _themeMode = await _store.loadThemeMode();
     _completedRetentionDays = await _store.loadCompletedRetentionDays();
@@ -62,6 +68,20 @@ class SettingsController extends ChangeNotifier {
 
     // Load dark palette preference
     _darkPalette = await _store.loadDarkPalette();
+
+    // Load task sort option
+    final sortName = await _store.loadTaskSortOption();
+    _taskSortOption = TaskSortOption.values.firstWhere(
+      (e) => e.name == sortName,
+      orElse: () => TaskSortOption.recentlyModified,
+    );
+
+    // Load category sort option
+    final catSortName = await _store.loadCategorySortOption();
+    _categorySortOption = CategorySortOption.values.firstWhere(
+      (e) => e.name == catSortName,
+      orElse: () => CategorySortOption.defaultOrder,
+    );
 
     notifyListeners();
   }
@@ -97,6 +117,24 @@ class SettingsController extends ChangeNotifier {
     _darkPalette = palette;
     notifyListeners();
     await _store.saveDarkPalette(palette);
+  }
+
+  /// Set task sort option
+  Future<void> setTaskSortOption(TaskSortOption option) async {
+    _taskSortOption = option;
+    notifyListeners();
+    await _store.saveTaskSortOption(option.name);
+  }
+
+  // Category sort option
+  CategorySortOption _categorySortOption = CategorySortOption.defaultOrder;
+  CategorySortOption get categorySortOption => _categorySortOption;
+
+  /// Set category sort option
+  Future<void> setCategorySortOption(CategorySortOption option) async {
+    _categorySortOption = option;
+    notifyListeners();
+    await _store.saveCategorySortOption(option.name);
   }
 
   /// Reload custom colors (called after customization screen saves)

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
 import 'package:nexus/core/widgets/filter_chip_bar.dart';
+import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/notes/controllers/note_controller.dart';
 import 'package:nexus/features/notes/views/note_editor_screen.dart';
 import 'package:nexus/features/notes/views/widgets/note_tile.dart';
@@ -15,8 +17,6 @@ class NotesListScreen extends StatefulWidget {
 }
 
 class _NotesListScreenState extends State<NotesListScreen> {
-  int _selectedFilterIndex = 0;
-  final _filters = ['All notes', 'Work', 'Personal', 'Ideas', 'Journal'];
   final _searchController = TextEditingController();
 
   @override
@@ -30,7 +30,19 @@ class _NotesListScreenState extends State<NotesListScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<NoteController>();
+    final categoryController = context.watch<CategoryController>();
+
     final notes = controller.visibleNotes;
+    final categories = categoryController.rootCategories;
+    final filterLabels = ['All notes', ...categories.map((c) => c.name)];
+
+    int selectedFilterIndex = 0;
+    if (controller.categoryIdFilter != null) {
+      final index = categories.indexWhere(
+        (c) => c.id == controller.categoryIdFilter,
+      );
+      if (index != -1) selectedFilterIndex = index + 1;
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -43,11 +55,17 @@ class _NotesListScreenState extends State<NotesListScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Notes',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      const AppDrawerButton(),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Notes',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                   Row(
                     children: [
@@ -120,18 +138,26 @@ class _NotesListScreenState extends State<NotesListScreen> {
             const SizedBox(height: 12),
             // Filter chips
             FilterChipBar(
-              labels: _filters,
-              selectedIndex: _selectedFilterIndex,
+              labels: filterLabels,
+              selectedIndex: selectedFilterIndex,
               onSelected: (index) {
-                setState(() {
-                  _selectedFilterIndex = index;
-                });
-                // Apply filter
                 if (index == 0) {
-                  controller.setQuery('');
+                  controller.setCategoryFilter(null);
                 } else {
-                  controller.setQuery(_filters[index].toLowerCase());
+                  // Adjust index for 'All notes'
+                  final category = categories[index - 1];
+                  controller.setCategoryFilter(category.id);
                 }
+
+                // Keep search query logic? The user didn't ask to remove it.
+                // But previous code overwrote query based on filter name which was weird.
+                // We should probably NOT overwrite query when filtering by category.
+                // The previous code: if index==0 setQuery(''); else setQuery(name).
+                // That was merging category and search.
+                // Now we have separate category filter.
+                // So we can remove the setQuery calls here unless user wants to search by category name?
+                // Standard behavior: category filter + text search are independent.
+                // I will remove setQuery here to decouple them.
               },
             ),
             const SizedBox(height: 16),
@@ -171,7 +197,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                       itemCount: notes.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) =>
                           NoteTile(note: notes[index]),
                     ),

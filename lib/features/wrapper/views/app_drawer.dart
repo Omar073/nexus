@@ -46,11 +46,19 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           DrawerItem(
+            icon: Icons.dashboard_outlined,
+            label: 'Dashboard',
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/');
+            },
+          ),
+          DrawerItem(
             icon: Icons.insights_outlined,
             label: 'Habits',
             onTap: () {
               Navigator.pop(context);
-              context.go('/habits');
+              context.push('/habits');
             },
           ),
           DrawerItem(
@@ -58,7 +66,7 @@ class AppDrawer extends StatelessWidget {
             label: 'Calendar',
             onTap: () {
               Navigator.pop(context);
-              context.go('/calendar');
+              context.push('/calendar');
             },
           ),
           DrawerItem(
@@ -66,7 +74,7 @@ class AppDrawer extends StatelessWidget {
             label: 'Analytics',
             onTap: () {
               Navigator.pop(context);
-              context.go('/analytics');
+              context.push('/analytics');
             },
           ),
         ],

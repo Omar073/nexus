@@ -80,4 +80,28 @@ class SettingsStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyDarkPalette, palette.name);
   }
+
+  // Task Sort Option
+  static const _keyTaskSortOption = 'task_sort_option';
+  static const _keyCategorySortOption = 'category_sort_option';
+
+  Future<void> saveTaskSortOption(String optionName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyTaskSortOption, optionName);
+  }
+
+  Future<String?> loadTaskSortOption() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyTaskSortOption);
+  }
+
+  Future<void> saveCategorySortOption(String optionName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyCategorySortOption, optionName);
+  }
+
+  Future<String?> loadCategorySortOption() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyCategorySortOption);
+  }
 }

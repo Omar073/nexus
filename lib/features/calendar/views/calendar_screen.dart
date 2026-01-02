@@ -4,6 +4,8 @@ import 'package:nexus/core/widgets/filter_chip_bar.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
 import 'package:nexus/features/calendar/controllers/calendar_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
+import 'package:nexus/features/wrapper/views/app_drawer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 /// Calendar screen following Nexus design system.
@@ -31,14 +33,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final items = controller.itemsForDay(selected);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
-          ),
-        ),
+        leading: const AppDrawerButton(),
         title: Text(
           DateFormat('MMMM yyyy').format(_focusedDay),
           style: theme.textTheme.titleMedium?.copyWith(
@@ -187,7 +184,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return _CalendarEventCard(item: item);
@@ -204,15 +201,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
 class _CalendarEventCard extends StatelessWidget {
   const _CalendarEventCard({required this.item});
 
-  final dynamic item;
+  final CalendarItem item;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     // Determine event type and display appropriately
-    final String title = item.title ?? 'Event';
+    final String title = item.title;
     final Color accentColor = theme.colorScheme.primary;
+
+    String timeText = 'All day';
+    if (!item.isAllDay) {
+      // Format time from item.when (which holds start/due date+time)
+      // Or use item.timeString if populated?
+      // I populated timeString? No, I defined it but didn't populate it in Controller yet.
+      // But item.when holds the time for tasks/reminders.
+      timeText = DateFormat.jm().format(item.when);
+    }
 
     return NexusCard(
       leftBorderColor: accentColor,
@@ -240,7 +246,7 @@ class _CalendarEventCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'All day',
+                      timeText,
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,

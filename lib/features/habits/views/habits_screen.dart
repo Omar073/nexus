@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nexus/app/router/app_routes.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
 import 'package:nexus/features/habits/controllers/habit_controller.dart';
 import 'package:nexus/features/habits/models/habit.dart';
 import 'package:nexus/features/habits/views/habit_details_screen.dart';
 import 'package:nexus/features/habits/views/widgets/habit_create_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:nexus/core/widgets/app_drawer_button.dart';
+import 'package:nexus/features/wrapper/views/app_drawer.dart';
 
 /// Habits screen following Nexus design system.
 /// Features large header with drawer button, habit cards with streak info.
@@ -18,19 +22,14 @@ class HabitsScreen extends StatelessWidget {
     final habits = controller.habits;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open menu',
-          ),
-        ),
+        leading: const AppDrawerButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined),
             onPressed: () {
-              Navigator.of(context).pushNamed('/calendar');
+              context.push(AppRoute.calendar.path);
             },
           ),
         ],
@@ -98,7 +97,7 @@ class HabitsScreen extends StatelessWidget {
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                       itemCount: habits.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         return _HabitCard(habit: habits[index]);
                       },

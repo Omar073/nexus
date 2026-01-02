@@ -104,10 +104,7 @@ class AppInitializer {
 
     // Android-only: periodic background hook (can be slow)
     if (!kIsWeb && Platform.isAndroid) {
-      await Workmanager().initialize(
-        workmanagerCallbackDispatcher,
-        isInDebugMode: false,
-      );
+      await Workmanager().initialize(workmanagerCallbackDispatcher);
       await Workmanager().registerPeriodicTask(
         'nexus.periodic',
         'nexus.periodic',
