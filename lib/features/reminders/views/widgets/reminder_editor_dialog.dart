@@ -41,31 +41,22 @@ Future<void> showReminderEditorDialog(
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Time'),
-                    subtitle: Text(
-                      DateFormat.yMMMd().add_Hm().format(selected),
-                    ),
+                    subtitle: Text(DateFormat.jm().format(selected)),
                     trailing: const Icon(Icons.schedule),
                     onTap: () async {
-                      final date = await showDatePicker(
-                        context: dialogContext,
-                        firstDate: DateTime.now().subtract(
-                          const Duration(days: 1),
-                        ),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                        initialDate: selected,
-                      );
-                      if (date == null) return;
                       if (!dialogContext.mounted) return;
                       final time = await showTimePicker(
                         context: dialogContext,
                         initialTime: TimeOfDay.fromDateTime(selected),
                       );
                       if (time == null) return;
+                      final now = DateTime.now();
                       setState(() {
+                        // Always set to today, preserving the selected time
                         selected = DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
+                          now.year,
+                          now.month,
+                          now.day,
                           time.hour,
                           time.minute,
                         );

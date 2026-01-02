@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
-import 'package:nexus/features/tasks/views/widgets/task_filter_sheet.dart';
+import 'task_filter_sheet.dart';
 import 'package:provider/provider.dart';
 
 /// Search bar widget for filtering tasks with text search and priority filters.

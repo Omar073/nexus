@@ -81,7 +81,9 @@ class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
     if (value is Timestamp) {
       return value.toDate();
     } else if (value is Map) {
-      return value.map((k, v) => MapEntry(k, _convertTimestamps(v)));
+      return value
+          .map((k, v) => MapEntry(k, _convertTimestamps(v)))
+          .cast<String, dynamic>();
     } else if (value is List) {
       return value.map(_convertTimestamps).toList();
     }

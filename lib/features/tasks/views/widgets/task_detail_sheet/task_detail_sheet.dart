@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nexus/core/services/storage/attachment_storage_service.dart';
+import 'package:nexus/features/tasks/controllers/attachment_helper.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/views/widgets/attachments/attachments_list.dart';
@@ -13,6 +14,7 @@ import 'package:provider/provider.dart';
 Future<void> showTaskDetailSheet(BuildContext context, Task task) async {
   final controller = context.read<TaskController>();
   final storage = AttachmentStorageService();
+  final attachmentHelper = AttachmentHelper(storage: storage);
   final picker = ImagePicker();
 
   await showModalBottomSheet<void>(
@@ -39,7 +41,7 @@ Future<void> showTaskDetailSheet(BuildContext context, Task task) async {
             AttachmentButtons(
               task: task,
               controller: controller,
-              storage: storage,
+              attachmentHelper: attachmentHelper,
               picker: picker,
             ),
             const SizedBox(height: 16),

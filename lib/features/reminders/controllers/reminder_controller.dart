@@ -32,7 +32,9 @@ class ReminderController extends ChangeNotifier {
 
   List<Reminder> get reminders {
     final all = _repo.getAll().toList()
-      ..sort((a, b) => a.time.compareTo(b.time));
+      ..sort(
+        (a, b) => b.updatedAt.compareTo(a.updatedAt),
+      ); // Recently modified first
     return all;
   }
 
@@ -96,6 +98,22 @@ class ReminderController extends ChangeNotifier {
     reminder.updatedAt = DateTime.now();
     await reminder.save();
     await _notifications.cancel(reminder.notificationId);
+  }
+
+  Future<void> uncomplete(Reminder reminder) async {
+    reminder.completedAt = null;
+    reminder.updatedAt = DateTime.now();
+    await reminder.save();
+
+    // Reschedule if the time is in the future
+    if (reminder.time.isAfter(DateTime.now())) {
+      await _notifications.schedule(
+        id: reminder.notificationId,
+        title: 'Reminder',
+        body: reminder.title,
+        when: reminder.time,
+      );
+    }
   }
 
   Future<void> snooze(Reminder reminder, {int minutes = 5}) async {

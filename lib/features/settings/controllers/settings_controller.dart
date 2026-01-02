@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/models/settings_store.dart';
 import 'package:nexus/features/settings/models/custom_colors_store.dart';
 import 'package:nexus/features/settings/models/color_preset.dart';
 import 'package:nexus/features/settings/models/nav_bar_style.dart';
+import 'package:nexus/features/tasks/models/task_sort_option.dart';
+import 'package:nexus/features/tasks/models/category_sort_option.dart';
 
 class SettingsController extends ChangeNotifier {
   SettingsController({SettingsStore? store, CustomColorsStore? colorsStore})
@@ -40,6 +43,14 @@ class SettingsController extends ChangeNotifier {
   NavBarStyle _navBarStyle = NavBarStyle.standard;
   NavBarStyle get navBarStyle => _navBarStyle;
 
+  // Dark theme palette (Navy or AMOLED)
+  DarkPalette _darkPalette = DarkPalette.navy;
+  DarkPalette get darkPalette => _darkPalette;
+
+  // Task sort option
+  TaskSortOption _taskSortOption = TaskSortOption.recentlyModified;
+  TaskSortOption get taskSortOption => _taskSortOption;
+
   Future<void> load() async {
     _themeMode = await _store.loadThemeMode();
     _completedRetentionDays = await _store.loadCompletedRetentionDays();
@@ -54,6 +65,23 @@ class SettingsController extends ChangeNotifier {
 
     // Load nav bar style
     _navBarStyle = await _store.loadNavBarStyle();
+
+    // Load dark palette preference
+    _darkPalette = await _store.loadDarkPalette();
+
+    // Load task sort option
+    final sortName = await _store.loadTaskSortOption();
+    _taskSortOption = TaskSortOption.values.firstWhere(
+      (e) => e.name == sortName,
+      orElse: () => TaskSortOption.recentlyModified,
+    );
+
+    // Load category sort option
+    final catSortName = await _store.loadCategorySortOption();
+    _categorySortOption = CategorySortOption.values.firstWhere(
+      (e) => e.name == catSortName,
+      orElse: () => CategorySortOption.defaultOrder,
+    );
 
     notifyListeners();
   }
@@ -82,6 +110,31 @@ class SettingsController extends ChangeNotifier {
     _navBarStyle = style;
     notifyListeners();
     await _store.saveNavBarStyle(style);
+  }
+
+  /// Set dark theme palette (Navy or AMOLED)
+  Future<void> setDarkPalette(DarkPalette palette) async {
+    _darkPalette = palette;
+    notifyListeners();
+    await _store.saveDarkPalette(palette);
+  }
+
+  /// Set task sort option
+  Future<void> setTaskSortOption(TaskSortOption option) async {
+    _taskSortOption = option;
+    notifyListeners();
+    await _store.saveTaskSortOption(option.name);
+  }
+
+  // Category sort option
+  CategorySortOption _categorySortOption = CategorySortOption.defaultOrder;
+  CategorySortOption get categorySortOption => _categorySortOption;
+
+  /// Set category sort option
+  Future<void> setCategorySortOption(CategorySortOption option) async {
+    _categorySortOption = option;
+    notifyListeners();
+    await _store.saveCategorySortOption(option.name);
   }
 
   /// Reload custom colors (called after customization screen saves)
@@ -137,10 +190,10 @@ class SettingsController extends ChangeNotifier {
   // Preset Management
   // ============================================================================
 
-  /// Default colors for presets
-  static const Color _defaultLightPrimary = Color(0xFF3F51B5);
+  /// Default colors for presets - Updated to Nexus design system
+  static const Color _defaultLightPrimary = Color(0xFF1392EC);
   static const Color _defaultLightSecondary = Color(0xFF009688);
-  static const Color _defaultDarkPrimary = Color(0xFF9FA8DA);
+  static const Color _defaultDarkPrimary = Color(0xFF1392EC);
   static const Color _defaultDarkSecondary = Color(0xFF80CBC4);
 
   /// Save current colors as a new preset

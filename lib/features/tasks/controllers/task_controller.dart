@@ -1,18 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/tasks/controllers/task_crud_mixin.dart';
 import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_attachment.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
+import 'package:nexus/features/tasks/models/task_sort_option.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:io';
 
-class TaskController extends ChangeNotifier {
+/// Base class exposing dependencies to mixins.
+abstract class TaskControllerBase extends ChangeNotifier {
+  TaskRepository get repo;
+  SyncService get syncService;
+  GoogleDriveService get googleDrive;
+  SettingsController get settings;
+  String get deviceId;
+  Uuid get uuid;
+
+  Future<void> enqueueTaskUpsert(Task task, {required bool isCreate});
+  Future<void> deleteTask(Task task);
+}
+
+class TaskController extends TaskControllerBase with TaskCrudMixin {
   TaskController({
     required TaskRepository repo,
     required SyncService syncService,
@@ -35,6 +47,20 @@ class TaskController extends ChangeNotifier {
   final String _deviceId;
   final Listenable _listenable;
   static const _uuid = Uuid();
+
+  // Expose to mixins
+  @override
+  TaskRepository get repo => _repo;
+  @override
+  SyncService get syncService => _syncService;
+  @override
+  GoogleDriveService get googleDrive => _googleDrive;
+  @override
+  SettingsController get settings => _settings;
+  @override
+  String get deviceId => _deviceId;
+  @override
+  Uuid get uuid => _uuid;
 
   String _query = '';
   String get query => _query;
@@ -96,194 +122,75 @@ class TaskController extends ChangeNotifier {
         })
         .toList();
 
-    // Sort: priority desc, dueDate asc, updatedAt desc.
-    int priorityScore(TaskPriority? p) => switch (p) {
-      TaskPriority.high => 3,
-      TaskPriority.medium => 2,
-      TaskPriority.low => 1,
-      null => 0,
-    };
+    // Smart sorting:
+    // 1. Urgent tasks (due within 48h) go first, sorted by dueDate
+    // 2. High priority tasks go next, sorted by selected option
+    // 3. Normal tasks sorted by selected option
+    final urgentThreshold = now.add(const Duration(hours: 48));
 
-    filtered.sort((a, b) {
-      final p = priorityScore(
-        b.priorityEnum,
-      ).compareTo(priorityScore(a.priorityEnum));
-      if (p != 0) return p;
-      final ad = a.dueDate;
-      final bd = b.dueDate;
-      if (ad != null && bd != null) {
-        final c = ad.compareTo(bd);
-        if (c != 0) return c;
-      } else if (ad == null && bd != null) {
-        return 1;
-      } else if (ad != null && bd == null) {
-        return -1;
-      }
-      return b.updatedAt.compareTo(a.updatedAt);
-    });
+    final urgent = <Task>[];
+    final highPriority = <Task>[];
+    final normal = <Task>[];
 
-    return filtered;
-  }
+    for (final t in filtered) {
+      final due = t.dueDate;
+      final isUrgent =
+          due != null && due.isBefore(urgentThreshold) && due.isAfter(now);
+      final isHighPriority = t.priorityEnum == TaskPriority.high;
 
-  Future<Task> createTask({
-    required String title,
-    String? description,
-    DateTime? dueDate,
-    TaskPriority? priority,
-    TaskDifficulty? difficulty,
-    TaskRecurrenceRule recurrence = TaskRecurrenceRule.none,
-  }) async {
-    final now = DateTime.now();
-    final task = Task(
-      id: _uuid.v4(),
-      title: title.trim(),
-      description: (description?.trim().isEmpty ?? true)
-          ? null
-          : description?.trim(),
-      status: TaskStatus.active.index,
-      createdAt: now,
-      updatedAt: now,
-      dueDate: dueDate,
-      priority: priority?.index,
-      difficulty: difficulty?.index,
-      recurringRule: recurrence.index,
-      lastModifiedByDevice: _deviceId,
-      isDirty: true,
-      syncStatus: SyncStatus.idle.index,
-    );
-    await _repo.upsert(task);
-    await _enqueueTaskUpsert(task, isCreate: true);
-    return task;
-  }
-
-  Future<void> updateTask(
-    Task task, {
-    String? title,
-    String? description,
-    DateTime? dueDate,
-    TaskPriority? priority,
-    TaskDifficulty? difficulty,
-    TaskRecurrenceRule? recurrence,
-  }) async {
-    final now = DateTime.now();
-    if (title != null) task.title = title.trim();
-    if (description != null) {
-      task.description = description.trim().isEmpty ? null : description.trim();
-    }
-    if (dueDate != null) task.dueDate = dueDate;
-    if (priority != null) task.priorityEnum = priority;
-    if (difficulty != null) task.difficultyEnum = difficulty;
-    if (recurrence != null) task.recurringRuleEnum = recurrence;
-    task.updatedAt = now;
-    task.lastModifiedByDevice = _deviceId;
-    task.isDirty = true;
-    task.syncStatusEnum = SyncStatus.idle;
-    await task.save();
-    await _enqueueTaskUpsert(task, isCreate: false);
-  }
-
-  Future<void> deleteTask(Task task) async {
-    await _repo.delete(task.id);
-    final op = SyncOperation(
-      id: _uuid.v4(),
-      type: SyncOperationType.delete.index,
-      entityType: 'task',
-      entityId: task.id,
-      createdAt: DateTime.now(),
-      data: null,
-    );
-    await _syncService.enqueueOperation(op);
-    unawaited(_syncService.syncOnce());
-  }
-
-  Future<void> toggleCompleted(Task task, bool completed) async {
-    final now = DateTime.now();
-    task.statusEnum = completed ? TaskStatus.completed : TaskStatus.active;
-    task.completedAt = completed ? now : null;
-    task.updatedAt = now;
-    task.lastModifiedByDevice = _deviceId;
-    task.isDirty = true;
-    task.syncStatusEnum = SyncStatus.idle;
-    await task.save();
-    await _enqueueTaskUpsert(task, isCreate: false);
-
-    if (completed && task.recurringRuleEnum != TaskRecurrenceRule.none) {
-      await _createNextRecurring(task);
-    }
-  }
-
-  Future<void> addAttachment(Task task, TaskAttachment attachment) async {
-    task.attachments = [...task.attachments, attachment];
-    task.updatedAt = DateTime.now();
-    task.lastModifiedByDevice = _deviceId;
-    task.isDirty = true;
-    task.syncStatusEnum = SyncStatus.idle;
-    await task.save();
-
-    // Best-effort upload to Google Drive if authenticated + localUri exists.
-    if (attachment.localUri != null) {
-      try {
-        final file = File(attachment.localUri!);
-        if (await file.exists()) {
-          // This will throw DriveAuthRequiredException if not authenticated
-          final driveId = await _googleDrive.uploadTaskFile(
-            taskId: task.id,
-            file: file,
-            filename: file.uri.pathSegments.last,
-            mimeType: attachment.mimeType,
-          );
-          attachment.driveFileId = driveId;
-          attachment.uploaded = true;
-          await task.save();
-        }
-      } catch (e) {
-        // Re-throw DriveAuthRequiredException so view can handle it
-        // Other errors are silently ignored - attachment is saved locally
-        rethrow;
+      if (isUrgent) {
+        urgent.add(t);
+      } else if (isHighPriority) {
+        highPriority.add(t);
+      } else {
+        normal.add(t);
       }
     }
 
-    await _enqueueTaskUpsert(task, isCreate: false);
+    // Sort urgent by dueDate (soonest first)
+    urgent.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    // Sort high priority and normal by selected option
+    _applySortOption(highPriority);
+    _applySortOption(normal);
+
+    return [...urgent, ...highPriority, ...normal];
   }
 
-  Future<void> _createNextRecurring(Task completedTask) async {
-    final rule = completedTask.recurringRuleEnum;
-    final nextDue = switch (rule) {
-      TaskRecurrenceRule.daily => (completedTask.dueDate ?? DateTime.now()).add(
-        const Duration(days: 1),
-      ),
-      TaskRecurrenceRule.weekly =>
-        (completedTask.dueDate ?? DateTime.now()).add(const Duration(days: 7)),
-      _ => null,
-    };
-    if (nextDue == null) return;
-
-    await createTask(
-      title: completedTask.title,
-      description: completedTask.description,
-      dueDate: nextDue,
-      priority: completedTask.priorityEnum,
-      difficulty: completedTask.difficultyEnum,
-      recurrence: completedTask.recurringRuleEnum,
-    );
-  }
-
-  Future<void> _enqueueTaskUpsert(Task task, {required bool isCreate}) async {
-    final op = SyncOperation(
-      id: _uuid.v4(),
-      type: (isCreate ? SyncOperationType.create : SyncOperationType.update)
-          .index,
-      entityType: 'task',
-      entityId: task.id,
-      createdAt: DateTime.now(),
-      data: task.toFirestoreJson(),
-    );
-    await _syncService.enqueueOperation(op);
-    unawaited(_syncService.syncOnce());
+  void _applySortOption(List<Task> tasks) {
+    final sortOption = _settings.taskSortOption;
+    switch (sortOption) {
+      case TaskSortOption.newestFirst:
+        tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      case TaskSortOption.oldestFirst:
+        tasks.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case TaskSortOption.recentlyModified:
+        tasks.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      case TaskSortOption.dueDateAsc:
+        tasks.sort((a, b) {
+          final ad = a.dueDate;
+          final bd = b.dueDate;
+          if (ad == null && bd == null) return 0;
+          if (ad == null) return 1;
+          if (bd == null) return -1;
+          return ad.compareTo(bd);
+        });
+      case TaskSortOption.priorityDesc:
+        int priorityScore(TaskPriority? p) => switch (p) {
+          TaskPriority.high => 3,
+          TaskPriority.medium => 2,
+          TaskPriority.low => 1,
+          null => 0,
+        };
+        tasks.sort(
+          (a, b) => priorityScore(
+            b.priorityEnum,
+          ).compareTo(priorityScore(a.priorityEnum)),
+        );
+    }
   }
 
   Future<void> _purgeCompletedOlderThanRetention(List<Task> all) async {
-    // Only purge if auto-delete is enabled
     if (!_settings.autoDeleteCompletedTasks) return;
 
     final days = _settings.completedRetentionDays;
@@ -297,7 +204,6 @@ class TaskController extends ChangeNotifier {
 
     if (purge.isEmpty) return;
 
-    // Avoid heavy purge loops: cap per call.
     for (final t in purge.take(50)) {
       await deleteTask(t);
     }
@@ -318,5 +224,23 @@ class TaskController extends ChangeNotifier {
       if (tp > bp) best = t;
     }
     return best;
+  }
+
+  /// Clears categoryId on all tasks that belong to the given category IDs.
+  Future<void> clearCategoryOnTasks(List<String> categoryIds) async {
+    final all = _repo.getAll();
+    for (final task in all) {
+      if (categoryIds.contains(task.categoryId) ||
+          categoryIds.contains(task.subcategoryId)) {
+        if (categoryIds.contains(task.categoryId)) {
+          task.categoryId = null;
+        }
+        if (categoryIds.contains(task.subcategoryId)) {
+          task.subcategoryId = null;
+        }
+        task.updatedAt = DateTime.now();
+        await task.save();
+      }
+    }
   }
 }
