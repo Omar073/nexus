@@ -1,0 +1,121 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:nexus/core/services/notifications/notification_service.dart';
+import 'package:nexus/core/services/notifications/workmanager_dispatcher.dart';
+import 'package:nexus/features/reminders/models/reminder.dart';
+
+class MockBox extends Mock implements Box<Reminder> {}
+
+class MockNotificationService extends Mock implements NotificationService {}
+
+class MockReminder extends Mock implements Reminder {}
+
+void main() {
+  late MockBox mockBox;
+  late MockNotificationService mockNotifications;
+
+  setUp(() {
+    mockBox = MockBox();
+    mockNotifications = MockNotificationService();
+    // Register fallback values if needed
+    registerFallbackValue(
+      Reminder(
+        id: 'fallback',
+        title: 'fallback',
+        time: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        notificationId: 0,
+      ),
+    );
+  });
+
+  test(
+    'handleBackgroundCheck finds due reminders and triggers notification',
+    () async {
+      // Arrange
+      final now = DateTime.now();
+      final pastTime = now.subtract(const Duration(minutes: 5));
+
+      final reminder = MockReminder();
+      when(() => reminder.completedAt).thenReturn(null);
+      when(() => reminder.time).thenReturn(pastTime);
+      when(() => reminder.notificationId).thenReturn(1);
+      when(() => reminder.title).thenReturn('Test Reminder');
+
+      when(() => mockBox.values).thenReturn([reminder]);
+      when(
+        () => mockNotifications.showNow(
+          id: any(named: 'id'),
+          title: any(named: 'title'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((_) async {});
+
+      // Act
+      final result = await handleBackgroundCheck(
+        box: mockBox,
+        notifications: mockNotifications,
+      );
+
+      // Assert
+      expect(result, true);
+      verify(
+        () => mockNotifications.showNow(
+          id: 1,
+          title: 'Reminder',
+          body: 'Test Reminder',
+        ),
+      ).called(1);
+    },
+  );
+
+  test('handleBackgroundCheck ignores completed reminders', () async {
+    // Arrange
+    final now = DateTime.now();
+    final pastTime = now.subtract(const Duration(minutes: 5));
+
+    final reminder = MockReminder();
+    when(() => reminder.completedAt).thenReturn(now); // Completed
+    when(() => reminder.time).thenReturn(pastTime);
+
+    when(() => mockBox.values).thenReturn([reminder]);
+
+    // Act
+    await handleBackgroundCheck(box: mockBox, notifications: mockNotifications);
+
+    // Assert
+    verifyNever(
+      () => mockNotifications.showNow(
+        id: any(named: 'id'),
+        title: any(named: 'title'),
+        body: any(named: 'body'),
+      ),
+    );
+  });
+
+  test('handleBackgroundCheck ignores future reminders', () async {
+    // Arrange
+    final now = DateTime.now();
+    final futureTime = now.add(const Duration(minutes: 5)); // Future
+
+    final reminder = MockReminder();
+    when(() => reminder.completedAt).thenReturn(null);
+    when(() => reminder.time).thenReturn(futureTime);
+
+    when(() => mockBox.values).thenReturn([reminder]);
+
+    // Act
+    await handleBackgroundCheck(box: mockBox, notifications: mockNotifications);
+
+    // Assert
+    verifyNever(
+      () => mockNotifications.showNow(
+        id: any(named: 'id'),
+        title: any(named: 'title'),
+        body: any(named: 'body'),
+      ),
+    );
+  });
+}

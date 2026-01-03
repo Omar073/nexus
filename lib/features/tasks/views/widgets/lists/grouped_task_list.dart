@@ -27,7 +27,7 @@ class GroupedTaskList extends StatelessWidget {
   final List<Category> categories;
   final TaskController taskController;
   final Map<String, GlobalKey> categoryKeys;
-  final void Function(Map<String?, int>) onShowDrawer;
+  final void Function(Map<String?, int>, List<Category>) onShowDrawer;
   final String emptyMessage;
   final IconData emptyIcon;
   final bool isCompletedTab;
@@ -50,7 +50,9 @@ class GroupedTaskList extends StatelessWidget {
     final List<Widget> sections = [];
 
     // Jump to category button
-    sections.add(JumpToCategoryButton(onTap: () => onShowDrawer(taskCounts)));
+    sections.add(
+      JumpToCategoryButton(onTap: () => onShowDrawer(taskCounts, categories)),
+    );
 
     // Category sections
     for (final category in categories) {

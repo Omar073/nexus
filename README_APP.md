@@ -56,44 +56,33 @@ It's built to feel fast and reliable day‑to‑day: you can keep using it even 
 - Habits progress circle showing daily completion percentage.
 - Quick stats for completion rate, on-time rate, and active habits.
 
-### Dashboard
+### Dashboard (Home)
 
-- At-a-glance overview of your tasks, reminders, notes, and habits.
-- Quick access to today's tasks.
-- Menu button to open the navigation drawer.
+- **At-a-glance overview**: See your day in one view.
+- **Quick Actions**: Access to today's tasks and upcoming reminders.
+- **Aggregated View**: A meaningful summary of your productivity across tasks, habits, and notes.
 
 ### Navigation
 
-- **Bottom navigation bar**: Quick access to Dashboard, Tasks, and Settings.
-- **Navigation drawer**: Access all features including Reminders, Habits, Notes, Calendar, and Analytics.
-- Multiple navigation bar styles available in Settings (Standard, Google, Curved, Animated Notch).
+- **Bottom Navigation**: Quick access to core screens.
+- **Customizable Styles**: Choose your preferred look in Settings:
+  - **Standard**: Classic material design.
+  - **Google**: Modern, floating style.
+  - **Curved**: Stylish curved cutout.
+  - **Animated Notch**: Dynamic interaction.
+- **App Drawer**: Access secondary features like Analytics, Calendar, and detailed Settings.
 
-## Attachments and media
+### Settings
 
-Nexus can keep attachments on your device and (when configured) also store copies in a shared cloud folder so you can:
-
-- Keep important files connected to tasks/notes
-- Avoid losing recordings or images when switching devices
-
-## Offline-friendly by design
-
-Nexus is designed to keep working even if the internet is spotty:
-
-- Your changes are saved immediately on your device.
-- When the app can reach the cloud again, it syncs in the background.
-- The app automatically notifies you when your network connection is lost or restored, so you always know your sync status.
-- In Settings, you can check the connectivity status of Firebase (cloud sync), Hive (local storage), and Google Drive (attachments) at any time.
-
-## Settings
-
-- **Theme**: Switch between light, dark, and system theme modes.
-- **Accent Color**: Choose your preferred accent color for the app.
-- **Navigation Bar Style**: Choose from Standard, Google, Curved, or Animated Notch styles.
-- **Task Management**: Configure retention periods and other task-related settings.
-- **Sync Settings**: Manage cloud sync preferences.
-- **Connectivity Status**: Check the status of Firebase, Hive, and Google Drive connections.
-- **Google Drive Access**: Sign in/out and manage Drive authentication.
-- **Permissions**: Review and manage app permissions.
+- **Theme & Appearance**:
+  - Toggle Light/Dark modes or follow system.
+  - **Accent Colors**: customize the app's primary color.
+  - **Navigation Bar Style**: Switch between 4 distinct visual styles.
+- **Sync & Data**:
+  - **Status Indicators**: Real-time status of Firebase (Cloud), Hive (Local), and Google Drive.
+  - **Drive Integration**: Manage your Google Drive connection for attachment backups.
+- **Task Management**: Configure retention policies for completed items.
+- **Permissions**: centralized control over app permissions (Notifications, Alarms, etc.).
 
 ## Who Nexus is great for
 

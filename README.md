@@ -64,6 +64,19 @@ The app uses a **composer pattern** to manage widget wrappers and background ser
 
 - **Global ScaffoldMessenger**: `appMessengerKey` in `lib/app/app_globals.dart` allows services and other code to show snackbars without BuildContext. Use `CommonSnackbar.showGlobal()` for context-free snackbars.
 
+### App Initialization Flow (`lib/features/splash/`)
+
+The app startup is managed by `AppInitializer` (`lib/features/splash/controllers/app_initializer.dart`) in two phases:
+
+1. **Critical Initialization** (`initializeCritical`):
+   - Runs before `runApp`.
+   - Initializes Firebase, Hive, Device ID, and Settings.
+   - **Failure handling**: If this fails, the app throws an error immediately (fail fast).
+2. **Complete Initialization** (`completeInitialization`):
+   - Runs after the Splash Screen is visible.
+   - Initializes heavier services: `NotificationService`, `Workmanager`, `GoogleDriveService`, and all Repositories/Controllers.
+   - **User Experience**: The Splash Screen waits for this to complete before navigating to the Dashboard.
+
 **Data flow for background services:**
 
 1) `App` widget (StatefulWidget) initializes in `initState`
@@ -128,6 +141,33 @@ Core services were reorganized into subfolders under `lib/core/services/`:
 - `lib/core/services/debug/debug_logger_service.dart`: in-memory logs (max 500) + 30-min archive
 - `lib/core/services/debug/debug_log_archiver_io.dart`: writes archive to app documents dir (Android/Windows)
 - `lib/core/widgets/debug/global_debug_overlay.dart`: hidden overlay UI (triple-tap / Ctrl+Shift+D)
+
+## App Shell & Navigation (`lib/features/wrapper/`)
+
+The `Wrapper` feature manages the persistent UI shell that surrounds the entire app.
+
+**Key files**:
+
+- `lib/features/wrapper/views/app_wrapper.dart`: Main Scaffold containing the `ScaffoldKey` for drawer control.
+- `lib/features/wrapper/views/app_drawer.dart`: The side navigation drawer accessible globally.
+- `lib/features/dashboard/views/dashboard_screen.dart`: The home screen aggregator.
+
+## Dashboard (`lib/features/dashboard/`)
+
+The Dashboard acts as an aggregator view, pulling data from multiple controllers to show a daily summary.
+
+**Key files**:
+
+- `lib/features/dashboard/views/dashboard_screen.dart`
+- `lib/features/dashboard/controllers/dashboard_controller.dart` (if applicable)
+
+**How it works**:
+It listens to `TaskController`, `ReminderController`, `NoteController`, and `HabitController` to display:
+
+- Today's pending tasks
+- Upcoming reminders
+- Quick access buttons
+- Recent activity stats
 
 ## Firebase (Firestore sync) — setup + layout
 
@@ -240,7 +280,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ## Tasks
 
-### Key files
+### Tasks Architecture
+
+**Key files:**
 
 - Models: `lib/features/tasks/models/task.dart`, `task_attachment.dart`, `task_enums.dart`, `task_editor_result.dart`
 - Local storage: `lib/features/tasks/data/task_local_datasource.dart`
@@ -251,9 +293,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
   - `lib/features/tasks/views/widgets/task_tile.dart`
   - `lib/features/tasks/views/widgets/task_search_bar.dart`
   - `lib/features/tasks/views/widgets/task_filter_sheet.dart`
-  - `lib/features/tasks/views/widgets/task_editor_dialog.dart`
-  - `lib/features/tasks/views/widgets/task_detail_sheet/` (modular task detail components)
-- Utils: `lib/features/tasks/views/utils/attachment_picker_utils.dart`
+  - `lib/features/tasks/views/widgets/task_editor_dialog.dart`: **Main Task Editor**. Handles creation and editing logic, differentiating it from the list view.
+- `lib/features/tasks/views/widgets/task_detail_sheet/`: Modular components for the task detail bottom sheet (e.g., specific rows for priority, due date).
+- `lib/features/tasks/views/utils/attachment_picker_utils.dart`: Helper for picking files/images.
 
 ### How it works
 
@@ -264,7 +306,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ## Reminders
 
-### Key files
+### Reminders Architecture
+
+**Key files:**
 
 - Models: `lib/features/reminders/models/reminder.dart`
 - Controller: `lib/features/reminders/controllers/reminder_controller.dart`
@@ -276,9 +320,27 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 - Creating/updating schedules a local notification.
 - Completing/deleting cancels the scheduled notification.
 
+### Background Reliability Strategy (Hybrid Approach)
+
+To ensure notifications are delivered reliably (especially on Samsung/Android 12+), the app uses a **hybrid** timing strategy:
+
+1. **Primary (Exact)**: `zonedSchedule` (AlarmManager)
+    - Used for exact notification timing.
+    - Works best when the app is running or device is standard Android.
+2. **Secondary (Foreground Accuracy)**: In-App Timer
+    - `ReminderController` runs a 30-second periodic timer while the app is open.
+    - Checks for due reminders and triggers `showNow` immediately.
+    - Ensures 100% reliability while the user is using the app.
+3. **Tertiary (Background Safety Net)**: `Workmanager`
+    - Runs every ~15 minutes (Android minimum for periodic background jobs).
+    - **Data Flow**: `Workmanager` -> `workmanagerCallbackDispatcher` -> Initialize Hive (Read-Only) -> Check Due Reminders -> Trigger `NotificationService.showNow`.
+    - Catches any reminders that were missed by the OS alarm manager (e.g. if the app was killed).
+
 ## Sync + conflict handling
 
-### Key files
+### Sync Architecture
+
+**Key files:**
 
 - Queue model: `lib/core/data/sync_queue.dart`
 - Sync engine: `lib/core/services/sync/sync_service.dart`
@@ -296,7 +358,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ## Notes (Rich text + inline voice notes)
 
-### Key files
+### Notes Architecture
+
+**Key files:**
 
 - Models: `lib/features/notes/models/note.dart`, `note_attachment.dart`
 - Controller: `lib/features/notes/controllers/note_controller.dart`
@@ -311,7 +375,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ## Habits
 
-### Key files
+### Habits Architecture
+
+**Key files:**
 
 - Models: `lib/features/habits/models/habit.dart`, `habit_log.dart`
 - Controller: `lib/features/habits/controllers/habit_controller.dart`
@@ -324,7 +390,9 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in `li
 
 ## Analytics
 
-### Key files
+### Analytics Architecture
+
+**Key files:**
 
 - Controller: `lib/features/analytics/controllers/analytics_controller.dart`
 - UI: `lib/features/analytics/views/analytics_screen.dart`
@@ -339,7 +407,9 @@ Provides basic KPIs and a simple pie chart.
 
 ## Calendar
 
-### Key files
+### Calendar Architecture
+
+**Key files:**
 
 - Controller: `lib/features/calendar/controllers/calendar_controller.dart`
 - UI: `lib/features/calendar/views/calendar_screen.dart`
@@ -349,7 +419,9 @@ Calendar overlays tasks (due dates) and reminders (scheduled times).
 
 ## Settings
 
-### Key files
+### Settings Architecture
+
+**Key files:**
 
 - Controller: `lib/features/settings/controllers/settings_controller.dart`
 - Connectivity Helper: `lib/features/settings/controllers/settings_connectivity_helper.dart`
@@ -367,6 +439,16 @@ Calendar overlays tasks (due dates) and reminders (scheduled times).
 
 Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.
 
+## Theme Customization (`lib/features/theme_customization/`)
+
+Manages the app's visual style, including dynamic color generation.
+
+**Key files**:
+
+- `lib/features/theme_customization/services/theme_service.dart`: Handles theme switching logic.
+- `lib/features/theme_customization/views/theme_customization_screen.dart`: UI for selecting colors/modes.
+- `lib/app/theme/app_theme.dart`: Defines light/dark theme data.
+
 ## Testing + CI
 
 ### Tests
@@ -380,6 +462,7 @@ flutter test
 ### CI
 
 GitHub Actions workflow is at `.github/workflows/flutter.yml`:
+
 - `flutter pub get; flutter analyze; flutter test`
 
 ## Contributor workflow

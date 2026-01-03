@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
 import 'package:nexus/features/reminders/views/widgets/reminder_editor_dialog.dart';
 import 'package:nexus/features/reminders/views/widgets/reminder_tile.dart';
+import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/views/app_wrapper.dart';
 import 'package:provider/provider.dart';
 
@@ -43,6 +46,7 @@ class RemindersScreen extends StatelessWidget {
               onPressed: () =>
                   AppWrapper.scaffoldKey.currentState?.openDrawer(),
             ),
+
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: false,
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
@@ -94,10 +98,21 @@ class RemindersScreen extends StatelessWidget {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'reminders_fab',
-        onPressed: () => showReminderEditorDialog(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Builder(
+        builder: (context) {
+          final navBarHeight = context
+              .watch<SettingsController>()
+              .navBarStyle
+              .height;
+          return Padding(
+            padding: EdgeInsets.only(bottom: navBarHeight + 50),
+            child: FloatingActionButton(
+              heroTag: 'reminders_fab',
+              onPressed: () => showReminderEditorDialog(context),
+              child: const Icon(Icons.add),
+            ),
+          );
+        },
       ),
     );
   }

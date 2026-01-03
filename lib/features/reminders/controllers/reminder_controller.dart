@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+
 import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/models/reminder.dart';
 import 'package:nexus/features/reminders/models/reminder_repository.dart';
@@ -14,18 +15,85 @@ class ReminderController extends ChangeNotifier {
        _notifications = notifications,
        _listenable = repo.listenable() {
     _listenable.addListener(_onLocalChanged);
+    // Clean up completed reminders from previous days on startup
+    _cleanupCompletedReminders();
+    // Start the in-app timer to check for due reminders
+    _startReminderCheckTimer();
+  }
+
+  /// Deletes reminders that were completed before today.
+  /// Completed reminders stay visible until end of day, then get cleaned up.
+  Future<void> _cleanupCompletedReminders() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final toDelete = _repo.getAll().where((r) {
+      if (r.completedAt == null) return false;
+      final completedDate = DateTime(
+        r.completedAt!.year,
+        r.completedAt!.month,
+        r.completedAt!.day,
+      );
+      return completedDate.isBefore(today);
+    }).toList();
+
+    for (final reminder in toDelete) {
+      await _repo.delete(reminder.id);
+    }
   }
 
   final ReminderRepository _repo;
   final ReminderNotifications _notifications;
   final Listenable _listenable;
+  Timer? _reminderCheckTimer;
+  final Set<String> _firedReminderIds = {};
 
   static const _uuid = Uuid();
 
   void _onLocalChanged() => notifyListeners();
 
+  /// Starts a periodic timer that checks for due reminders every 30 seconds.
+  /// This ensures precise notifications while the app is running (foreground or cached).
+  /// For background terminals, we rely on Workmanager (every 15m) as a safety net.
+  /// TODO: Investigate Foreground Service for exact 60s background checks (requires permanent notification).
+  void _startReminderCheckTimer() {
+    _reminderCheckTimer?.cancel();
+    _reminderCheckTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _checkDueReminders(),
+    );
+    // Also check immediately
+    _checkDueReminders();
+  }
+
+  /// Checks if any reminders are due and fires immediate notifications.
+  Future<void> _checkDueReminders() async {
+    final now = DateTime.now();
+    final dueReminders = _repo.getAll().where((r) {
+      if (r.completedAt != null) return false; // Already completed
+      if (_firedReminderIds.contains(r.id)) return false; // Already fired
+      // Due if the reminder time is in the past or within 1 minute from now
+      return r.time.isBefore(now.add(const Duration(seconds: 30)));
+    }).toList();
+
+    for (final reminder in dueReminders) {
+      debugPrint(
+        '[ReminderController] Firing immediate notification for: ${reminder.title}',
+      );
+      _firedReminderIds.add(reminder.id);
+
+      // Use the injected notification service
+      await _notifications.showNow(
+        id: reminder.notificationId,
+        title: 'Reminder',
+        body: reminder.title,
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _reminderCheckTimer?.cancel();
     _listenable.removeListener(_onLocalChanged);
     super.dispose();
   }

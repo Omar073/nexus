@@ -19,6 +19,42 @@ class CategorySectionTaskItem extends StatelessWidget {
   final bool isCompletedTab;
   final bool animateExit;
 
+  void _handleToggle(BuildContext context, bool newValue) {
+    final wasCompleted = task.statusEnum == TaskStatus.completed;
+    taskController.toggleCompleted(task, newValue);
+
+    // Show undo snackbar
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            // Undo the toggle
+            taskController.toggleCompleted(task, wasCompleted);
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(newValue ? 'Task completed' : 'Task uncompleted'),
+              ),
+              Text(
+                'Click to undo',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.inversePrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCompleted = task.statusEnum == TaskStatus.completed;
@@ -36,7 +72,7 @@ class CategorySectionTaskItem extends StatelessWidget {
           isCompleted: isCompleted,
           isOverdue: isOverdue,
           animateExit: animateExit,
-          onToggle: (value) => taskController.toggleCompleted(task, value),
+          onToggle: (value) => _handleToggle(context, value),
           onTap: () => showTaskEditorDialog(context, task: task),
         ),
       ),

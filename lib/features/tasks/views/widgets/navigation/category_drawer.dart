@@ -11,17 +11,21 @@ class CategoryDrawer extends StatelessWidget {
     super.key,
     required this.onCategorySelected,
     required this.taskCountByCategory,
+    required this.sortedCategories,
   });
 
   final ValueChanged<String?> onCategorySelected;
   final Map<String?, int> taskCountByCategory;
+
+  /// Pre-sorted list of categories matching the order displayed in the tasks screen.
+  final List<Category> sortedCategories;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categoryController = context.watch<CategoryController>();
     final taskController = context.read<TaskController>();
-    final categories = categoryController.rootCategories;
+    final categories = sortedCategories;
 
     return Container(
       decoration: BoxDecoration(

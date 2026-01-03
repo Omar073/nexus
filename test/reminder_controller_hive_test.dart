@@ -27,6 +27,15 @@ class _FakeNotificationService implements ReminderNotifications {
   Future<void> cancel(int id) async {
     canceled.add(id);
   }
+
+  @override
+  Future<void> showNow({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    scheduled[id] = DateTime.now();
+  }
 }
 
 void main() {

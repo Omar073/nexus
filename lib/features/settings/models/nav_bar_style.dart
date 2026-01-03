@@ -40,4 +40,19 @@ extension NavBarStyleExtension on NavBarStyle {
         return 'Pill-shaped active state';
     }
   }
+
+  /// Returns the height of the navigation bar for this style.
+  /// Used for positioning FABs and other elements above the navbar.
+  double get height {
+    switch (this) {
+      case NavBarStyle.standard:
+        return 80.0; // Material 3 NavigationBar default
+      case NavBarStyle.curved:
+        return 65.0; // CurvedNavBarWrapper.height
+      case NavBarStyle.notch:
+        return 56.0; // AnimatedNotchNavBar bottomBarHeight
+      case NavBarStyle.google:
+        return 56.0; // GNav with padding
+    }
+  }
 }

@@ -3,6 +3,8 @@ import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/settings/models/nav_bar_style.dart';
+import 'package:nexus/features/tasks/models/category.dart';
 import 'package:nexus/features/tasks/models/category_sort_option.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 import 'package:nexus/features/tasks/views/widgets/helpers/sliver_tab_bar_delegate.dart';
@@ -10,7 +12,6 @@ import 'package:nexus/features/tasks/views/widgets/lists/grouped_task_list.dart'
 import 'package:nexus/features/tasks/views/widgets/navigation/category_drawer.dart';
 
 import 'package:nexus/features/tasks/views/widgets/sections/tasks_header.dart';
-import 'package:nexus/features/wrapper/views/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/tasks/views/widgets/task_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -94,7 +95,10 @@ class _TasksScreenState extends State<TasksScreen>
     });
   }
 
-  void _showCategoryDrawer(Map<String?, int> taskCounts) {
+  void _showCategoryDrawer(
+    Map<String?, int> taskCounts,
+    List<Category> sortedCategories,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -102,6 +106,7 @@ class _TasksScreenState extends State<TasksScreen>
       builder: (context) => CategoryDrawer(
         onCategorySelected: _scrollToCategory,
         taskCountByCategory: taskCounts,
+        sortedCategories: sortedCategories,
       ),
     );
   }
@@ -179,6 +184,7 @@ class _TasksScreenState extends State<TasksScreen>
                   unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                   indicatorColor: theme.colorScheme.primary,
                   indicatorSize: TabBarIndicatorSize.label,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
                   labelStyle: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -233,13 +239,21 @@ class _TasksScreenState extends State<TasksScreen>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: CurvedNavBarWrapper.height + 50),
-        child: FloatingActionButton(
-          heroTag: 'tasks_fab',
-          onPressed: () => showTaskEditorDialog(context),
-          child: const Icon(Icons.add),
-        ),
+      floatingActionButton: Builder(
+        builder: (context) {
+          final navBarHeight = context
+              .watch<SettingsController>()
+              .navBarStyle
+              .height;
+          return Padding(
+            padding: EdgeInsets.only(bottom: navBarHeight + 50),
+            child: FloatingActionButton(
+              heroTag: 'tasks_fab',
+              onPressed: () => showTaskEditorDialog(context),
+              child: const Icon(Icons.add),
+            ),
+          );
+        },
       ),
     );
   }

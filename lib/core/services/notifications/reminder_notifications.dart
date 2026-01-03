@@ -7,5 +7,10 @@ abstract class ReminderNotifications {
   });
 
   Future<void> cancel(int id);
-}
 
+  Future<void> showNow({
+    required int id,
+    required String title,
+    required String body,
+  });
+}

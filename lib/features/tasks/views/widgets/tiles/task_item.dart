@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:nexus/core/widgets/circular_checkbox.dart';
 import 'package:nexus/features/tasks/models/task.dart';
+import 'package:nexus/features/tasks/views/widgets/tiles/task_item_content.dart';
 
 /// Task item card for task lists.
 /// Shows task title, due time, and actions.
@@ -106,90 +105,12 @@ class _TaskItemState extends State<TaskItem>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    Widget content = GestureDetector(
+    Widget content = TaskItemContent(
+      task: widget.task,
+      isCompleted: widget.isCompleted,
+      isOverdue: widget.isOverdue,
+      onToggle: _handleToggle,
       onTap: widget.onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: widget.isCompleted
-              ? (isDark ? Colors.black : Colors.grey.shade50)
-              : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(
-                    alpha: widget.isCompleted ? 0.05 : 0.1,
-                  )
-                : (widget.isCompleted
-                      ? Colors.grey.shade100
-                      : Colors.grey.shade200),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Checkbox
-            CircularCheckbox(
-              value: widget.isCompleted,
-              onChanged: _handleToggle,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.task.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: widget.isCompleted
-                          ? theme.colorScheme.onSurfaceVariant
-                          : theme.colorScheme.onSurface,
-                      decoration: widget.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                      decorationColor: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.task.startDate != null ||
-                      widget.task.dueDate != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (widget.isOverdue) ...[
-                          Icon(
-                            Icons.error_outline,
-                            size: 14,
-                            color: Colors.red.shade400,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          _formatTaskDuration(widget.task),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: widget.isOverdue
-                                ? Colors.red.shade400
-                                : widget.isCompleted
-                                ? theme.colorScheme.onSurfaceVariant
-                                : theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
 
     // If animating, wrap with slide + fade + size transitions
@@ -208,34 +129,5 @@ class _TaskItemState extends State<TaskItem>
     }
 
     return content;
-  }
-
-  String _formatTaskDuration(Task task) {
-    if (task.startDate == null && task.dueDate == null) return '';
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    String format(DateTime d) {
-      final date = DateTime(d.year, d.month, d.day);
-      if (date == today) {
-        return 'Today';
-      }
-      final diff = date.difference(today).inDays.abs();
-      if (diff < 7) {
-        return DateFormat('EEE, MMM d').format(d);
-      }
-      return DateFormat('MMM d').format(d);
-    }
-
-    if (task.startDate != null && task.dueDate != null) {
-      return '${format(task.startDate!)} - ${format(task.dueDate!)}';
-    }
-
-    if (task.startDate != null) {
-      return 'Starts ${format(task.startDate!)}';
-    }
-
-    return 'Due ${format(task.dueDate!)}';
   }
 }
