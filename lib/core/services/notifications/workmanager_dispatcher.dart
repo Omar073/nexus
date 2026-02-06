@@ -57,8 +57,14 @@ Future<bool> handleBackgroundCheck({
   final dueReminders = box.values.where((r) {
     if (r.completedAt != null) return false;
     // Check if due in the past (missed)
-    // We add a small buffer (e.g. 1 sec) to ensure we catch "just due" items
-    return r.time.isBefore(now.add(const Duration(seconds: 1)));
+    if (!r.time.isBefore(now)) return false;
+
+    // [SPAM PREVENTION]
+    // Only fire if the reminder was due recently (e.g. within the last 46 minutes).
+    // This prevents the Safety Net from nagging about old reminders every 15 minutes.
+    // Since Workmanager runs every ~15 mins, a 46-minute window gives us ~3 chances to catch it.
+    final diff = now.difference(r.time);
+    return diff.inMinutes <= 46;
   }).toList();
 
   debugPrint('[Workmanager] Found ${dueReminders.length} due reminders');

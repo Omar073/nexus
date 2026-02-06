@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/models/reminder.dart';
 import 'package:nexus/features/reminders/models/reminder_repository.dart';
+import 'package:nexus/features/reminders/services/reminder_timer_service.dart';
 import 'package:uuid/uuid.dart';
 
 class ReminderController extends ChangeNotifier {
@@ -13,13 +14,26 @@ class ReminderController extends ChangeNotifier {
     required ReminderNotifications notifications,
   }) : _repo = repo,
        _notifications = notifications,
+       _timerService = ReminderTimerService(
+         repo: repo,
+         notifications: notifications,
+       ),
        _listenable = repo.listenable() {
     _listenable.addListener(_onLocalChanged);
     // Clean up completed reminders from previous days on startup
     _cleanupCompletedReminders();
-    // Start the in-app timer to check for due reminders
-    _startReminderCheckTimer();
+    // Start the Timer Service
+    _timerService.start();
   }
+
+  final ReminderRepository _repo;
+  final ReminderNotifications _notifications;
+  final ReminderTimerService _timerService;
+  final Listenable _listenable;
+
+  static const _uuid = Uuid();
+
+  void _onLocalChanged() => notifyListeners();
 
   /// Deletes reminders that were completed before today.
   /// Completed reminders stay visible until end of day, then get cleaned up.
@@ -42,58 +56,9 @@ class ReminderController extends ChangeNotifier {
     }
   }
 
-  final ReminderRepository _repo;
-  final ReminderNotifications _notifications;
-  final Listenable _listenable;
-  Timer? _reminderCheckTimer;
-  final Set<String> _firedReminderIds = {};
-
-  static const _uuid = Uuid();
-
-  void _onLocalChanged() => notifyListeners();
-
-  /// Starts a periodic timer that checks for due reminders every 30 seconds.
-  /// This ensures precise notifications while the app is running (foreground or cached).
-  /// For background terminals, we rely on Workmanager (every 15m) as a safety net.
-  /// TODO: Investigate Foreground Service for exact 60s background checks (requires permanent notification).
-  void _startReminderCheckTimer() {
-    _reminderCheckTimer?.cancel();
-    _reminderCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _checkDueReminders(),
-    );
-    // Also check immediately
-    _checkDueReminders();
-  }
-
-  /// Checks if any reminders are due and fires immediate notifications.
-  Future<void> _checkDueReminders() async {
-    final now = DateTime.now();
-    final dueReminders = _repo.getAll().where((r) {
-      if (r.completedAt != null) return false; // Already completed
-      if (_firedReminderIds.contains(r.id)) return false; // Already fired
-      // Due if the reminder time is in the past or within 1 minute from now
-      return r.time.isBefore(now.add(const Duration(seconds: 30)));
-    }).toList();
-
-    for (final reminder in dueReminders) {
-      debugPrint(
-        '[ReminderController] Firing immediate notification for: ${reminder.title}',
-      );
-      _firedReminderIds.add(reminder.id);
-
-      // Use the injected notification service
-      await _notifications.showNow(
-        id: reminder.notificationId,
-        title: 'Reminder',
-        body: reminder.title,
-      );
-    }
-  }
-
   @override
   void dispose() {
-    _reminderCheckTimer?.cancel();
+    _timerService.dispose();
     _listenable.removeListener(_onLocalChanged);
     super.dispose();
   }
@@ -135,6 +100,7 @@ class ReminderController extends ChangeNotifier {
       body: reminder.title,
       when: reminder.time,
     );
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
     return reminder;
   }
 
@@ -154,11 +120,17 @@ class ReminderController extends ChangeNotifier {
       body: reminder.title,
       when: reminder.time,
     );
+    if (time != null) {
+      // Hook: Reset fired status if time changed
+      _timerService.resetFiredStatus(reminder.id);
+    }
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
   }
 
   Future<void> delete(Reminder reminder) async {
     await _notifications.cancel(reminder.notificationId);
     await _repo.delete(reminder.id);
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
   }
 
   Future<void> complete(Reminder reminder) async {
@@ -166,6 +138,7 @@ class ReminderController extends ChangeNotifier {
     reminder.updatedAt = DateTime.now();
     await reminder.save();
     await _notifications.cancel(reminder.notificationId);
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
   }
 
   Future<void> uncomplete(Reminder reminder) async {
@@ -182,6 +155,8 @@ class ReminderController extends ChangeNotifier {
         when: reminder.time,
       );
     }
+    _timerService.resetFiredStatus(reminder.id); // Hook: Allow firing again
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
   }
 
   Future<void> snooze(Reminder reminder, {int minutes = 5}) async {
@@ -196,5 +171,7 @@ class ReminderController extends ChangeNotifier {
       body: reminder.title,
       when: reminder.time,
     );
+    _timerService.resetFiredStatus(reminder.id); // Hook: Allow firing again
+    _timerService.scheduleNextCheck(); // Hook: Re-calc smart timer
   }
 }

@@ -64,6 +64,7 @@ class GroupedTaskList extends StatelessWidget {
             title: category.name,
             tasks: categoryTasks,
             taskController: taskController,
+            categoryId: category.id,
             isCompletedTab: isCompletedTab,
             animateExit: animateExit,
           ),

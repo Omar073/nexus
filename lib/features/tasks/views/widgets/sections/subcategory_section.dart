@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/views/widgets/sections/category_section_task_item.dart';
+import 'package:nexus/features/tasks/views/widgets/task_editor_dialog.dart';
 
 /// A collapsible subcategory section within a category.
 class SubcategorySection extends StatelessWidget {
@@ -12,6 +13,8 @@ class SubcategorySection extends StatelessWidget {
     required this.taskController,
     required this.isExpanded,
     required this.onToggle,
+    this.categoryId,
+    this.subcategoryId,
     this.isCompletedTab = false,
     this.animateExit = false,
   });
@@ -21,8 +24,18 @@ class SubcategorySection extends StatelessWidget {
   final TaskController taskController;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final String? categoryId;
+  final String? subcategoryId;
   final bool isCompletedTab;
   final bool animateExit;
+
+  void _handleAddTask(BuildContext context) {
+    showTaskEditorDialog(
+      context,
+      categoryId: categoryId,
+      subcategoryId: subcategoryId,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +76,24 @@ class SubcategorySection extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                const Spacer(),
+                if (subcategoryId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => _handleAddTask(context),
+                      behavior: HitTestBehavior.opaque,
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: Icon(
+                          Icons.add,
+                          size: 16,
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

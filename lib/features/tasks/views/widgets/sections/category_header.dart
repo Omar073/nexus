@@ -6,11 +6,13 @@ class CategoryHeader extends StatelessWidget {
     required this.title,
     required this.taskCount,
     required this.isExpanded,
+    this.onAddPressed,
   });
 
   final String title;
   final int taskCount;
   final bool isExpanded;
+  final VoidCallback? onAddPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +66,25 @@ class CategoryHeader extends StatelessWidget {
               color: theme.colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
+          if (onAddPressed != null) ...[
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: onAddPressed,
+                behavior: HitTestBehavior.opaque,
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Icon(
+                    Icons.add,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

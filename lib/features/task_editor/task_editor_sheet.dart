@@ -13,10 +13,18 @@ import 'package:provider/provider.dart';
 /// Main task editor sheet widget.
 /// Displayed as a bottom sheet for creating or editing tasks.
 class TaskEditorSheet extends StatefulWidget {
-  const TaskEditorSheet({super.key, this.task, required this.controller});
+  const TaskEditorSheet({
+    super.key,
+    this.task,
+    required this.controller,
+    this.initialCategoryId,
+    this.initialSubcategoryId,
+  });
 
   final Task? task;
   final TaskController controller;
+  final String? initialCategoryId;
+  final String? initialSubcategoryId;
 
   @override
   State<TaskEditorSheet> createState() => _TaskEditorSheetState();
@@ -51,8 +59,10 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
     _selectedDifficulty = widget.task?.difficultyEnum;
     _selectedRecurrence =
         widget.task?.recurringRuleEnum ?? TaskRecurrenceRule.none;
-    _selectedCategoryId = widget.task?.categoryId;
-    _selectedSubcategoryId = widget.task?.subcategoryId;
+    // Use initial values from props if provided, otherwise use task values
+    _selectedCategoryId = widget.initialCategoryId ?? widget.task?.categoryId;
+    _selectedSubcategoryId =
+        widget.initialSubcategoryId ?? widget.task?.subcategoryId;
   }
 
   @override

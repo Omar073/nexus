@@ -8,7 +8,12 @@ import 'package:nexus/features/tasks/controllers/category_controller.dart';
 
 /// Shows a bottom sheet modal for creating or editing a task.
 /// Follows Nexus design with styled inputs and priority selector.
-Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
+Future<void> showTaskEditorDialog(
+  BuildContext context, {
+  Task? task,
+  String? categoryId,
+  String? subcategoryId,
+}) async {
   final taskController = context.read<TaskController>();
   final categoryController = context.read<CategoryController>();
 
@@ -22,7 +27,12 @@ Future<void> showTaskEditorDialog(BuildContext context, {Task? task}) async {
         ChangeNotifierProvider.value(value: taskController),
         ChangeNotifierProvider.value(value: categoryController),
       ],
-      child: TaskEditorSheet(task: task, controller: taskController),
+      child: TaskEditorSheet(
+        task: task,
+        controller: taskController,
+        initialCategoryId: categoryId,
+        initialSubcategoryId: subcategoryId,
+      ),
     ),
   );
 }

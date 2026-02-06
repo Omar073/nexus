@@ -5,6 +5,7 @@ import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/views/widgets/sections/category_header.dart';
 import 'package:nexus/features/tasks/views/widgets/sections/category_section_task_item.dart';
 import 'package:nexus/features/tasks/views/widgets/sections/subcategory_section.dart';
+import 'package:nexus/features/tasks/views/widgets/task_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
 /// A section displaying tasks grouped under a category header.
@@ -15,6 +16,7 @@ class CategorySection extends StatefulWidget {
     required this.title,
     required this.tasks,
     required this.taskController,
+    this.categoryId,
     this.isCompletedTab = false,
     this.animateExit = false,
   });
@@ -23,6 +25,7 @@ class CategorySection extends StatefulWidget {
   final String title;
   final List<Task> tasks;
   final TaskController taskController;
+  final String? categoryId;
   final bool isCompletedTab;
   final bool animateExit;
 
@@ -67,6 +70,13 @@ class _CategorySectionState extends State<CategorySection>
     });
   }
 
+  void _handleAddTask() {
+    showTaskEditorDialog(
+      context,
+      categoryId: widget.categoryId,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.tasks.isEmpty) return const SizedBox.shrink();
@@ -107,6 +117,7 @@ class _CategorySectionState extends State<CategorySection>
               title: widget.title,
               taskCount: widget.tasks.length,
               isExpanded: _isExpanded,
+              onAddPressed: widget.categoryId != null ? _handleAddTask : null,
             ),
           ),
 
@@ -151,6 +162,8 @@ class _CategorySectionState extends State<CategorySection>
                         name: subName,
                         tasks: tasks,
                         taskController: widget.taskController,
+                        subcategoryId: subId,
+                        categoryId: widget.categoryId,
                         isExpanded: isSubExpanded,
                         onToggle: () {
                           setState(() {
