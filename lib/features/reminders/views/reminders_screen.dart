@@ -15,6 +15,7 @@ class RemindersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final controller = context.watch<ReminderController>();
+    final navBarStyle = context.watch<SettingsController>().navBarStyle;
     final allReminders = controller.reminders;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -86,7 +87,12 @@ class RemindersScreen extends StatelessWidget {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                navBarStyle.contentPadding,
+              ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   return Padding(
@@ -98,21 +104,13 @@ class RemindersScreen extends StatelessWidget {
             ),
         ],
       ),
-      floatingActionButton: Builder(
-        builder: (context) {
-          final navBarHeight = context
-              .watch<SettingsController>()
-              .navBarStyle
-              .height;
-          return Padding(
-            padding: EdgeInsets.only(bottom: navBarHeight + 50),
-            child: FloatingActionButton(
-              heroTag: 'reminders_fab',
-              onPressed: () => showReminderEditorDialog(context),
-              child: const Icon(Icons.add),
-            ),
-          );
-        },
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+        child: FloatingActionButton(
+          heroTag: 'reminders_fab',
+          onPressed: () => showReminderEditorDialog(context),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

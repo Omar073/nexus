@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/tasks/models/category.dart';
+import 'package:nexus/features/tasks/models/category_sort_option.dart';
+import 'package:nexus/features/tasks/models/task.dart';
 import 'package:uuid/uuid.dart';
 
 /// Controller for managing task categories.
@@ -40,6 +42,47 @@ class CategoryController extends ChangeNotifier {
 
   /// Get category by ID.
   Category? getById(String id) => _box.get(id);
+
+  /// Get sorted root categories based on sort option.
+  /// For [CategorySortOption.recentlyModified], requires [tasks] to calculate
+  /// the most recently modified category.
+  List<Category> getSortedCategories({
+    required CategorySortOption sortOption,
+    List<Task> tasks = const [],
+  }) {
+    final categories = List<Category>.from(rootCategories);
+
+    switch (sortOption) {
+      case CategorySortOption.defaultOrder:
+        return categories; // Insertion order
+      case CategorySortOption.alphabeticalAsc:
+        categories.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+      case CategorySortOption.alphabeticalDesc:
+        categories.sort(
+          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+        );
+      case CategorySortOption.recentlyModified:
+        final lastUpdates = <String, DateTime>{};
+        for (final task in tasks) {
+          if (task.categoryId != null) {
+            final current = lastUpdates[task.categoryId!];
+            if (current == null || task.updatedAt.isAfter(current)) {
+              lastUpdates[task.categoryId!] = task.updatedAt;
+            }
+          }
+        }
+        categories.sort((a, b) {
+          final timeA =
+              lastUpdates[a.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final timeB =
+              lastUpdates[b.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return timeB.compareTo(timeA); // Descending (newest first)
+        });
+    }
+    return categories;
+  }
 
   /// Create a new category.
   Future<Category> createCategory(String name, {String? parentId}) async {

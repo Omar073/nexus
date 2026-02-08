@@ -107,6 +107,7 @@ class NotificationService implements ReminderNotifications {
   }
 
   /// Show an immediate notification (for testing)
+  @override
   Future<void> showNow({
     required int id,
     required String title,

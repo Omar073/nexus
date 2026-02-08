@@ -5,6 +5,8 @@ import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/notes/controllers/note_controller.dart';
 import 'package:nexus/features/notes/views/note_editor_screen.dart';
 import 'package:nexus/features/notes/views/widgets/note_tile.dart';
+import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:provider/provider.dart';
 
 /// Notes list screen following Nexus design system.
@@ -31,6 +33,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<NoteController>();
     final categoryController = context.watch<CategoryController>();
+    final navBarStyle = context.watch<SettingsController>().navBarStyle;
 
     final notes = controller.visibleNotes;
     final categories = categoryController.rootCategories;
@@ -195,7 +198,12 @@ class _NotesListScreenState extends State<NotesListScreen> {
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        navBarStyle.contentPadding,
+                      ),
                       itemCount: notes.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) =>
@@ -205,18 +213,21 @@ class _NotesListScreenState extends State<NotesListScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'notes_fab',
-        onPressed: () async {
-          final note = await controller.createEmpty();
-          if (!context.mounted) return;
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => NoteEditorScreen(noteId: note.id),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+        child: FloatingActionButton(
+          heroTag: 'notes_fab',
+          onPressed: () async {
+            final note = await controller.createEmpty();
+            if (!context.mounted) return;
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => NoteEditorScreen(noteId: note.id),
+              ),
+            );
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

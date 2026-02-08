@@ -11,20 +11,17 @@ import 'package:nexus/core/services/platform/connectivity_service.dart';
 /// This is a singleton service that runs independently of the widget tree.
 /// It uses the global ScaffoldMessenger key to show snackbars from anywhere.
 class ConnectivityMonitorService {
+  factory ConnectivityMonitorService() => _instance;
   static final ConnectivityMonitorService _instance =
       ConnectivityMonitorService._internal();
-  factory ConnectivityMonitorService() => _instance;
+  // named constructor that returns the singleton instance
   ConnectivityMonitorService._internal();
 
   StreamSubscription<bool>? _subscription;
   bool? _previousState;
   bool _isInitialized = false;
 
-  /// Starts monitoring connectivity changes
-  ///
-  /// [connectivityService] - The connectivity service to monitor
   void startMonitoring(ConnectivityService connectivityService) {
-    // Cancel existing subscription if any
     _subscription?.cancel();
     _isInitialized = false;
     _previousState = null;
@@ -38,7 +35,6 @@ class ConnectivityMonitorService {
           return;
         }
 
-        // Only show snackbar if state actually changed
         if (_previousState != null && _previousState != isOnline) {
           _showConnectivitySnackbar(isOnline);
         }
@@ -71,7 +67,6 @@ class ConnectivityMonitorService {
     );
   }
 
-  /// Disposes the service and cancels subscriptions
   void dispose() {
     _subscription?.cancel();
     _subscription = null;

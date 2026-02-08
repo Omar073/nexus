@@ -55,4 +55,10 @@ extension NavBarStyleExtension on NavBarStyle {
         return 56.0; // GNav with padding
     }
   }
+
+  /// Returns the offset for FAB positioning (navbar height + spacing buffer).
+  double get fabOffset => height + 20.0;
+
+  /// Returns the padding for scrollable content to avoid navbar overlap.
+  double get contentPadding => height + 16.0;
 }

@@ -79,7 +79,7 @@ class _AppState extends State<App> {
           data: currentTheme,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          child: wrapWithAppServices(context, child ?? const SizedBox.shrink()),
+          child: wrapWithOverlays(context, child ?? const SizedBox.shrink()),
         );
       },
     );
