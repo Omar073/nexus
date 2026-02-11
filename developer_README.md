@@ -14,37 +14,34 @@ If you're looking for a **non-technical, end-user overview**, see `README.md`.
 
 ## Table of contents
 
-- [Getting started (step-by-step)](#getting-started-step-by-step)
-- [High-level architecture](#high-level-architecture)
-- [Repository map (where-everything-lives)](#repository-map-where-everything-lives)
-- [App Shell & Navigation](#app-shell--navigation-libfeatureswrapper)
-- [Dashboard](#dashboard-libfeaturesdashboard)
-- [Firebase (Firestore sync)](#firebase-firestore-sync--setup--layout)
-- [Google Drive (attachments)](#google-drive-attachments--setup)
-- [Secret debug logs](#secret-debug-logs-production-only--android--windows)
-- [Feature-by-feature guide](#feature-by-feature-guide)
-  - [Tasks](#tasks)
-  - [Reminders](#reminders)
-  - [Sync + conflict handling](#sync--conflict-handling)
-  - [Notes](#notes-rich-text--inline-voice-notes)
-  - [Habits](#habits)
-  - [Analytics](#analytics)
-  - [Calendar](#calendar)
-  - [Settings](#settings)
-  - [Theme Customization](#theme-customization-libfeaturestheme_customization)
-- [Testing + CI](#testing--ci)
-- [Contributor workflow](#contributor-workflow)
-- [Localization (Removed)](#localization-removed)
-- [Deep architecture & implementation guide](#deep-architecture--implementation-guide)
-  - [Background services deep dive](#background-services-deep-dive)
-  - [Feature deep dives](#feature-deep-dives)
-  - [How to implement common changes](#how-to-implement-common-changes)
-  - [Coding style & project conventions](#coding-style--project-conventions)
-  - [Glossary](#glossary-quick-reference)
-- [Per-feature walkthroughs](#per-feature-walkthroughs-libfeatures)
-- [Per-service walkthroughs](#per-service-walkthroughs-libcoreservices)
+- [1. Getting started](#1-getting-started-step-by-step)
+- [2. High-level architecture](#2-high-level-architecture)
+- [3. Repository map](#3-repository-map-where-everything-lives)
+- [4. App Shell & Navigation](#4-app-shell--navigation-libfeatureswrapper)
+- [5. Dashboard](#5-dashboard-libfeaturesdashboard)
+- [6. Firebase (Firestore sync)](#6-firebase-firestore-sync--setup--layout)
+- [7. Google Drive (attachments)](#7-google-drive-attachments--setup)
+- [8. Secret debug logs](#8-secret-debug-logs-production-only--android--windows)
+- [9. Feature-by-feature guide](#9-feature-by-feature-guide)
+  - [9.1 Tasks](#91-tasks)
+  - [9.2 Reminders](#92-reminders)
+  - [9.3 Sync + conflict handling](#93-sync--conflict-handling)
+  - [9.4 Notes](#94-notes-rich-text--inline-voice-notes)
+  - [9.5 Habits](#95-habits)
+  - [9.6 Analytics](#96-analytics)
+  - [9.7 Calendar](#97-calendar)
+  - [9.8 Settings](#98-settings)
+  - [9.9 Theme Customization](#99-theme-customization-libfeaturestheme_customization)
+- [10. Testing + CI](#10-testing--ci)
+- [11. Contributor workflow](#11-contributor-workflow)
+- [12. Deep architecture & implementation guide](#12-deep-architecture--implementation-guide)
+  - [12.1 Background services deep dive](#121-background-services-deep-dive)
+  - [12.2 Feature deep dives](#122-feature-deep-dives)
+  - [12.3 How to implement common changes](#123-how-to-implement-common-changes)
+  - [12.4 Coding style & project conventions](#124-coding-style--project-conventions)
+  - [12.5 Glossary](#125-glossary-quick-reference)
 
-## Getting started (step-by-step)
+## 1. Getting started (step-by-step)
 
 ### 1) Install dependencies
 
@@ -64,7 +61,7 @@ flutter analyze; flutter test
 flutter build apk; flutter build windows
 ```
 
-## High-level architecture
+## 2. High-level architecture
 
 ### Offline-first data flow
 
@@ -180,7 +177,7 @@ MaterialApp.router(
 
 **How it works:**
 
-- **Widget wrappers**: Composed via `wrapWithOverlays()` in [`lib/app/services/app_services_composer.dart`](lib/app/services/app_services_composer.dart). This function takes the root widget and wraps it with all necessary UI overlays (e.g., `GlobalDebugOverlay`). To add a new wrapper, you simply add it inside `wrapWithOverlays()` — no need to touch `main.dart` or other files.
+- **Widget wrappers**: Composed via [`wrapWithOverlays()`](lib/app/services/app_services_composer.dart#L11) in [`lib/app/services/app_services_composer.dart`](lib/app/services/app_services_composer.dart). This function takes the root widget and wraps it with all necessary UI overlays (e.g., `GlobalDebugOverlay`). To add a new wrapper, you simply add it inside `wrapWithOverlays()` — no need to touch `main.dart` or other files.
 
 > [!NOTE]
 > **"Why does it only wrap with `GlobalDebugOverlay`?"**
@@ -295,9 +292,9 @@ Device/OS → connectivity_plus → ConnectivityService.onlineStream() → bool 
 
 **Lifecycle:**
 
-1. `App.initState()` → calls `initializeBackgroundServices(context)` → starts monitoring
+1. `App.initState()` → calls [`initializeBackgroundServices(context)`](lib/app/services/app_services_composer.dart#L19) → starts monitoring
 2. Service receives stream events → reacts (e.g., shows snackbar via global key)
-3. `App.dispose()` → calls `disposeBackgroundServices()` → cancels subscriptions
+3. `App.dispose()` → calls [`disposeBackgroundServices()`](lib/app/services/app_services_composer.dart#L29) → cancels subscriptions
 
 - **Global ScaffoldMessenger**: `appMessengerKey` in [`lib/app/app_globals.dart`](lib/app/app_globals.dart) allows services and other code to show snackbars without BuildContext. Use `CommonSnackbar.showGlobal()` for context-free snackbars.
 
@@ -305,11 +302,11 @@ Device/OS → connectivity_plus → ConnectivityService.onlineStream() → bool 
 
 The app startup is managed by `AppInitializer` ([`lib/features/splash/controllers/app_initializer.dart`](lib/features/splash/controllers/app_initializer.dart)) in two phases:
 
-1. **Critical Initialization** (`initializeCritical`):
+1. **Critical Initialization** ([`initializeCritical`](lib/features/splash/controllers/app_initializer.dart#L46)):
    - Runs before `runApp`.
    - Initializes Firebase, Hive, Device ID, and Settings.
    - **Failure handling**: If this fails, the app throws an error immediately (fail fast).
-2. **Complete Initialization** (`completeInitialization`):
+2. **Complete Initialization** ([`completeInitialization`](lib/features/splash/controllers/app_initializer.dart#L85)):
    - Runs after the Splash Screen is visible.
    - Initializes heavier services: `NotificationService`, `Workmanager`, `GoogleDriveService`, and all Repositories/Controllers.
    - **User Experience**: The Splash Screen waits for this to complete before navigating to the Dashboard.
@@ -317,12 +314,12 @@ The app startup is managed by `AppInitializer` ([`lib/features/splash/controller
 **Data flow for background services:**
 
 1) `App` widget (StatefulWidget) initializes in `initState`
-2) After first frame, `initializeBackgroundServices(context)` is called
+2) After first frame, [`initializeBackgroundServices(context)`](lib/app/services/app_services_composer.dart#L19) is called
 3) Services access Provider context to read dependencies (e.g., `ConnectivityService`)
 4) Services subscribe to streams/events and use `appMessengerKey` to show UI updates
-5) On app disposal, `disposeBackgroundServices()` cleans up all service subscriptions
+5) On app disposal, [`disposeBackgroundServices()`](lib/app/services/app_services_composer.dart#L29) cleans up all service subscriptions
 
-## Repository map (where everything lives)
+## 3. Repository map (where everything lives)
 
 ### App bootstrap / routing / UI shell
 
@@ -335,51 +332,219 @@ The app startup is managed by `AppInitializer` ([`lib/features/splash/controller
 - [`lib/features/wrapper/views/app_drawer.dart`](lib/features/wrapper/views/app_drawer.dart): Navigation drawer
 - [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Material 3 themes
 
-### Core data + infra
+### Core Data Infrastructure
 
-- [`lib/core/data/hive_type_ids.dart`](lib/core/data/hive_type_ids.dart): stable Hive type IDs (never reuse)
-- [`lib/core/data/hive_boxes.dart`](lib/core/data/hive_boxes.dart): Hive box names
-- [`lib/core/data/hive_bootstrap.dart`](lib/core/data/hive_bootstrap.dart): adapter registration + box opening
-- [`lib/core/data/sync_queue.dart`](lib/core/data/sync_queue.dart): sync operation queue model
-- [`lib/core/data/sync_metadata.dart`](lib/core/data/sync_metadata.dart): last successful sync timestamp
+The core data layer manages local storage (Hive) and sync operations.
 
-Core services were reorganized into subfolders under [`lib/core/services/`](lib/core/services/):
+#### How Hive Stores Data
 
-- **Platform**:
-  - [`lib/core/services/platform/connectivity_service.dart`](lib/core/services/platform/connectivity_service.dart): online/offline detection
-  - [`lib/core/services/platform/connectivity_status_service.dart`](lib/core/services/platform/connectivity_status_service.dart): connectivity status checks (Firebase, Hive, Google Drive)
-  - [`lib/core/services/platform/permission_service.dart`](lib/core/services/platform/permission_service.dart): runtime permissions
-  - [`lib/core/services/platform/device_calendar_service.dart`](lib/core/services/platform/device_calendar_service.dart): device calendar wrapper
-- **Sync**:
-  - [`lib/core/services/sync/sync_service.dart`](lib/core/services/sync/sync_service.dart): sync engine (push/pull + conflict detection)
-- **Notifications**:
-  - [`lib/core/services/notifications/notification_service.dart`](lib/core/services/notifications/notification_service.dart): local notifications
-  - [`lib/core/services/notifications/workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart): Android background dispatcher
-  - [`lib/core/services/notifications/reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart): notifications interface
-- **Storage**:
-  - [`lib/core/services/storage/attachment_storage_service.dart`](lib/core/services/storage/attachment_storage_service.dart): local file storage layout
-  - [`lib/core/services/storage/google_drive_service.dart`](lib/core/services/storage/google_drive_service.dart): **facade** for Drive operations
-  - [`lib/core/services/storage/google_drive_auth.dart`](lib/core/services/storage/google_drive_auth.dart): password gate + Google Sign-In
-  - [`lib/core/services/storage/google_drive_api_client.dart`](lib/core/services/storage/google_drive_api_client.dart): Drive API client creation
-  - [`lib/core/services/storage/google_drive_folders.dart`](lib/core/services/storage/google_drive_folders.dart): folder management
-  - [`lib/core/services/storage/google_drive_files.dart`](lib/core/services/storage/google_drive_files.dart): upload/list/download/delete
-  - [`lib/core/services/storage/drive_auth_store.dart`](lib/core/services/storage/drive_auth_store.dart): device auth state (SharedPreferences)
-  - [`lib/core/services/storage/drive_auth_exception.dart`](lib/core/services/storage/drive_auth_exception.dart): `DriveAuthRequiredException`
-- **Background Services**:
-  - [`lib/core/services/connectivity_monitor_service.dart`](lib/core/services/connectivity_monitor_service.dart): singleton service that monitors network connectivity and shows snackbars on connection changes (runs independently of widget tree)
+Hive is a key-value store that serializes Dart objects to binary. Each model class needs:
 
-### Core widgets
+1. **TypeAdapter** — Tells Hive how to read/write the object to binary
+2. **Type ID** — Unique integer identifying the model type (defined in `hive_type_ids.dart`)
+3. **Field annotations** — `@HiveField(n)` marks each field with a numeric index
 
-- [`lib/core/widgets/common_snackbar.dart`](lib/core/widgets/common_snackbar.dart): reusable snackbar utility with `show()` (BuildContext-based) and `showGlobal()` (context-free) methods
-- [`lib/core/widgets/debug/global_debug_overlay.dart`](lib/core/widgets/debug/global_debug_overlay.dart): hidden overlay UI for production debug logs (triple-tap / Ctrl+Shift+D)
+When storing objects, Hive writes each field as `[field index][encoded value]`. This allows:
 
-### Production debug logs (Android + Windows)
+- **Backwards compatibility** — New fields can be added without breaking old data
+- **Sparse storage** — Missing fields are handled gracefully with defaults
 
-- [`lib/core/services/debug/debug_logger_service.dart`](lib/core/services/debug/debug_logger_service.dart): in-memory logs (max 500) + 30-min archive
-- [`lib/core/services/debug/debug_log_archiver_io.dart`](lib/core/services/debug/debug_log_archiver_io.dart): writes archive to app documents dir (Android/Windows)
-- [`lib/core/widgets/debug/global_debug_overlay.dart`](lib/core/widgets/debug/global_debug_overlay.dart): hidden overlay UI (triple-tap / Ctrl+Shift+D)
+> See [Hive Binary Serialization](technical_concepts.md#hive-binary-serialization) in `technical_concepts.md` for detailed implementation patterns.
 
-## App Shell & Navigation ([`lib/features/wrapper/`](lib/features/wrapper/))
+#### Hive Configuration ([`lib/core/data/hive/`](lib/core/data/hive/))
+
+| File | Role |
+|------|------|
+| [`hive_type_ids.dart`](lib/core/data/hive/hive_type_ids.dart) | **Central registry of Hive type IDs.** Each model that Hive stores needs a unique integer ID. Once assigned, these IDs must NEVER be reused or changed—doing so corrupts existing data. Add new models at the end of the list. |
+| [`hive_boxes.dart`](lib/core/data/hive/hive_boxes.dart) | **Box name constants.** Defines string names for each Hive box (e.g., `'tasks'`, `'notes'`). Centralizing these prevents typos and makes refactoring easier. |
+| [`hive_bootstrap.dart`](lib/core/data/hive/hive_bootstrap.dart) | **App startup initialization.** Registers all Hive adapters and opens all boxes. Called once during app launch before any data access. |
+
+#### Sync Infrastructure
+
+The sync system implements an **offline-first queue** pattern. All writes happen locally first, then get pushed to Firestore when online.
+
+##### How Sync Works
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 1. USER ACTION (e.g., create task)                                           │
+│    Controller writes to Hive → sets isDirty=true                             │
+│    Controller creates SyncOperation → adds to sync queue                     │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 2. SYNC QUEUE (Hive box)                                                     │
+│    Stores pending operations: {id, type, entityType, entityId, data, ...}    │
+│    Persists across app restarts                                              │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 3. SYNC SERVICE (triggered when online)                                      │
+│    Reads pending operations from queue                                       │
+│    Pushes each to Firestore                                                  │
+│    On success: removes from queue, clears isDirty                            │
+│    On failure: increments retryCount, updates lastAttemptAt                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+##### Sync Queue Files
+
+| File | Role |
+|------|------|
+| [`sync_queue.dart`](lib/core/data/sync_queue.dart) | **Model definition.** Contains `SyncOperation` (the queued operation) and two enums: `SyncOperationType` (create/update/delete) and `SyncOperationStatus` (pending/syncing/failed/completed). |
+| [`sync_operation_adapter.dart`](lib/core/data/sync_operation_adapter.dart) | **Hive serialization.** Custom TypeAdapter that handles reading/writing `SyncOperation` to Hive. Includes `_convertTimestamps()` to convert Firestore `Timestamp` objects to Dart `DateTime` (Hive can't store Timestamps directly). |
+| [`sync_metadata.dart`](lib/core/data/sync_metadata.dart) | **Sync state tracking.** Stores the timestamp of the last successful sync. Used to fetch only changes since then, avoiding full data pulls. |
+
+##### SyncOperation Fields
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Unique ID for this sync operation |
+| `type` | Operation type: 0=create, 1=update, 2=delete |
+| `entityType` | What kind of entity: `'task'`, `'category'`, `'reminder'`, etc. |
+| `entityId` | ID of the entity being synced |
+| `data` | JSON snapshot of the entity (for retries if entity is deleted locally) |
+| `retryCount` | How many times sync has failed for this operation |
+| `createdAt` | When the operation was queued |
+| `lastAttemptAt` | Last time sync was attempted |
+| `status` | Current status: pending, syncing, failed, completed |
+
+##### Why a Custom Adapter?
+
+Firestore returns `Timestamp` objects for datetime fields. Hive can't serialize these directly—it throws an error. The `SyncOperationAdapter`:
+
+1. **On read**: Reconstructs `SyncOperation` from binary data
+2. **On write**: Recursively scans the `data` map and converts any `Timestamp` → `DateTime` before saving
+
+This ensures data snapshots from Firestore can be safely stored in the local queue.
+
+##### Connection Restoration Pipeline
+
+When the device comes back online, here's the exact call chain that triggers sync:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. CONNECTIVITY SERVICE (lib/core/services/platform/connectivity_service.dart)
+│    - Wraps the `connectivity_plus` package                                  │
+│    - Exposes `onlineStream()` → Stream<bool> that emits true/false          │
+│    - Device goes online → emits `true`                                      │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. SYNC SERVICE LISTENER (lib/core/services/sync/sync_service.dart)         │
+│    startAutoSync() subscribes to onlineStream:                              │
+│                                                                             │
+│    _connectivity.onlineStream().listen((online) {                           │
+│      if (online) {                                                          │
+│        unawaited(syncOnce());  // ← triggers full sync cycle                │
+│      }                                                                      │
+│    });                                                                      │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. syncOnce() EXECUTES                                                      │
+│    - Guards against concurrent syncs (_isSyncing flag)                      │
+│    - Double-checks connectivity before proceeding                           │
+│    - Runs the full sync cycle:                                              │
+│                                                                             │
+│    await _pushQueue();         // Push local changes to Firestore           │
+│    await _pullTasks();         // Pull remote task changes                  │
+│    await _pullNotes();         // Pull remote note changes                  │
+│    await _markSuccessfulSync(); // Update lastSuccessfulSyncAt timestamp    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key methods in `SyncService`:**
+
+| Method | What it does | Source |
+|--------|--------------|--------|
+| `startAutoSync()` | Called once at app startup. Sets up listener on connectivity stream. | [sync_service.dart:L127](lib/core/services/sync/sync_service.dart#L127) |
+| `syncOnce()` | Full sync cycle: push queue → pull remote → save timestamp. | [sync_service.dart:L151](lib/core/services/sync/sync_service.dart#L151) |
+| `_pushQueue()` | Iterates pending `SyncOperation`s, pushes each to Firestore. | [sync_service.dart:L179](lib/core/services/sync/sync_service.dart#L179) |
+| `_pullTasks()` | Queries Firestore for tasks updated since `lastSuccessfulSyncAt`. Detects conflicts. | [sync_service.dart:L256](lib/core/services/sync/sync_service.dart#L256) |
+| `_pullNotes()` | Same as above but for notes. | [sync_service.dart:L310](lib/core/services/sync/sync_service.dart#L310) |
+| `_markSuccessfulSync()` | Updates `SyncMetadata.lastSuccessfulSyncAt` so next sync only pulls newer changes. | [sync_service.dart:L361](lib/core/services/sync/sync_service.dart#L361) |
+
+**Key methods in `ConnectivityService`:**
+
+| Method | What it does | Source |
+|--------|--------------|--------|
+| `onlineStream()` | Returns `Stream<bool>` that emits connectivity changes. | [connectivity_service.dart:L28](lib/core/services/platform/connectivity_service.dart#L28) |
+| `isOnline` | Async getter that checks current connectivity. | [connectivity_service.dart:L22](lib/core/services/platform/connectivity_service.dart#L22) |
+
+---
+
+### Core Services ([`lib/core/services/`](lib/core/services/))
+
+Services are organized by domain. Each service encapsulates a specific capability.
+
+#### Platform Services (`platform/`)
+
+| File | Role |
+|------|------|
+| [`connectivity_service.dart`](lib/core/services/platform/connectivity_service.dart) | **Network state provider.** Exposes a `Stream<bool>` that emits `true`/`false` as the device goes online/offline. Used by sync and Drive services to know when to attempt operations. |
+| [`backend_health_checker.dart`](lib/core/services/platform/backend_health_checker.dart) | **Health check aggregator.** Tests connectivity to specific backends (Firebase reachable? Hive readable? Drive authenticated?) and reports status for the debug overlay. |
+| [`permission_service.dart`](lib/core/services/platform/permission_service.dart) | **Runtime permissions wrapper.** Handles requesting and checking permissions (notifications, storage, calendar) with platform-specific logic. |
+| [`device_calendar_service.dart`](lib/core/services/platform/device_calendar_service.dart) | **Native calendar integration.** Reads/writes events to the device's native calendar app. Wraps the `device_calendar` plugin. |
+
+#### Sync Service (`sync/`)
+
+| File | Role |
+|------|------|
+| [`sync_service.dart`](lib/core/services/sync/sync_service.dart) | **The sync engine.** Handles the full sync cycle: (1) Push local changes from `SyncQueue` to Firestore, (2) Pull remote changes since last sync, (3) Detect conflicts when both local and remote changed, (4) Surface conflicts to UI for user resolution. |
+
+#### Notification Services (`notifications/`)
+
+| File | Role |
+|------|------|
+| [`notification_service.dart`](lib/core/services/notifications/notification_service.dart) | **Local notification scheduler.** Uses `flutter_local_notifications` to schedule, show, and cancel notifications. Handles timezone-aware scheduling for reminders. |
+| [`workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) | **Background task entry point.** Android's `Workmanager` calls this when the app is killed. Bootstraps minimal Hive access, checks for due reminders, and triggers notifications as a fallback safety net. |
+| [`reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart) | **Notification interface.** Defines the contract for scheduling reminder notifications. Implemented by `NotificationService`. |
+
+#### Storage Services (`storage/`)
+
+Google Drive integration is split into focused, single-responsibility files:
+
+| File | Role |
+|------|------|
+| [`attachment_storage_service.dart`](lib/core/services/storage/attachment_storage_service.dart) | **Local file layout.** Manages where attachments are stored on the device filesystem (organized by entity type and ID). |
+| [`google_drive_service.dart`](lib/core/services/storage/google_drive_service.dart) | **Façade pattern.** The single entry point for all Drive operations. Delegates to auth/folders/files internally. Other code only imports this file. |
+| [`google_drive_auth.dart`](lib/core/services/storage/google_drive_auth.dart) | **Authentication flow.** Handles the in-app password gate and Google Sign-In. Returns authenticated HTTP client for Drive API calls. |
+| [`google_drive_api_client.dart`](lib/core/services/storage/google_drive_api_client.dart) | **HTTP client factory.** Creates the authenticated `DriveApi` instance from Google's SDK. |
+| [`google_drive_folders.dart`](lib/core/services/storage/google_drive_folders.dart) | **Folder management.** Creates and retrieves the app's folder hierarchy in Drive (e.g., `Nexus/Tasks/`, `Nexus/Notes/`). |
+| [`google_drive_files.dart`](lib/core/services/storage/google_drive_files.dart) | **File operations.** Upload, download, list, and delete files in Drive. Used for attachments and backups. |
+| [`drive_auth_store.dart`](lib/core/services/storage/drive_auth_store.dart) | **Persistent auth state.** Stores whether the user has authenticated with Drive (uses `SharedPreferences`). |
+| [`drive_auth_exception.dart`](lib/core/services/storage/drive_auth_exception.dart) | **Custom exception.** `DriveAuthRequiredException` thrown when Drive operations fail due to missing authentication. |
+
+#### Background Services (root level)
+
+| File | Role |
+|------|------|
+| [`connectivity_monitor_service.dart`](lib/core/services/connectivity_monitor_service.dart) | **Singleton network monitor.** Runs independently of the widget tree. Listens to connectivity changes and shows snackbars ("Back online" / "No internet"). Initialized once at app start, never disposed. |
+
+---
+
+### Core Widgets ([`lib/core/widgets/`](lib/core/widgets/))
+
+| File | Role |
+|------|------|
+| [`common_snackbar.dart`](lib/core/widgets/common_snackbar.dart) | **Snackbar utility.** Provides `show(context, message)` for widget-based calls and `showGlobal(message)` for context-free calls (e.g., from services). Uses `AppGlobals.scaffoldMessengerKey`. |
+| [`debug/global_debug_overlay.dart`](lib/core/widgets/debug/global_debug_overlay.dart) | **Hidden debug UI.** Only active in production builds. Accessed via triple-tap (mobile) or Ctrl+Shift+D (desktop). Shows live logs and connectivity status. |
+
+---
+
+### Production Debug System
+
+For debugging issues in production builds where you can't attach a debugger:
+
+| File | Role |
+|------|------|
+| [`debug/debug_logger_service.dart`](lib/core/services/debug/debug_logger_service.dart) | **In-memory log buffer.** Singleton that stores the last 500 log entries. Auto-archives to disk every 30 minutes. Call `DebugLogger.log('message')` from anywhere. |
+| [`debug/debug_log_archiver_io.dart`](lib/core/services/debug/debug_log_archiver_io.dart) | **Disk persistence.** Writes log archives to the app's documents directory as timestamped JSON files. |
+| [`debug/global_debug_overlay.dart`](lib/core/widgets/debug/global_debug_overlay.dart) | **Visual log viewer.** Displays logs in a draggable overlay panel. Allows filtering, searching, and copying logs. |
+| [`debug/debug_log_archiver_stub.dart`](lib/core/services/debug/debug_log_archiver_stub.dart) | **Stub implementation.** Used on platforms where IO isn’t available to prevent compilation errors. |
+
+## 4. App Shell & Navigation ([`lib/features/wrapper/`](lib/features/wrapper/))
 
 The `Wrapper` feature manages the persistent UI shell that surrounds the entire app.
 
@@ -389,7 +554,13 @@ The `Wrapper` feature manages the persistent UI shell that surrounds the entire 
 - [`lib/features/wrapper/views/app_drawer.dart`](lib/features/wrapper/views/app_drawer.dart): The side navigation drawer accessible globally.
 - [`lib/features/dashboard/views/dashboard_screen.dart`](lib/features/dashboard/views/dashboard_screen.dart): The home screen aggregator.
 
-## Dashboard ([`lib/features/dashboard/`](lib/features/dashboard/))
+**Data & communication flow**:
+
+- Does **not** own business data; it delegates to child routes.
+- Reads the current route from the router and displays the appropriate screen.
+- Routes deeper into feature screens where controllers provide actual state.
+
+## 5. Dashboard ([`lib/features/dashboard/`](lib/features/dashboard/))
 
 The Dashboard acts as an aggregator view, pulling data from multiple controllers to show a daily summary.
 
@@ -401,15 +572,13 @@ The Dashboard acts as an aggregator view, pulling data from multiple controllers
   - [`lib/features/dashboard/views/widgets/dashboard_reminders_section.dart`](lib/features/dashboard/views/widgets/dashboard_reminders_section.dart): Reminders grid.
   - [`lib/features/dashboard/views/widgets/dashboard_tasks_section.dart`](lib/features/dashboard/views/widgets/dashboard_tasks_section.dart): Upcoming tasks list.
 
-**How it works**:
-It listens to `TaskController`, `ReminderController`, `NoteController`, and `HabitController` to display:
+**Data & communication flow**:
 
-- Today's pending tasks
-- Upcoming reminders
-- Quick access buttons
-- Recent activity stats
+- Reads from multiple controllers via Provider (e.g. `TaskController`, `ReminderController`, `HabitController`, `AnalyticsController`).
+- Each card performs **lightweight projection** of controller data (e.g. filter today’s tasks) but leaves core logic in controllers.
+- Dashboard never writes; it only triggers navigation (e.g. “See all tasks”) or opens editors.
 
-## Firebase (Firestore sync) — setup + layout
+## 6. Firebase (Firestore sync) — setup + layout
 
 Firebase bootstrap exists in [`lib/firebase_setup/firebase_options.dart`](lib/firebase_setup/firebase_options.dart) and is initialized in [`lib/main.dart`](lib/main.dart).
 
@@ -456,7 +625,7 @@ service cloud.firestore {
 }
 ```
 
-## Google Drive (attachments) — setup
+## 7. Google Drive (attachments) — setup
 
 Attachments are stored locally first, then **best-effort uploaded to Google Drive**.
 
@@ -474,7 +643,14 @@ Attachments are stored locally first, then **best-effort uploaded to Google Driv
 
 Drive integration code lives in [`lib/core/services/storage/`](lib/core/services/storage/) (see repo map above).
 
-## Secret debug logs (production-only) — Android + Windows
+### Implementation Details
+
+- [`google_drive_service.dart`](lib/core/services/storage/google_drive_service.dart): **Façade pattern.** The single entry point for all Drive operations. Delegates to auth/folders/files internally.
+- [`google_drive_auth.dart`](lib/core/services/storage/google_drive_auth.dart): **Authentication flow.** Handles the in-app password gate and Google Sign-In.
+- [`drive_auth_store.dart`](lib/core/services/storage/drive_auth_store.dart): **Persistent auth state.** Stores whether the user has authenticated with Drive.
+- [`attachment_storage_service.dart`](lib/core/services/storage/attachment_storage_service.dart): **Local file layout.** Manages where attachments are stored on the device filesystem.
+
+## 8. Secret debug logs (production-only) — Android + Windows
 
 This feature is intentionally hidden and only active in **non-debug builds** (`kDebugMode == false`).
 
@@ -516,27 +692,32 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in [`l
 - Color-coded levels (info/warn/error)
 - Auto-archive to a file every ~30 minutes (clears in-memory logs after archiving)
 
-## Feature-by-feature guide
+## 9. Feature-by-feature guide
 
-## Tasks
+## 9.1 Tasks
 
 ### Tasks Architecture
 
 **Key files:**
 
-- Models: [`lib/features/tasks/models/task.dart`](lib/features/tasks/models/task.dart), `task_attachment.dart`, `task_enums.dart`, `task_editor_result.dart`
+- Models: [`lib/features/tasks/models/task.dart`](lib/features/tasks/models/task.dart), [`task_attachment.dart`](lib/features/tasks/models/task_attachment.dart), [`task_enums.dart`](lib/features/tasks/models/task_enums.dart), [`task_editor_result.dart`](lib/features/tasks/models/task_editor_result.dart)
 - Local storage: [`lib/features/tasks/models/task_local_datasource.dart`](lib/features/tasks/models/task_local_datasource.dart)
 - Repository: [`lib/features/tasks/models/task_repository.dart`](lib/features/tasks/models/task_repository.dart)
-- Controller: [`lib/features/tasks/controllers/task_controller.dart`](lib/features/tasks/controllers/task_controller.dart)
+- Controllers:
+  - [`lib/features/tasks/controllers/task_controller.dart`](lib/features/tasks/controllers/task_controller.dart): Main controller with filter state, queries, and lifecycle management.
+  - [`lib/features/tasks/controllers/task_controller_base.dart`](lib/features/tasks/controllers/task_controller_base.dart): Abstract base class exposing dependencies to mixins.
+  - [`lib/features/tasks/controllers/task_crud_mixin.dart`](lib/features/tasks/controllers/task_crud_mixin.dart): CRUD operations (create, update, delete, toggle).
+  - [`lib/features/tasks/controllers/category_controller.dart`](lib/features/tasks/controllers/category_controller.dart): Category management with `getSortedCategories()` method.
+- Controller Helpers:
+  - [`lib/features/tasks/controllers/helpers/task_sorting_helper.dart`](lib/features/tasks/controllers/helpers/task_sorting_helper.dart): Smart sorting logic (urgent → high priority → normal).
+- View Helpers:
+  - [`lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart`](lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart): Scroll-to-category navigation logic.
 - UI: [`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart)
 - Widgets:
   - [`lib/features/tasks/views/widgets/task_tile.dart`](lib/features/tasks/views/widgets/task_tile.dart)
   - [`lib/features/tasks/views/widgets/task_search_bar.dart`](lib/features/tasks/views/widgets/task_search_bar.dart)
-  - [`lib/features/tasks/views/widgets/task_filter_sheet.dart`](lib/features/tasks/views/widgets/task_filter_sheet.dart)
-  - [`lib/features/tasks/views/widgets/task_editor_dialog.dart`](lib/features/tasks/views/widgets/task_editor_dialog.dart): **Main Task Editor**. Handles creation and editing logic, differentiating it from the list view.
-- Helpers:
-  - [`lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart`](lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart): Manages scroll-to-category navigation logic.
-- [`lib/features/tasks/views/task_detail_sheet/`](lib/features/tasks/views/task_detail_sheet/): Modular components for the task detail bottom sheet (e.g., specific rows for priority, due date).
+  - [`lib/features/tasks/views/widgets/task_editor_dialog.dart`](lib/features/tasks/views/widgets/task_editor_dialog.dart): **Main Task Editor**. Handles creation and editing logic.
+- [`lib/features/tasks/views/task_detail_sheet/`](lib/features/tasks/views/task_detail_sheet/): Modular components for the task detail bottom sheet.
 - [`lib/features/tasks/views/utils/attachment_picker_utils.dart`](lib/features/tasks/views/utils/attachment_picker_utils.dart): Helper for picking files/images.
 
 ### How Tasks work
@@ -546,7 +727,36 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in [`l
 - Attachments (images/voice) are stored locally and best-effort uploaded to Drive.
 - A sync status icon in the Tasks app bar shows queue/sync/conflict state.
 
-## Reminders
+### TaskController Structure (Base + Mixin)
+
+The TaskController is split across three files to keep each file focused:
+
+| File | Purpose |
+|------|---------|
+| [`task_controller_base.dart`](lib/features/tasks/controllers/task_controller_base.dart) | Abstract class defining dependencies (repo, syncService, etc.) |
+| [`task_crud_mixin.dart`](lib/features/tasks/controllers/task_crud_mixin.dart) | CRUD operations ([`createTask:L12`](lib/features/tasks/controllers/task_crud_mixin.dart#L12), [`updateTask:L49`](lib/features/tasks/controllers/task_crud_mixin.dart#L49), [`deleteTask:L82`](lib/features/tasks/controllers/task_crud_mixin.dart#L82), [`toggleCompleted:L96`](lib/features/tasks/controllers/task_crud_mixin.dart#L96)) |
+| [`task_controller.dart`](lib/features/tasks/controllers/task_controller.dart) | Main controller combining both, plus filters/queries/lifecycle ([`L15`](lib/features/tasks/controllers/task_controller.dart#L15)) |
+
+**Why this pattern?**
+
+- **Smaller files**: Each file has one clear responsibility
+- **Mixin reuse**: CRUD logic could be shared with other controllers
+- **Testability**: Can stub the base class to test mixin behavior
+
+For a detailed technical explanation with code examples, see [`technical_concepts.md`](technical_concepts.md) → "Base Class + Mixin Pattern".
+
+### Task Editor UI (`lib/features/task_editor/`)
+
+- **Purpose**: Provides a reusable, rich editing surface for tasks separate from the list.
+- **Key files**:
+  - `task_editor_sheet.dart`: High-level bottom sheet entry point for editing.
+  - `widgets/*`: Modular pieces (header, inputs, selectors, chips, quick options).
+- **Data & communication flow**:
+  - Receives an existing `Task` (for edit) or null (for create) plus callbacks / `TaskController` reference.
+  - Produces a `TaskEditorResult` describing the user’s choices.
+  - Delegates actual persistence to `TaskController`; the editor itself never writes to Hive.
+
+## 9.2 Reminders
 
 ### Reminders Architecture
 
@@ -559,8 +769,8 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in [`l
 
 ### How Reminders work
 
-- Creating/updating schedules a local notification.
-- Completing/deleting cancels the scheduled notification.
+- Creating/updating schedules a local notification via [`ReminderController.create()`](lib/features/reminders/controllers/reminder_controller.dart#L81) and [`update()`](lib/features/reminders/controllers/reminder_controller.dart#L107).
+- Completing/deleting cancels the scheduled notification via [`complete()`](lib/features/reminders/controllers/reminder_controller.dart#L136) and [`delete()`](lib/features/reminders/controllers/reminder_controller.dart#L130).
 
 **Scheduling a reminder notification (typical shape):**
 
@@ -580,12 +790,12 @@ To ensure notifications are delivered reliably (especially on Samsung/Android 12
     - Used for exact notification timing.
     - Works best when the app is running or device is standard Android.
 2. **Secondary (Foreground Accuracy)**: In-App Timer
-    - `ReminderController` runs a 30-second periodic timer while the app is open.
-    - Checks for due reminders and triggers `showNow` immediately.
+    - `ReminderTimerService` runs a periodic timer while the app is open.
+    - Checks for due reminders and triggers [`showNow()`](lib/core/services/notifications/notification_service.dart#L111) immediately.
     - Ensures 100% reliability while the user is using the app.
 3. **Tertiary (Background Safety Net)**: `Workmanager`
     - Runs every ~15 minutes (Android minimum for periodic background jobs).
-    - **Data Flow**: `Workmanager` -> `workmanagerCallbackDispatcher` -> Initialize Hive (Read-Only) -> Check Due Reminders -> Trigger `NotificationService.showNow`.
+    - **Data Flow**: `Workmanager` → [`workmanagerCallbackDispatcher`](lib/core/services/notifications/workmanager_dispatcher.dart) → Initialize Hive (Read-Only) → Check Due Reminders → Trigger `NotificationService.showNow`.
     - Catches any reminders that were missed by the OS alarm manager (e.g. if the app was killed).
 
 **Workmanager dispatcher entry (high-level skeleton):**
@@ -603,7 +813,7 @@ void workmanagerCallbackDispatcher() {
 }
 ```
 
-## Sync + conflict handling
+## 9.3 Sync + conflict handling
 
 ### Sync Architecture
 
@@ -636,32 +846,42 @@ await syncQueue.enqueue(
 );
 ```
 
-## Notes (Rich text + inline voice notes)
+## 9.4 Notes (Rich text + inline voice notes)
 
 ### Notes Architecture
 
 **Key files:**
 
-- Models: [`lib/features/notes/models/note.dart`](lib/features/notes/models/note.dart), `note_attachment.dart`
+- Models: [`lib/features/notes/models/note.dart`](lib/features/notes/models/note.dart), [`lib/features/notes/models/note_attachment.dart`](lib/features/notes/models/note_attachment.dart)
 - Controller: [`lib/features/notes/controllers/note_controller.dart`](lib/features/notes/controllers/note_controller.dart)
-- UI: [`lib/features/notes/views/notes_list_screen.dart`](lib/features/notes/views/notes_list_screen.dart), `note_editor_screen.dart`
+- UI:
+  - [`lib/features/notes/views/notes_list_screen.dart`](lib/features/notes/views/notes_list_screen.dart): List of all notes.
+  - [`lib/features/notes/views/note_editor_screen.dart`](lib/features/notes/views/note_editor_screen.dart): Rich text editor with Quill. **Save button exits editor automatically.**
 - RTL helper: [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart)
 - Voice helper: [`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart)
 
-### Storage format
+### Storage format & Rich Text
 
-- `Note.contentDeltaJson` stores Quill Delta JSON as a String.
-- Voice notes are stored as `NoteAttachment` entries referencing local file paths (and Drive ids when uploaded).
+- **Rich Text Engine**: [flutter_quill](https://pub.dev/packages/flutter_quill)
+- **Data Model**: `Note.contentDeltaJson` stores the document as a **Quill Delta** JSON string.
+  - *Delta* is a format representing changes (inserts, attributes) rather than HTML.
+  - Example: `[{"insert":"Hello\n"}]`
+- **Read-Only Previews**:
+  - The list view and conflict dialogs render previews by parsing the Delta JSON and extracting plain text via `doc.toPlainText()`.
+  - Conflict resolution shows a read-only Quill editor to display formatting without allowing edits.
+- **Voice Notes**:
+  - Stored as `NoteAttachment` entries referencing local file paths.
+  - Synced to Google Drive (best-effort) with a reference ID in the attachment model.
 
-## Habits
+## 9.5 Habits
 
 ### Habits Architecture
 
 **Key files:**
 
-- Models: [`lib/features/habits/models/habit.dart`](lib/features/habits/models/habit.dart), `habit_log.dart`
+- Models: [`lib/features/habits/models/habit.dart`](lib/features/habits/models/habit.dart), [`lib/features/habits/models/habit_log.dart`](lib/features/habits/models/habit_log.dart)
 - Controller: [`lib/features/habits/controllers/habit_controller.dart`](lib/features/habits/controllers/habit_controller.dart)
-- UI: [`lib/features/habits/views/habits_screen.dart`](lib/features/habits/views/habits_screen.dart), `habit_details_screen.dart`
+- UI: [`lib/features/habits/views/habits_screen.dart`](lib/features/habits/views/habits_screen.dart), [`habit_details_screen.dart`](lib/features/habits/views/habit_details_screen.dart)
 - Widgets:
   - [`lib/features/habits/views/widgets/habit_card.dart`](lib/features/habits/views/widgets/habit_card.dart): Styled habit card with keyword-based icon/color mapping.
 
@@ -670,7 +890,7 @@ await syncQueue.enqueue(
 - Each completion is a `HabitLog` keyed by local `YYYY-MM-DD`.
 - Streak is computed by counting consecutive completed days back from today.
 
-## Analytics
+## 9.6 Analytics
 
 ### Analytics Architecture
 
@@ -687,7 +907,7 @@ await syncQueue.enqueue(
 
 Provides basic KPIs and a simple pie chart.
 
-## Calendar
+## 9.7 Calendar
 
 ### Calendar Architecture
 
@@ -699,7 +919,7 @@ Provides basic KPIs and a simple pie chart.
 
 Calendar overlays tasks (due dates) and reminders (scheduled times).
 
-## Settings
+## 9.8 Settings
 
 ### Settings Architecture
 
@@ -724,7 +944,7 @@ Calendar overlays tasks (due dates) and reminders (scheduled times).
 
 Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.
 
-## Theme Customization ([`lib/features/theme_customization/`](lib/features/theme_customization/))
+## 9.9 Theme Customization ([`lib/features/theme_customization/`](lib/features/theme_customization/))
 
 Manages the app's visual style, including dynamic color generation.
 
@@ -733,7 +953,7 @@ Manages the app's visual style, including dynamic color generation.
 - [`lib/features/theme_customization/views/theme_customization_screen.dart`](lib/features/theme_customization/views/theme_customization_screen.dart): UI for selecting colors/modes.
 - [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Defines light/dark theme data.
 
-## Testing + CI
+## 10. Testing + CI
 
 ### Tests
 
@@ -749,7 +969,7 @@ GitHub Actions workflow is at [`.github/workflows/flutter.yml`](.github/workflow
 
 - `flutter pub get; flutter analyze; flutter test`
 
-## Contributor workflow
+## 11. Contributor workflow
 
 ### Adding a new feature module (recommended approach)
 
@@ -767,12 +987,6 @@ GitHub Actions workflow is at [`.github/workflows/flutter.yml`](.github/workflow
 flutter pub get; flutter analyze; flutter test
 flutter build apk; flutter build windows
 ```
-
-## Localization (Removed)
-
-The app previously used Flutter's l10n infrastructure with ARB files. This has been **removed** in favor of hardcoded English strings for simplicity. All UI text is now directly in the Dart code.
-
-If you need to add/modify UI text, simply edit the string literals in the relevant widget files.
 
 ### Why Immutable Models?
 
@@ -796,7 +1010,7 @@ final updatedTask = task.copyWith(title: "New Title");
 3. **Undo/Redo & History**:
     - Immutability makes it trivial to store history snapshots (just keep a list of old objects).
 
-## Deep architecture & implementation guide
+## 12. Deep architecture & implementation guide
 
 This section is a deeper, **implementation-level** walkthrough for new contributors. Read it top‑to‑bottom once, then jump back here as a reference when you build features.
 
@@ -851,33 +1065,159 @@ try {
 }
 ```
 
-## Background services deep dive
+## 12.1 Background services deep dive
 
 ### Connectivity monitoring
 
 - **Files to know**:
   - [`lib/core/services/platform/connectivity_service.dart`](lib/core/services/platform/connectivity_service.dart)
-  - [`lib/core/services/platform/connectivity_status_service.dart`](lib/core/services/platform/connectivity_status_service.dart)
+  - [`lib/core/services/platform/backend_health_checker.dart`](lib/core/services/platform/backend_health_checker.dart)
   - [`lib/core/services/connectivity_monitor_service.dart`](lib/core/services/connectivity_monitor_service.dart)
 - **Responsibilities**:
   - Track whether the device appears online/offline.
   - Provide a higher-level "is the backend ecosystem healthy?" status (Firebase, Drive, local storage checks).
   - Surface connectivity issues via global snackbars so all features benefit.
 
-### Notifications & Workmanager
+### Notifications & Workmanager (Deep Dive)
 
-- **Key components**:
-  - `NotificationService` — encapsulates `flutter_local_notifications` setup and APIs.
-  - `ReminderNotifications` — reminder-specific scheduling helpers.
-  - [`lib/core/services/notifications/workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) — entry point that Workmanager calls in the background.
-- **Lifecycle**:
-  1. App starts → background services initialized → `NotificationService` configures channels and timezone.
-  2. User creates/updates a reminder → `ReminderController` calls scheduling helpers.
-  3. If OS kills the app or misses an alarm:
-     - Workmanager job wakes periodically,
-     - Rebuilds minimal read-only Hive context,
-     - Checks for due reminders,
-     - Fires `NotificationService.showNow` as a safety net.
+The notification system is critical for reminders. Because Android aggressively kills background apps (especially on Samsung/MIUI devices), we use a **hybrid reliability strategy** with three layers of redundancy.
+
+#### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           NOTIFICATION SYSTEM                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────┐   ┌─────────────────────┐   ┌───────────────────┐  │
+│  │   Layer 1: Exact    │   │   Layer 2: Smart    │   │  Layer 3: Safety  │  │
+│  │   (AlarmManager)    │   │   (In-App Timer)    │   │  (Workmanager)    │  │
+│  └──────────┬──────────┘   └──────────┬──────────┘   └─────────┬─────────┘  │
+│             │                         │                        │            │
+│     zonedSchedule()           ReminderTimerService     workmanagerCallback  │
+│   (OS-level alarm)         (Smart targeted timer)       (every ~15 min)     │
+│             │                         │                        │            │
+│             └─────────────────────────┼────────────────────────┘            │
+│                                       ▼                                      │
+│                          ┌─────────────────────────┐                        │
+│                          │   NotificationService   │                        │
+│                          │      showNow() or       │                        │
+│                          │      schedule()         │                        │
+│                          └─────────────────────────┘                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### The Three Layers Explained
+
+| Layer | Trigger | Precision | When It Works | When It Fails |
+|-------|---------|-----------|---------------|---------------|
+| **1. Exact Alarm** | `zonedSchedule()` | Exact time | App running OR device allows background alarms | Samsung/Xiaomi kill the alarm, or exact alarm permission denied |
+| **2. Smart Timer** | `ReminderTimerService` | Exact second | App is open in foreground | App is closed or killed |
+| **3. Workmanager** | Periodic ~15min job | ±15 minutes | App terminated, device allows background work | Device in Doze mode, battery saver extreme |
+
+**Why three layers?**
+
+- Layer 1 is the ideal path but unreliable on aggressive OEMs.
+- Layer 2 guarantees 100% accuracy while the user is in the app.
+- Layer 3 is a "safety net" that catches anything missed by Layers 1-2.
+
+#### Key Files
+
+| File | Purpose | Line Reference |
+|------|---------|----------------|
+| [`notification_service.dart`](lib/core/services/notifications/notification_service.dart) | Core wrapper for `flutter_local_notifications`. Handles init, permissions, scheduling, and showing immediate notifications. | [Class:L10](lib/core/services/notifications/notification_service.dart#L10) |
+| [`reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart) | Abstract interface for reminder-specific notification operations (`schedule`, `cancel`, `showNow`). | [L1-17](lib/core/services/notifications/reminder_notifications.dart#L1) |
+| [`workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) | Top-level callback that Workmanager invokes in the background. Bootstraps Hive, checks due reminders, fires notifications. | [L13](lib/core/services/notifications/workmanager_dispatcher.dart#L13) |
+| [`reminder_timer_service.dart`](lib/features/reminders/services/reminder_timer_service.dart) | In-app Smart Timer service. Finds next due reminder, sleeps exactly until that time, fires, repeats. | [Class:L10](lib/features/reminders/services/reminder_timer_service.dart#L10) |
+
+#### NotificationService Methods
+
+| Method | Purpose | When Called |
+|--------|---------|-------------|
+| [`initialize()`](lib/core/services/notifications/notification_service.dart#L20) | Sets up plugin, notification channel, and timezone. | App startup (in `completeInitialization`) |
+| [`requestPermissionsIfNeeded()`](lib/core/services/notifications/notification_service.dart#L46) | Requests notification + exact alarm permissions on Android. | After initialization |
+| [`schedule()`](lib/core/services/notifications/notification_service.dart#L142) | Schedules a notification for a future time using `zonedSchedule`. | When user creates/updates a reminder |
+| [`showNow()`](lib/core/services/notifications/notification_service.dart#L111) | Shows an immediate notification. | Timer service fires, or Workmanager catches a due reminder |
+| [`cancel()`](lib/core/services/notifications/notification_service.dart#L194) | Cancels a scheduled notification by ID. | When reminder is deleted or completed |
+
+#### Smart Timer Strategy (ReminderTimerService)
+
+The [`ReminderTimerService`](lib/features/reminders/services/reminder_timer_service.dart#L10) uses a **Smart Targeted Timer** approach instead of polling:
+
+```dart
+// Instead of polling every 30 seconds (wastes CPU)...
+// We calculate exactly when the next reminder is due:
+
+void scheduleNextCheck() {
+  final activeReminders = _repo.getAll().where(...).toList();
+  activeReminders.sort((a, b) => a.time.compareTo(b.time));
+  
+  final nextReminder = activeReminders.firstWhere((r) => r.time.isAfter(now));
+  final waitDuration = nextReminder.time.difference(now);
+  
+  _smartTimer = Timer(waitDuration, () {
+    _fireImmediate(nextReminder);
+    scheduleNextCheck(); // Recursively schedule next
+  });
+}
+```
+
+**Benefits:**
+
+- **0% CPU usage** while waiting (timer is dormant)
+- **100% time precision** (fires on the exact second)
+- Must be reset whenever reminders are created/updated/deleted
+
+#### Workmanager Background Flow
+
+When the OS kills the app, Workmanager runs periodically (~15 min minimum on Android) as a safety net:
+
+```
+workmanagerCallbackDispatcher() (top-level function)
+    │
+    ├─▶ 1. WidgetsFlutterBinding.ensureInitialized()
+    │
+    ├─▶ 2. NotificationService().initialize()
+    │
+    ├─▶ 3. Hive.init() + registerAdapter(ReminderAdapter)
+    │
+    ├─▶ 4. Hive.openBox<Reminder>(HiveBoxes.reminders)
+    │
+    └─▶ 5. handleBackgroundCheck()
+            │
+            ├─▶ Query: Incomplete reminders due within last 46 min
+            │
+            └─▶ For each: notifications.showNow()
+```
+
+**Spam Prevention:** We only fire notifications for reminders due within the last 46 minutes. This prevents Workmanager from nagging about very old missed reminders every 15 minutes.
+
+#### Android Permission Considerations
+
+| Permission | Required For | How to Request |
+|------------|--------------|----------------|
+| `POST_NOTIFICATIONS` | Showing any notification (Android 13+) | `requestNotificationsPermission()` |
+| `SCHEDULE_EXACT_ALARM` | Using exact timing with `zonedSchedule` (Android 12+) | `requestExactAlarmsPermission()` or prompt user to Settings |
+
+If exact alarm permission is denied, the service falls back to `AndroidScheduleMode.inexactAllowWhileIdle`, which may have slight timing variations but still works.
+
+#### Initialization Sequence
+
+```
+main.dart
+    │
+    └─▶ AppInitializer.completeInitialization()
+            │
+            ├─▶ NotificationService().initialize()
+            │       ├─▶ _plugin.initialize()
+            │       ├─▶ tz.initializeTimeZones()
+            │       └─▶ tz.setLocalLocation(userTimezone)
+            │
+            ├─▶ Workmanager().initialize(workmanagerCallbackDispatcher)
+            │
+            └─▶ Workmanager().registerPeriodicTask('reminder_check', ...)
+```
 
 ### Storage & Google Drive
 
@@ -889,7 +1229,7 @@ try {
   - Authentication state is handled separately ([`lib/core/services/storage/drive_auth_store.dart`](lib/core/services/storage/drive_auth_store.dart) and [`lib/core/services/storage/google_drive_auth.dart`](lib/core/services/storage/google_drive_auth.dart)).
   - Failed uploads should never block core functionality; they only affect cloud availability.
 
-## Feature deep dives
+## 12.2 Feature deep dives
 
 ### Tasks — lifecycle, lists, and editor
 
@@ -951,7 +1291,7 @@ try {
   - The editor converts between Delta and the UI representation; note entities only know about the JSON string.
 - **Voice embeddings**:
   - Voice note files are stored locally and referenced by `NoteAttachment`.
-  - The editor and supporting services are responsible for:
+  - The editor and supporting services (specifically `NoteEmbedService`) are responsible for:
     - Recording / picking audio,
     - Saving it to the correct folder,
     - Creating/updating the associated `NoteAttachment`,
@@ -987,7 +1327,7 @@ try {
   - Maps them into a unified day/time-slot model.
   - Optionally syncs with the device calendar (through `DeviceCalendarService`) if enabled by user.
 
-## How to implement common changes
+## 12.3 How to implement common changes
 
 ### Add a new field to an existing model (e.g., `Task`)
 
@@ -1031,7 +1371,7 @@ try {
    - The Workmanager dispatcher for background jobs.
 4. Log start/end + any notable outcomes using `DebugLoggerService`.
 
-## Coding style & project conventions
+## 12.4 Coding style & project conventions
 
 - **Dart & Flutter style**:
   - Follow `dart format` defaults.
@@ -1048,7 +1388,7 @@ try {
   - Prefer non-nullable fields with sensible defaults where possible.
   - Use nullable fields only when a value is truly optional, and handle them explicitly in UI.
 
-## Glossary (quick reference)
+## 12.5 Glossary (quick reference)
 
 - **Hive**: Local key-value store used as the app’s primary source of truth.
 - **SyncOperation**: A queued instruction describing what needs to be synchronized with Firestore.
@@ -1057,282 +1397,3 @@ try {
 - **Service**: Cross-cutting infrastructure (notifications, connectivity, storage, debug logging, etc.).
 - **Attachment**: Any non-text asset (image, audio, file) associated with a Task or Note.
 - **Background service**: Long-lived object outside of widget tree that listens to system/app events and reacts (e.g. connectivity monitor).
-
-## Per-feature walkthroughs ([`lib/features/…`](lib/features/))
-
-This section mirrors the `lib/features` folder and explains **what each feature does**, **how its pieces talk to each other**, and **how data flows through it**.
-
-### [`features/wrapper`](lib/features/wrapper/) — app shell & navigation
-
-- **Purpose**: Provides the persistent shell around the whole app (drawer + bottom navigation).
-- **Key files**:
-  - [`lib/features/wrapper/views/app_wrapper.dart`](lib/features/wrapper/views/app_wrapper.dart): Top-level `Scaffold` with `Drawer` and a body that hosts the current route from `go_router`.
-  - [`lib/features/wrapper/views/app_drawer.dart`](lib/features/wrapper/views/app_drawer.dart): The side drawer with navigation items.
-  - [`lib/features/wrapper/views/nav_bar_wrappers/`](lib/features/wrapper/views/nav_bar_wrappers/): Abstractions around different nav bar visual styles.
-  - [`lib/features/wrapper/views/widgets/nav_bar_builder.dart`](lib/features/wrapper/views/widgets/nav_bar_builder.dart) and [`lib/features/wrapper/views/widgets/drawer_item.dart`](lib/features/wrapper/views/widgets/drawer_item.dart): Small helpers to make the shell composable.
-- **Data & communication flow**:
-  - Does **not** own business data; it delegates to child routes.
-  - Reads the current route from the router and displays the appropriate screen.
-  - Routes deeper into feature screens where controllers provide actual state.
-
-### [`features/splash`](lib/features/splash/) — app initialization
-
-- **Purpose**: Orchestrates app startup so the user sees a controlled Splash instead of a blank screen.
-- **Key files**:
-  - [`lib/features/splash/controllers/app_initializer.dart`](lib/features/splash/controllers/app_initializer.dart): Implements the two-phase initialization (`initializeCritical` then `completeInitialization`).
-  - [`lib/features/splash/controllers/provider_factory.dart`](lib/features/splash/controllers/provider_factory.dart): Central place to create and wire controllers/providers.
-  - [`lib/features/splash/views/splash_wrapper.dart`](lib/features/splash/views/splash_wrapper.dart): Hosts the Splash UI while initialization runs.
-  - [`lib/features/splash/views/splash_screen.dart`](lib/features/splash/views/splash_screen.dart): Visual splash screen.
-- **Data & communication flow**:
-  - Startup sequence:
-    1. [`lib/main.dart`](lib/main.dart) calls `AppInitializer.initializeCritical()` before `runApp`.
-    2. After the root widget tree is ready, `completeInitialization()` is called from the Splash layer using `ProviderFactory` to construct controllers and repositories.
-    3. Once everything is initialized, navigation transitions to the main `Wrapper`/Dashboard route.
-  - Any failure in critical initialization is treated as fatal; failures in non-critical init are surfaced via snackbars or debug logs.
-
-### [`features/dashboard`](lib/features/dashboard/) — daily summary
-
-- **Purpose**: Aggregates information from tasks, reminders, habits, and analytics into a single home screen.
-- **Key files**:
-  - [`lib/features/dashboard/views/dashboard_screen.dart`](lib/features/dashboard/views/dashboard_screen.dart): Main widget that composes multiple dashboard cards.
-  - Widgets: [`lib/features/dashboard/views/widgets/daily_progress_card.dart`](lib/features/dashboard/views/widgets/daily_progress_card.dart), [`lib/features/dashboard/views/widgets/upcoming_task_card.dart`](lib/features/dashboard/views/widgets/upcoming_task_card.dart), [`lib/features/dashboard/views/widgets/quick_reminder_card.dart`](lib/features/dashboard/views/widgets/quick_reminder_card.dart), [`lib/features/dashboard/views/widgets/stat_card.dart`](lib/features/dashboard/views/widgets/stat_card.dart).
-- **Data & communication flow**:
-  - Reads from multiple controllers via Provider (e.g. `TaskController`, `ReminderController`, `HabitController`, `AnalyticsController`).
-  - Each card performs **lightweight projection** of controller data (e.g. filter today’s tasks) but leaves core logic in controllers.
-  - Dashboard never writes; it only triggers navigation (e.g. “See all tasks”) or opens editors.
-
-### [`features/tasks`](lib/features/tasks/) — tasks domain
-
-- **Purpose**: Owns everything related to tasks: models, categories, CRUD, lists, detail views, and attachment handling.
-- **Key files**:
-  - Controllers:
-    - [`lib/features/tasks/controllers/task_controller.dart`](lib/features/tasks/controllers/task_controller.dart): Main task business logic and list state.
-    - [`lib/features/tasks/controllers/category_controller.dart`](lib/features/tasks/controllers/category_controller.dart): Category and subcategory management.
-    - [`lib/features/tasks/controllers/task_crud_mixin.dart`](lib/features/tasks/controllers/task_crud_mixin.dart): Reusable CRUD helpers shared by controllers.
-    - [`lib/features/tasks/controllers/attachment_helper.dart`](lib/features/tasks/controllers/attachment_helper.dart): Helpers around task attachments and their life cycle.
-  - Models / data:
-    - [`lib/features/tasks/models/task.dart`](lib/features/tasks/models/task.dart), [`lib/features/tasks/models/task_attachment.dart`](lib/features/tasks/models/task_attachment.dart), [`lib/features/tasks/models/task_enums.dart`](lib/features/tasks/models/task_enums.dart), [`lib/features/tasks/models/task_editor_result.dart`](lib/features/tasks/models/task_editor_result.dart).
-    - [`lib/features/tasks/models/task_local_datasource.dart`](lib/features/tasks/models/task_local_datasource.dart): Hive access for tasks.
-    - [`lib/features/tasks/models/task_repository.dart`](lib/features/tasks/models/task_repository.dart): High-level repository responsible for fetching/persisting with proper flags and sync queue updates.
-    - [`lib/features/tasks/models/category.dart`](lib/features/tasks/models/category.dart), [`lib/features/tasks/models/category_sort_option.dart`](lib/features/tasks/models/category_sort_option.dart), [`lib/features/tasks/models/task_sort_option.dart`](lib/features/tasks/models/task_sort_option.dart).
-  - Views:
-    - [`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart): Main list view for tasks.
-    - [`lib/features/tasks/views/utils/`](lib/features/tasks/views/utils/): Utilities for attachments, date formatting, etc.
-    - [`lib/features/tasks/views/widgets/`](lib/features/tasks/views/widgets/): All UI components (tiles, sections, drawers, editors).
-- **Data & communication flow**:
-  - [`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart) subscribes to `TaskController` and `CategoryController` via Provider.
-  - User interactions (create/edit/delete, change status, move category) call into `TaskController` methods.
-  - `TaskController` delegates:
-    - Persistence to `TaskRepository` → `TaskLocalDataSource` → Hive.
-    - Attachments to `AttachmentStorageService` (core service) via helpers.
-    - Sync responsibilities (set `isDirty`, enqueue `SyncOperation`).
-  - Views such as [`lib/features/tasks/views/widgets/lists/grouped_task_list.dart`](lib/features/tasks/views/widgets/lists/grouped_task_list.dart) + section widgets transform `List<Task>` from the controller into grouped UI by due date, status, and category without touching Hive directly.
-
-### `features/task_editor` — task editing UI
-
-- **Purpose**: Provides a reusable, rich editing surface for tasks separate from the list.
-- **Key files**:
-  - `task_editor_sheet.dart`: High-level bottom sheet entry point for editing.
-  - `widgets/*`: Modular pieces (header, inputs, selectors, chips, quick options).
-- **Data & communication flow**:
-  - Receives an existing `Task` (for edit) or null (for create) plus callbacks / `TaskController` reference.
-  - Produces a `TaskEditorResult` describing the user’s choices.
-  - Delegates actual persistence to `TaskController`; the editor itself never writes to Hive.
-
-### [`features/reminders`](lib/features/reminders/) — reminders domain
-
-- **Purpose**: Manages reminder entities and the link between reminder data and notification scheduling.
-- **Key files**:
-  - [`lib/features/reminders/models/reminder.dart`](lib/features/reminders/models/reminder.dart): Core reminder entity.
-  - [`lib/features/reminders/controllers/reminder_controller.dart`](lib/features/reminders/controllers/reminder_controller.dart): Business logic and in-memory list.
-  - [`lib/features/reminders/views/reminders_screen.dart`](lib/features/reminders/views/reminders_screen.dart): List and management UI.
-- **Data & communication flow**:
-  - [`lib/features/reminders/views/reminders_screen.dart`](lib/features/reminders/views/reminders_screen.dart) reads the list of reminders from `ReminderController`.
-  - When a reminder is created/updated/deleted:
-    - Controller persists to Hive (through its data layer),
-    - Calls `NotificationService` / `ReminderNotifications` to schedule or cancel OS-level notifications,
-    - Ensures any in-app timer logic is updated so callbacks fire correctly while app is open.
-  - Background Workmanager jobs use core notification logic to catch missed reminders, sharing common code paths where possible.
-
-### [`features/notes`](lib/features/notes/) — rich notes domain
-
-- **Purpose**: Rich text + embedded audio notes with optional sync and attachments.
-- **Key files**:
-  - [`lib/features/notes/controllers/note_controller.dart`](lib/features/notes/controllers/note_controller.dart): In-memory list, filtering/search, CRUD.
-  - [`lib/features/notes/models/`](lib/features/notes/models/): Note entities and attachments (including voice note references).
-  - [`lib/features/notes/views/notes_list_screen.dart`](lib/features/notes/views/notes_list_screen.dart), `note_editor_screen.dart`: List and editor UIs.
-  - [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart): Smart text direction helper.
-- **Data & communication flow**:
-  - User opens note list → `NoteController` loads notes from Hive via its data layer.
-  - When creating/editing:
-    - Editor converts the Quill-style Delta content to JSON (`contentDeltaJson`) and passes to controller.
-    - Controller persists entity and updates any sync queue entries.
-  - Voice notes:
-    - `NoteEmbedService` coordinates recording/picking audio and storing files.
-    - `NoteAttachment` tracks local paths and Drive IDs.
-
-### [`features/habits`](lib/features/habits/) — habits + streaks
-
-- **Purpose**: Tracks recurring habits and daily completions.
-- **Key files**:
-  - [`lib/features/habits/controllers/habit_controller.dart`](lib/features/habits/controllers/habit_controller.dart): Core business logic and view state.
-  - Models:
-    - [`lib/features/habits/models/habit.dart`](lib/features/habits/models/habit.dart), `habit_log.dart`: Main entities.
-    - `habit_local_datasource.dart`, `habit_log_local_datasource.dart`: Hive access.
-    - `habit_repository.dart`, `habit_log_repository.dart`: Repositories.
-  - Views:
-    - [`lib/features/habits/views/habits_screen.dart`](lib/features/habits/views/habits_screen.dart), `habit_details_screen.dart`, dialog widgets, tiles.
-- **Data & communication flow**:
-  - User marks a habit as done for a date → `HabitController` writes a `HabitLog` via repository.
-  - Controller recomputes streaks and exposes them to the UI.
-  - Analytics feature can read habit data (through controller or repository) to show progress charts.
-
-### [`features/analytics`](lib/features/analytics/) — KPIs and charts
-
-- **Purpose**: Visualizes KPIs around tasks and habits.
-- **Key files**:
-  - [`lib/features/analytics/controllers/analytics_controller.dart`](lib/features/analytics/controllers/analytics_controller.dart): Central place to compute aggregates.
-  - [`lib/features/analytics/utils/analytics_utils.dart`](lib/features/analytics/utils/analytics_utils.dart): Shared math/utility functions.
-  - [`lib/features/analytics/views/analytics_screen.dart`](lib/features/analytics/views/analytics_screen.dart) and widget files (charts, legend, quick stats).
-- **Data & communication flow**:
-  - Analytics controller subscribes to / queries from Task and Habit controllers/repositories.
-  - Computes:
-    - Counts of pending vs completed tasks,
-    - Habit completion rates,
-    - Velocity or trend metrics as applicable.
-  - Widgets bind to simple view models (e.g. `List<ChartSlice>`) rather than raw entities.
-
-### [`features/calendar`](lib/features/calendar/) — calendar overlay
-
-- **Purpose**: Consolidates time-based data (tasks with due dates + reminders) into a unified calendar view.
-- **Key files**:
-  - [`lib/features/calendar/controllers/calendar_controller.dart`](lib/features/calendar/controllers/calendar_controller.dart): Maps domain entities into calendar events.
-  - [`lib/features/calendar/views/calendar_screen.dart`](lib/features/calendar/views/calendar_screen.dart): Calendar UI and interactions.
-  - [`lib/features/calendar/views/widgets/calendar_event_tile.dart`](lib/features/calendar/views/widgets/calendar_event_tile.dart): Event representation.
-- **Data & communication flow**:
-  - Controller reads from Task and Reminder data sources (or controllers) and produces a stream/list of calendar events.
-  - Optionally syncs with device calendar via `DeviceCalendarService` when user enables it in Settings.
-  - UI selects a date/time slot and triggers navigation to the related entity detail (task/reminder).
-
-### [`features/settings`](lib/features/settings/) — configuration & diagnostics
-
-- **Purpose**: Central place for toggles (theme, sync, notifications, Drive, connectivity checks, etc.).
-- **Key files** (see earlier section for more detail):
-  - [`lib/features/settings/controllers/settings_controller.dart`](lib/features/settings/controllers/settings_controller.dart) and related helpers/mixins.
-  - [`lib/features/settings/views/settings_screen.dart`](lib/features/settings/views/settings_screen.dart) and its `views/sections/*` widgets.
-- **Data & communication flow**:
-  - Settings controller persists configuration to local storage (Hive/SharedPreferences).
-  - Other services/controllers read settings on startup or listen for changes to alter behavior (e.g. disabling sync, changing theme).
-
-### [`features/theme_customization`](lib/features/theme_customization/) — theming UX
-
-- **Purpose**: UX for choosing themes, colors, and nav bar styles.
-- **Key files**:
-  - [`lib/features/theme_customization/views/theme_customization_screen.dart`](lib/features/theme_customization/views/theme_customization_screen.dart): Main entry point.
-  - `views/widgets/colors/*`, `nav_bar_styles/*`, `presets/*`, `preview/*`: Smaller widgets and config structures.
-- **Data & communication flow**:
-  - Reads/writes via `ThemeService` and `SettingsController` (for persisted theme prefs).
-  - Generates preview state that is applied to `AppTheme` before persisting.
-
-### [`features/sync`](lib/features/sync/) — sync UI
-
-- **Purpose**: UI representation of sync state and conflict resolution.
-- **Key files**:
-  - [`lib/features/sync/controllers/sync_controller.dart`](lib/features/sync/controllers/sync_controller.dart): Tracks sync state (queue size, last sync time, current status).
-  - [`lib/features/sync/views/sync_status_widget.dart`](lib/features/sync/views/sync_status_widget.dart): Icon/button that shows sync progress or problems.
-  - [`lib/features/sync/views/conflict_resolution_dialog.dart`](lib/features/sync/views/conflict_resolution_dialog.dart): Dialog for resolving task-related conflicts.
-- **Data & communication flow**:
-  - `SyncController` subscribes to `SyncService` (core service) and to queue metadata stored in Hive.
-  - When conflicts are detected, controller launches appropriate dialogs (tasks vs notes) and passes conflicting entities.
-  - User choices are persisted through repositories and may generate additional sync operations.
-
-## Per-service walkthroughs ([`lib/core/services/…`](lib/core/services/))
-
-This section covers infrastructure services and how they interact with features and each other.
-
-### Connectivity services
-
-- **[`lib/core/services/platform/connectivity_service.dart`](lib/core/services/platform/connectivity_service.dart)**:
-  - Thin wrapper around platform APIs (e.g. connectivity_plus).
-  - Exposes a stream of connectivity changes and a way to query current status.
-- **[`lib/core/services/platform/connectivity_status_service.dart`](lib/core/services/platform/connectivity_status_service.dart)**:
-  - Builds on `ConnectivityService` to perform **deeper health checks** (can we reach Firebase? is Drive authenticated? are Hive boxes open?).
-  - Produces a richer status model consumed by Settings and debug UIs.
-- **[`lib/core/services/connectivity_monitor_service.dart`](lib/core/services/connectivity_monitor_service.dart)**:
-  - Background service that subscribes to connectivity streams and health checks.
-  - Shows snackbars via `CommonSnackbar.showGlobal()` when connectivity status changes (e.g. “Offline mode”, “Back online”).  
-  - Helps all features behave consistently in offline/online transitions.
-
-### Debug logging services
-
-- **Files**: [`lib/core/services/debug/debug_logger_service.dart`](lib/core/services/debug/debug_logger_service.dart), [`lib/core/services/debug/debug_log_archiver.dart`](lib/core/services/debug/debug_log_archiver.dart), [`lib/core/services/debug/debug_log_archiver_io.dart`](lib/core/services/debug/debug_log_archiver_io.dart), [`lib/core/services/debug/debug_log_archiver_stub.dart`](lib/core/services/debug/debug_log_archiver_stub.dart).
-- **Responsibilities**:
-  - Provide a central API for logging structured debug messages.
-  - Keep an in-memory ring buffer (up to N entries) for the overlay.
-  - Periodically archive logs to disk on supported platforms via the IO implementation.
-  - Use a stub implementation on platforms where IO isn’t available.
-- **Data & communication flow**:
-  - Any part of the app can log via `DebugLoggerService` (injected where needed).
-  - `GlobalDebugOverlay` reads from logger and archives to present logs to the user.
-
-### Note embed service
-
-- **[`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart)**:
-  - Coordinates embedding of media (especially voice notes) into notes.
-  - Provides a higher-level API so note UI doesn’t have to know about file system paths or Drive IDs.
-  - Talks to `AttachmentStorageService` and Drive services when necessary.
-
-### Notification services
-
-- **[`lib/core/services/notifications/notification_service.dart`](lib/core/services/notifications/notification_service.dart)**:
-  - Encapsulates `flutter_local_notifications` initialization and channel setup.
-  - Provides methods for scheduling, updating, canceling, and showing notifications immediately.
-- **[`lib/core/services/notifications/reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart)**:
-  - Reminder-specific helpers for building notification payloads and IDs.
-  - Implements conventions like how notification IDs map to reminder IDs.
-- **[`lib/core/services/notifications/workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart)**:
-  - Entry function invoked by Workmanager in the background.
-  - Initializes minimal app context (Hive, notification plugin, time zones) and executes the reminder catch-up logic.
-- **Data & communication flow**:
-  - UI → `ReminderController` → `NotificationService`/`ReminderNotifications` for scheduling.
-  - System (Workmanager) → [`lib/core/services/notifications/workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) → same notification paths for missed reminders.
-
-### Platform services
-
-- **[`lib/core/services/platform/device_calendar_service.dart`](lib/core/services/platform/device_calendar_service.dart)**:
-  - Wraps platform calendar APIs with a simplified interface (create/read events, request permissions).
-  - Used by Calendar feature and possibly Settings.
-- **[`lib/core/services/platform/permission_service.dart`](lib/core/services/platform/permission_service.dart)**:
-  - Central authority for requesting/checking runtime permissions (notifications, calendar, storage, microphone, etc.).
-  - Features should avoid calling platform permission APIs directly; go through this service.
-
-### Storage & Google Drive services
-
-- **[`lib/core/services/storage/attachment_storage_service.dart`](lib/core/services/storage/attachment_storage_service.dart)**:
-  - Defines the on-disk layout for attachments (by feature/entity).
-  - Provides APIs for saving, reading, and deleting files.
-- **[`lib/core/services/storage/google_drive_service.dart`](lib/core/services/storage/google_drive_service.dart)**:
-  - High-level facade for Drive operations: ensure folders exist, upload/download/list/delete files.
-  - Hides the details of API clients, folder structure, and error handling.
-- **Supporting files**:
-  - [`lib/core/services/storage/google_drive_api_client.dart`](lib/core/services/storage/google_drive_api_client.dart): Creates the authenticated HTTP client for Drive.
-  - [`lib/core/services/storage/google_drive_auth.dart`](lib/core/services/storage/google_drive_auth.dart): Orchestrates sign-in, sign-out, and token refresh flows.
-  - [`lib/core/services/storage/drive_auth_store.dart`](lib/core/services/storage/drive_auth_store.dart): Persists auth state locally (e.g. tokens, last sign-in).
-  - [`lib/core/services/storage/drive_auth_exception.dart`](lib/core/services/storage/drive_auth_exception.dart): Typed exception for “auth required” and related cases.
-  - [`lib/core/services/storage/google_drive_folders.dart`](lib/core/services/storage/google_drive_folders.dart), [`lib/core/services/storage/google_drive_files.dart`](lib/core/services/storage/google_drive_files.dart): Low-level helpers for specific Drive operations.
-- **Data & communication flow**:
-  - Feature controllers request uploads/downloads via `GoogleDriveService`.
-  - `GoogleDriveService` checks auth state via `DriveAuthStore`; if missing/expired, it triggers `GoogleDriveAuth` to resolve.
-  - On success, Drive file IDs are written back to entities stored in Hive (e.g. `TaskAttachment`, `NoteAttachment`), enabling future sync.
-
-### Sync service
-
-- **[`lib/core/services/sync/sync_service.dart`](lib/core/services/sync/sync_service.dart)**:
-  - The central engine that processes `SyncOperation` entries and coordinates Firestore interactions.
-  - Steps for a typical sync:
-    1. Read queued `SyncOperation`s from Hive.
-    2. For each operation, map local entities to Firestore documents and push changes.
-    3. Fetch remote changes since last sync timestamp.
-    4. Apply remote changes to Hive, resolving conflicts or marking them for user resolution.
-    5. Update sync metadata (last sync timestamp, queue size).
-  - Exposes status updates for `SyncController` and may emit progress events for UI.

@@ -12,17 +12,8 @@ import 'package:nexus/features/notes/models/note.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';
 
-// =============================================================================
-// SYNC CONFLICT MODEL
-// =============================================================================
-
 /// Represents a conflict between local and remote versions of an entity.
-///
-/// Conflicts occur when:
-/// 1. Local entity has unsynced changes (isDirty = true)
-/// 2. Remote entity was updated after our last sync
-///
-/// The UI can subscribe to conflict streams and present resolution options.
+/// See `developer_README.md` (Section 9.3) for conflict logic.
 class SyncConflict<T> {
   SyncConflict({
     required this.entityId,
@@ -35,39 +26,14 @@ class SyncConflict<T> {
   final T remote;
 }
 
-// =============================================================================
-// SYNC SERVICE
-// =============================================================================
-
 /// Core synchronization service for offline-first data management.
 ///
-/// ## Architecture Overview
-/// ```
-/// User Action → Local Write (Hive) → Queue SyncOperation → Push to Firestore
-///                                                              ↓
-/// UI Updated ← Local Write (Hive) ← Pull from Firestore ← Network Restored
-/// ```
-///
-/// ## Key Responsibilities
-/// - **Auto-sync**: Listens to connectivity changes, syncs when online
-/// - **Push queue**: Sends pending local changes to Firestore
-/// - **Pull updates**: Fetches remote changes since last sync
-/// - **Conflict detection**: Identifies and emits sync conflicts for resolution
-///
-/// ## Usage
+/// Core synchronization service.
+/// See `developer_README.md` (Section 9.3) for full architecture and usage.
 /// ```dart
-/// final syncService = SyncService(
-///   firestore: FirebaseFirestore.instance,
-///   connectivity: connectivityService,
-///   deviceId: 'device-123',
-/// );
-/// syncService.startAutoSync(); // Call once at app startup
-/// ```
-class SyncService {
-  // ---------------------------------------------------------------------------
-  // Constructor & Dependencies
-  // ---------------------------------------------------------------------------
 
+class SyncService {
+  // Constructor & Dependencies
   SyncService({
     required FirebaseFirestore firestore,
     required ConnectivityService connectivity,
@@ -82,10 +48,7 @@ class SyncService {
   /// Device ID stamped on all synced documents for conflict detection.
   final String _deviceId;
 
-  // ---------------------------------------------------------------------------
   // Conflict Streams
-  // ---------------------------------------------------------------------------
-
   /// Stream of task conflicts detected during pull operations.
   /// Subscribe to this in your UI to show conflict resolution dialogs.
   final _conflictsController =
@@ -99,27 +62,18 @@ class SyncService {
   Stream<List<SyncConflict<Note>>> get noteConflictsStream =>
       _noteConflictsController.stream;
 
-  // ---------------------------------------------------------------------------
   // Sync State
-  // ---------------------------------------------------------------------------
-
   /// Guards against concurrent sync operations.
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  // ---------------------------------------------------------------------------
   // Firestore Collection References
-  // ---------------------------------------------------------------------------
-
   CollectionReference<Map<String, dynamic>> get _tasksCol =>
       _firestore.collection('tasks');
   CollectionReference<Map<String, dynamic>> get _notesCol =>
       _firestore.collection('notes');
 
-  // ===========================================================================
   // PUBLIC API
-  // ===========================================================================
-
   /// Starts automatic sync when connectivity is restored.
   ///
   /// Call this **once** at app startup. Sets up a listener on the connectivity
@@ -167,10 +121,7 @@ class SyncService {
     }
   }
 
-  // ===========================================================================
   // PUSH OPERATIONS (Local → Firestore)
-  // ===========================================================================
-
   /// Processes all pending sync operations in queue order.
   ///
   /// Operations are sorted by [createdAt] to maintain causality (e.g., create
@@ -266,10 +217,7 @@ class SyncService {
     }
   }
 
-  // ===========================================================================
   // PULL OPERATIONS (Firestore → Local)
-  // ===========================================================================
-
   /// Pulls task updates from Firestore since last sync.
   ///
   /// Uses incremental sync: only fetches documents with `updatedAt` greater
@@ -377,10 +325,7 @@ class SyncService {
     }
   }
 
-  // ===========================================================================
   // SYNC METADATA
-  // ===========================================================================
-
   /// Updates the last successful sync timestamp.
   ///
   /// This timestamp is used for incremental pulls: next sync will only fetch

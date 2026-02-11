@@ -37,7 +37,7 @@ class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
       // JSON snapshot of the entity (e.g., full Task or Note) for retry support.
       data: (fields[4] as Map?)?.cast<String, dynamic>(),
       retryCount: (fields[5] as int?) ?? 0,
-      createdAt: fields[6] as DateTime,
+      createdAt: (fields[6] as DateTime?) ?? DateTime.now(),
       lastAttemptAt: fields[7] as DateTime?,
       status: (fields[8] as int?) ?? SyncOperationStatus.pending.index,
     );
