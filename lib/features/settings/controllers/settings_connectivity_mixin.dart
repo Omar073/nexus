@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/services/platform/connectivity_status_service.dart';
+import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/features/settings/controllers/settings_connectivity_helper.dart';
 
 /// Mixin providing connectivity state management for settings screen.

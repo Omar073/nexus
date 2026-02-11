@@ -27,7 +27,8 @@ import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
 import 'package:nexus/firebase_setup/firebase_options.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:nexus/features/splash/models/initialization_results.dart';
+import 'package:nexus/features/splash/models/app_initialization_result.dart';
+import 'package:nexus/features/splash/models/critical_initialization_result.dart';
 
 /// Service responsible for initializing app dependencies
 class AppInitializer {
@@ -43,7 +44,6 @@ class AppInitializer {
   /// Returns [CriticalInitializationResult] with minimal providers
   /// Throws if critical initialization fails
   static Future<CriticalInitializationResult> initializeCritical() async {
-    // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -52,19 +52,15 @@ class AppInitializer {
       persistenceEnabled: true,
     );
 
-    // Initialize Hive
     await Hive.initFlutter();
     HiveBootstrap.registerAdapters();
     await HiveBootstrap.openBoxes();
 
-    // Create or get device ID
     final deviceId = await DeviceIdStore().getOrCreate();
 
-    // Load settings (needed for theme)
     final settingsController = SettingsController();
     await settingsController.load();
 
-    // Initialize basic services
     final connectivityService = ConnectivityService();
     final permissionService = PermissionService();
 
@@ -85,24 +81,19 @@ class AppInitializer {
   /// - Google Drive service
   /// - All repositories
   /// - All controllers
-  ///
-  /// Returns [AppInitializationResult] with all providers
   static Future<AppInitializationResult> completeInitialization(
     CriticalInitializationResult critical,
   ) async {
-    // Initialize sync service
     final syncService = SyncService(
       firestore: FirebaseFirestore.instance,
       connectivity: critical.connectivityService,
       deviceId: critical.deviceId,
     );
 
-    // Initialize notification service (can be slow)
     final notificationService = NotificationService();
     await notificationService.initialize();
     await notificationService.requestPermissionsIfNeeded();
 
-    // Android-only: periodic background hook (can be slow)
     if (!kIsWeb && Platform.isAndroid) {
       await Workmanager().initialize(workmanagerCallbackDispatcher);
       await Workmanager().registerPeriodicTask(
@@ -112,17 +103,14 @@ class AppInitializer {
       );
     }
 
-    // Initialize Google Drive service (lazy-loaded when needed)
     final googleDriveService = GoogleDriveService();
 
-    // Initialize repositories (lightweight, but can be deferred)
     final taskRepo = TaskRepository();
     final reminderRepo = ReminderRepository();
     final noteRepo = NoteRepository();
     final habitRepo = HabitRepository();
     final habitLogRepo = HabitLogRepository();
 
-    // Initialize controllers (can be deferred until screens are accessed)
     final taskController = TaskController(
       repo: taskRepo,
       syncService: syncService,

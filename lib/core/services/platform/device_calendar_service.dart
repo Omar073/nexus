@@ -1,12 +1,13 @@
 import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+//todo: can we add optional integration to google calendar to import / export events
 /// Minimal device calendar export/import helper.
 ///
 /// Phase 3 scope: list calendars + create events. Import can be added later.
 class DeviceCalendarService {
   DeviceCalendarService({DeviceCalendarPlugin? plugin})
-      : _plugin = plugin ?? DeviceCalendarPlugin();
+    : _plugin = plugin ?? DeviceCalendarPlugin();
 
   final DeviceCalendarPlugin _plugin;
 
@@ -43,4 +44,3 @@ class DeviceCalendarService {
     return result.data;
   }
 }
-

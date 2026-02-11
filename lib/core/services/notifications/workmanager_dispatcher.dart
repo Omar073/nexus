@@ -4,7 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/services/notifications/notification_service.dart';
-import 'package:nexus/features/reminders/models/reminder.dart'; // Ensure this exports the Adapter too or import it
+import 'package:nexus/features/reminders/models/reminder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 

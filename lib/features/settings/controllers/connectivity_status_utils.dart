@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/services/platform/connectivity_status_service.dart';
+import 'package:nexus/core/services/platform/backend_health_checker.dart';
 
 /// Utility functions for connectivity status UI display.
 class ConnectivityStatusUtils {

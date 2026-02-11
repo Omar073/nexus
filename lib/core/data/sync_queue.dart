@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
@@ -49,73 +48,4 @@ class SyncOperation extends HiveObject {
 
   @HiveField(8)
   int status;
-}
-
-class SyncOperationAdapter extends TypeAdapter<SyncOperation> {
-  @override
-  final int typeId = HiveTypeIds.syncOperation;
-
-  @override
-  SyncOperation read(BinaryReader reader) {
-    final fieldCount = reader.readByte();
-    final fields = <int, dynamic>{};
-    for (var i = 0; i < fieldCount; i++) {
-      final key = reader.readByte();
-      fields[key] = reader.read();
-    }
-    return SyncOperation(
-      id: fields[0] as String,
-      type: fields[1] as int,
-      entityType: fields[2] as String,
-      entityId: fields[3] as String,
-      data: (fields[4] as Map?)?.cast<String, dynamic>(),
-      retryCount: (fields[5] as int?) ?? 0,
-      createdAt: fields[6] as DateTime,
-      lastAttemptAt: fields[7] as DateTime?,
-      status: (fields[8] as int?) ?? SyncOperationStatus.pending.index,
-    );
-  }
-
-  /// Recursively converts Firestore Timestamps to DateTime for Hive storage.
-  dynamic _convertTimestamps(dynamic value) {
-    if (value is Timestamp) {
-      return value.toDate();
-    } else if (value is Map) {
-      return value
-          .map((k, v) => MapEntry(k, _convertTimestamps(v)))
-          .cast<String, dynamic>();
-    } else if (value is List) {
-      return value.map(_convertTimestamps).toList();
-    }
-    return value;
-  }
-
-  @override
-  void write(BinaryWriter writer, SyncOperation obj) {
-    // Convert any Timestamps in data to DateTime before writing
-    final sanitizedData = obj.data != null
-        ? _convertTimestamps(obj.data) as Map<String, dynamic>?
-        : null;
-
-    writer
-      ..writeByte(9)
-      ..writeByte(0)
-      ..write(obj.id)
-      ..writeByte(1)
-      ..write(obj.type)
-      ..writeByte(2)
-      ..write(obj.entityType)
-      ..writeByte(3)
-      ..write(obj.entityId)
-      ..writeByte(4)
-      ..write(sanitizedData)
-      ..writeByte(5)
-      ..write(obj.retryCount)
-      ..writeByte(6)
-      ..write(obj.createdAt)
-      ..writeByte(7)
-      ..write(obj.lastAttemptAt)
-      ..writeByte(8)
-      ..write(obj.status);
-  }
 }

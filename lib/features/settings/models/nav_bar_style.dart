@@ -57,7 +57,7 @@ extension NavBarStyleExtension on NavBarStyle {
   }
 
   /// Returns the offset for FAB positioning (navbar height + spacing buffer).
-  double get fabOffset => height + 20.0;
+  double get fabOffset => height + 40.0;
 
   /// Returns the padding for scrollable content to avoid navbar overlap.
   double get contentPadding => height + 16.0;

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:nexus/features/splash/controllers/app_initializer.dart';
-import 'package:nexus/features/splash/models/initialization_results.dart';
+import 'package:nexus/features/splash/models/critical_initialization_result.dart';
 
 /// Splash screen that displays app name based on theme and initializes critical services
 class SplashScreen extends StatefulWidget {

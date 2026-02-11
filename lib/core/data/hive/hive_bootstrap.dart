@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_metadata.dart';
+import 'package:nexus/core/data/sync_operation_adapter.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/features/habits/models/habit.dart';
 import 'package:nexus/features/habits/models/habit_log.dart';

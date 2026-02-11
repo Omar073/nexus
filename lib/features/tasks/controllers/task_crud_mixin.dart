@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:nexus/core/data/sync_queue.dart';
-import 'package:nexus/features/tasks/controllers/task_controller.dart';
+import 'package:nexus/features/tasks/controllers/task_controller_base.dart';
 import 'package:nexus/features/tasks/models/task.dart';
 import 'package:nexus/features/tasks/models/task_attachment.dart';
 import 'package:nexus/features/tasks/models/task_enums.dart';

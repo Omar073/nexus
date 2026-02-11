@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/app/app.dart';
 import 'package:nexus/features/splash/controllers/app_initializer.dart';
-import 'package:nexus/features/splash/models/initialization_results.dart';
+import 'package:nexus/features/splash/models/critical_initialization_result.dart';
 import 'package:nexus/features/splash/controllers/provider_factory.dart';
 import 'package:nexus/features/splash/views/splash_screen.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';

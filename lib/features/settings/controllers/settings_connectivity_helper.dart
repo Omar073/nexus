@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/services/platform/connectivity_status_service.dart';
+import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/core/widgets/common_snackbar.dart';
 import 'package:nexus/core/widgets/drive_password_dialog.dart';
@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 /// Helper class for managing connectivity and Drive operations in settings screen.
 class SettingsConnectivityHelper {
   final BuildContext context;
-  final ConnectivityStatusService connectivityStatusService;
+  final BackendHealthChecker connectivityStatusService;
 
   SettingsConnectivityHelper({
     required this.context,

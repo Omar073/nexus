@@ -9,9 +9,13 @@ import 'package:nexus/core/services/storage/google_drive_service.dart';
 /// Result of a connectivity check
 enum ConnectivityStatus { connected, disconnected, unknown }
 
-/// Service for checking connectivity status of various services
-class ConnectivityStatusService {
-  ConnectivityStatusService({
+/// Service for checking connectivity status of various backend services.
+///
+/// Unlike [ConnectivityService] which tracks network on/off state,
+/// this class performs actual health checks against specific backends
+/// (Firebase, Hive, Google Drive) to verify they are reachable and functional.
+class BackendHealthChecker {
+  BackendHealthChecker({
     FirebaseFirestore? firestore,
     GoogleDriveService? googleDriveService,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
@@ -25,7 +29,7 @@ class ConnectivityStatusService {
   /// Returns [ConnectivityStatus.connected] if Firebase is reachable,
   /// [ConnectivityStatus.disconnected] if not, or [ConnectivityStatus.unknown] on error
   Future<ConnectivityStatus> checkFirebaseConnectivity() async {
-    mPrint('[ConnectivityStatus] Checking Firebase connectivity...');
+    mPrint('[BackendHealthChecker] Checking Firebase connectivity...');
     try {
       // Try to read a non-existent document with a timeout
       // This will fail quickly if offline, or succeed if online
@@ -41,23 +45,23 @@ class ConnectivityStatusService {
           );
 
       // If we get here, Firebase is reachable
-      mPrint('[ConnectivityStatus] Firebase: CONNECTED');
+      mPrint('[BackendHealthChecker] Firebase: CONNECTED');
       return ConnectivityStatus.connected;
     } on TimeoutException {
-      mPrint('[ConnectivityStatus] Firebase: DISCONNECTED (timeout)');
+      mPrint('[BackendHealthChecker] Firebase: DISCONNECTED (timeout)');
       return ConnectivityStatus.disconnected;
     } catch (e) {
-      mPrint('[ConnectivityStatus] Firebase check error: $e');
+      mPrint('[BackendHealthChecker] Firebase check error: $e');
       // Check if it's a network error
       final errorString = e.toString().toLowerCase();
       if (errorString.contains('network') ||
           errorString.contains('unavailable') ||
           errorString.contains('failed host lookup')) {
-        mPrint('[ConnectivityStatus] Firebase: DISCONNECTED (network error)');
+        mPrint('[BackendHealthChecker] Firebase: DISCONNECTED (network error)');
         return ConnectivityStatus.disconnected;
       }
       // Other errors might indicate connectivity issues
-      mPrint('[ConnectivityStatus] Firebase: UNKNOWN (other error)');
+      mPrint('[BackendHealthChecker] Firebase: UNKNOWN (other error)');
       return ConnectivityStatus.unknown;
     }
   }
@@ -67,7 +71,7 @@ class ConnectivityStatusService {
   /// Returns [ConnectivityStatus.connected] if Hive boxes are accessible,
   /// [ConnectivityStatus.disconnected] if not
   Future<ConnectivityStatus> checkHiveConnectivity() async {
-    mPrint('[ConnectivityStatus] Checking Hive connectivity...');
+    mPrint('[BackendHealthChecker] Checking Hive connectivity...');
     try {
       // Check if main boxes are open (already opened during app init)
       final tasksOpen = Hive.isBoxOpen(HiveBoxes.tasks);
@@ -75,19 +79,21 @@ class ConnectivityStatusService {
       final syncOpsOpen = Hive.isBoxOpen(HiveBoxes.syncOps);
 
       mPrint(
-        '[ConnectivityStatus] Boxes open status: tasks=$tasksOpen, notes=$notesOpen, syncOps=$syncOpsOpen',
+        '[BackendHealthChecker] Boxes open status: tasks=$tasksOpen, notes=$notesOpen, syncOps=$syncOpsOpen',
       );
 
       if (tasksOpen && notesOpen && syncOpsOpen) {
-        mPrint('[ConnectivityStatus] Hive: CONNECTED');
+        mPrint('[BackendHealthChecker] Hive: CONNECTED');
         return ConnectivityStatus.connected;
       } else {
-        mPrint('[ConnectivityStatus] Hive: DISCONNECTED (some boxes not open)');
+        mPrint(
+          '[BackendHealthChecker] Hive: DISCONNECTED (some boxes not open)',
+        );
         return ConnectivityStatus.disconnected;
       }
     } catch (e) {
-      mPrint('[ConnectivityStatus] Hive check error: $e');
-      mPrint('[ConnectivityStatus] Hive: DISCONNECTED');
+      mPrint('[BackendHealthChecker] Hive check error: $e');
+      mPrint('[BackendHealthChecker] Hive: DISCONNECTED');
       return ConnectivityStatus.disconnected;
     }
   }
@@ -98,74 +104,74 @@ class ConnectivityStatusService {
   /// [ConnectivityStatus.disconnected] if not authenticated or unreachable,
   /// or [ConnectivityStatus.unknown] on error
   Future<ConnectivityStatus> checkGoogleDriveConnectivity() async {
-    mPrint('[ConnectivityStatus] Checking Google Drive connectivity...');
+    mPrint('[BackendHealthChecker] Checking Google Drive connectivity...');
     final googleDriveService = _googleDriveService;
     if (googleDriveService == null) {
-      mPrint('[ConnectivityStatus] GoogleDriveService is null - UNKNOWN');
+      mPrint('[BackendHealthChecker] GoogleDriveService is null - UNKNOWN');
       return ConnectivityStatus.unknown;
     }
 
     try {
       // Check if authenticated (password gate)
       mPrint(
-        '[ConnectivityStatus] Checking isAuthenticated (password gate)...',
+        '[BackendHealthChecker] Checking isAuthenticated (password gate)...',
       );
       final isAuthenticated = await googleDriveService.isAuthenticated();
-      mPrint('[ConnectivityStatus] isAuthenticated: $isAuthenticated');
+      mPrint('[BackendHealthChecker] isAuthenticated: $isAuthenticated');
       if (!isAuthenticated) {
         mPrint(
-          '[ConnectivityStatus] Google Drive: DISCONNECTED (not authenticated via password)',
+          '[BackendHealthChecker] Google Drive: DISCONNECTED (not authenticated via password)',
         );
         return ConnectivityStatus.disconnected;
       }
 
       // Check if signed in to Google (for API access)
-      mPrint('[ConnectivityStatus] Checking isSignedIn (Google Sign-In)...');
+      mPrint('[BackendHealthChecker] Checking isSignedIn (Google Sign-In)...');
       final isSignedIn = await googleDriveService.isSignedIn();
-      mPrint('[ConnectivityStatus] isSignedIn: $isSignedIn');
+      mPrint('[BackendHealthChecker] isSignedIn: $isSignedIn');
       if (!isSignedIn) {
         mPrint(
-          '[ConnectivityStatus] Google Drive: DISCONNECTED (not signed into Google)',
+          '[BackendHealthChecker] Google Drive: DISCONNECTED (not signed into Google)',
         );
         return ConnectivityStatus.disconnected;
       }
 
       // Try to verify the media folder exists (lightweight API call)
-      mPrint('[ConnectivityStatus] Verifying media folder...');
+      mPrint('[BackendHealthChecker] Verifying media folder...');
       final folderExists = await googleDriveService.verifyMediaFolder().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
-          mPrint('[ConnectivityStatus] verifyMediaFolder timed out');
+          mPrint('[BackendHealthChecker] verifyMediaFolder timed out');
           return false;
         },
       );
-      mPrint('[ConnectivityStatus] folderExists: $folderExists');
+      mPrint('[BackendHealthChecker] folderExists: $folderExists');
 
       if (folderExists) {
-        mPrint('[ConnectivityStatus] Google Drive: CONNECTED');
+        mPrint('[BackendHealthChecker] Google Drive: CONNECTED');
         return ConnectivityStatus.connected;
       } else {
         mPrint(
-          '[ConnectivityStatus] Google Drive: DISCONNECTED (folder not found or inaccessible)',
+          '[BackendHealthChecker] Google Drive: DISCONNECTED (folder not found or inaccessible)',
         );
         return ConnectivityStatus.disconnected;
       }
     } on TimeoutException {
-      mPrint('[ConnectivityStatus] Google Drive: DISCONNECTED (timeout)');
+      mPrint('[BackendHealthChecker] Google Drive: DISCONNECTED (timeout)');
       return ConnectivityStatus.disconnected;
     } catch (e) {
-      mPrint('[ConnectivityStatus] Google Drive check error: $e');
+      mPrint('[BackendHealthChecker] Google Drive check error: $e');
       // Check if it's a network error
       final errorString = e.toString().toLowerCase();
       if (errorString.contains('network') ||
           errorString.contains('unavailable') ||
           errorString.contains('failed host lookup')) {
         mPrint(
-          '[ConnectivityStatus] Google Drive: DISCONNECTED (network error)',
+          '[BackendHealthChecker] Google Drive: DISCONNECTED (network error)',
         );
         return ConnectivityStatus.disconnected;
       }
-      mPrint('[ConnectivityStatus] Google Drive: UNKNOWN (other error)');
+      mPrint('[BackendHealthChecker] Google Drive: UNKNOWN (other error)');
       return ConnectivityStatus.unknown;
     }
   }

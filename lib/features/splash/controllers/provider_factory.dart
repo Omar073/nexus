@@ -18,7 +18,8 @@ import 'package:nexus/features/sync/controllers/sync_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
-import 'package:nexus/features/splash/models/initialization_results.dart';
+import 'package:nexus/features/splash/models/app_initialization_result.dart';
+import 'package:nexus/features/splash/models/critical_initialization_result.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 

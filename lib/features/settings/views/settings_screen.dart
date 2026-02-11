@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/services/platform/connectivity_status_service.dart';
+import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/features/settings/controllers/settings_connectivity_mixin.dart';
 import 'package:nexus/features/settings/controllers/settings_connectivity_helper.dart';
@@ -28,8 +28,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen>
     with SettingsConnectivityMixin {
-  ConnectivityStatusService get connectivityService =>
-      context.read<ConnectivityStatusService>();
+  BackendHealthChecker get connectivityService =>
+      context.read<BackendHealthChecker>();
 
   GoogleDriveService get driveService => context.read<GoogleDriveService>();
 
