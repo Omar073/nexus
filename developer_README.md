@@ -858,6 +858,54 @@ This adapter keeps the queue **backwards-compatible**: missing fields default to
 - `lastSuccessfulSyncAt`: a single `DateTime` field stored in its own Hive box.
 - Used by [`SyncService`](lib/core/services/sync/sync_service.dart) to pull only entities **updated since** that time from Firestore (incremental sync).
 
+#### Incremental Sync Deep Dive
+
+This is a performance and cost-saving optimization. Since you are using Firestore (which charges per document read), downloading the entire database every time the user opens the app would be slow and expensive.
+
+Here is the breakdown of how **Incremental Sync** works in your code:
+
+**1. The Timestamp (`lastSuccessfulSyncAt`)**
+
+The app tracks exactly when the last *successful* sync finished. This is stored in a Hive box called `SyncMetadata`.
+
+```dart
+// lib/core/services/sync/sync_service.dart
+// 1. Get the timestamp of the last time we successfully synced
+final metaBox = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata);
+final meta = metaBox.get('default');
+final lastSyncAt = meta?.lastSuccessfulSyncAt;
+```
+
+**2. The Query (`where isGreaterThan`)**
+
+When asking Firestore for data, instead of saying "Active: Give me everything," the app says "Active: Give me **only** what has changed since [Timestamp]."
+
+```dart
+// lib/core/services/sync/sync_service.dart
+Query<Map<String, dynamic>> q = _tasksCollection;
+if (lastSyncAt != null) {
+  // 2. Add a filter to the query
+  q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
+}
+// 3. Execute query (If nothing changed, this returns 0 documents)
+final snap = await q.get();
+```
+
+**3. The Catch-Up**
+
+- **First Run**: `lastSyncAt` is null. The query fetches **all** tasks.
+- **Subsequent Runs**: `lastSyncAt` is (e.g.) `10:00 AM`.
+  - If you add a task on another device at `10:05 AM`, its `updatedAt` is `10:05 AM`.
+  - When this device syncs at `10:10 AM`, the query asks: `updatedAt > 10:00 AM`.
+  - Firestore returns **only that one new task**.
+  - The 1,000 other older tasks are ignored.
+
+**Why this is critical for your app:**
+
+- **Cost**: Firestore charges ~$0.06 per 100,000 reads. Without this, 1,000 users with 100 tasks each syncing once would cost you ~100k reads instantly. With this, it costs 0 reads if they have no new data.
+- **Speed**: Parsing 5 JSON objects is instant; parsing 5,000 takes seconds and blocks the UI.
+- **Bandwidth**: Essential for mobile users on patchy connections.
+
 ---
 
 ### 2. End-to-End Data Flow
@@ -911,6 +959,19 @@ The pattern is the same for Tasks and other entities:
 
 > **Note on `isDirty` Lifecycle:**
 > The `isDirty` flag remains `true` until the **Pull Phase** completes. When `_pullTasks` fetches the latest version from Firestore (which matches the local version we just pushed), it overwrites the local entity with the remote one. Since the remote entity allows defaults to `isDirty = false`, this effectively "clears" the flag. This "Round-Trip Confirmation" ensures we only consider data synced when we verify it exists on the server.
+>
+> **Detailed Flow:**
+>
+> 1. **Local Create/Update**: Sets `isDirty = true`.
+> 2. **Upload to Firebase**: The document is sent to Firestore. Crucially, it is sent with `isDirty` merely as a field in the JSON payload, or often ignored by the server if your `toFirestoreJson` doesn't include it (or includes it but it's meaningless on the server).
+> 3. **Fetch from Firebase**: We get the document back.
+> 4. **Reset**: The reset to `false` happens explicitly in your code when converting the Firestore JSON back into a local Dart object. It is hardcoded in your `fromFirestoreJson` factory methods.
+>
+> **Does it refetch my own changes?**
+> Yes. If you push a task at `10:00:00` and `syncOnce()` runs immediately, the pull phase asks for updates `> lastSuccessTime`.
+>
+> - If `lastSuccessTime` was `09:00:00`, your own task (updated at `10:00:00`) **will** be returned by the query.
+> - This is intentional. It confirms the server accepted the write. The local entity is overwritten with the server version (which is identical but clean), thus clearing the `isDirty` flag.
 
 #### B. SyncService: Auto-sync on Connectivity
 
@@ -944,7 +1005,7 @@ final snapshots = await _firestore
 `_applyRemoteNote`:
 
 1. Loads the local [`Note`](lib/features/notes/models/note.dart) (if any) by `id`.
-2. Compares `remote.updatedAt` vs local `lastSyncedAt` + `isDirty`.
+2. Compares `remote.updatedAt` vs local `lastSyncedAt` + `isDirty` via `NoteConflictDetector`.
 3. Either:
    - Applies the remote update directly (no conflict), or
    - Creates a `SyncConflict<Note>` if both sides changed.
@@ -971,7 +1032,7 @@ This covers the common case where a user only edits from one device at a time.
 
 #### Manual Resolution (`SyncConflict<T>`)
 
-If the user has **unsynced local changes** (`local.isDirty == true`) and there is a newer remote version (`remote.updatedAt > local.lastSyncedAt`), we treat this as a conflict. `SyncService` does **not** overwrite local data in this case. Instead it:
+If `TaskConflictDetector` or `NoteConflictDetector` determines that the user has **unsynced local changes** (`isDirty == true`) and there is a newer remote version (`remote.updatedAt > local.lastSyncedAt`), we treat this as a conflict. `SyncService` does **not** overwrite local data in this case. Instead it:
 
 1. Builds a `SyncConflict<T>` (one per entity).
 2. Emits it on a `Stream<List<SyncConflict<T>>>` managed by [`SyncController`](lib/features/sync/controllers/sync_controller.dart) (for notes, tasks, etc.).
@@ -995,6 +1056,58 @@ For notes, conflicts are resolved via [`NoteConflictResolutionDialog`](lib/featu
     - `syncStatus = idle`, `isDirty = true`.
 
 The same pattern can be re-used for other entity types (e.g. Tasks) with entity-specific dialogs.
+
+---
+
+### Sync Flow Clarifications
+
+#### 1. Push Logic (`_pushQueue`)
+
+One common point of confusion is how "successful" operations are handled.
+
+- **There is no "fast path".**
+- Every single create/update operation is first written to the local Hive queue as `status: pending`.
+- `_pushQueue` queries for **all** operations where `status != completed`:
+  - This includes brand new operations (`pending`).
+  - This includes previously failed operations (`failed`).
+- It processes them **in order of creation**.
+- Only after a successful API call is the operation marked `completed` and removed from the queue.
+
+#### 2. The "Echo" Confirmations
+
+When you sync immediately after writing data, `_pullTasks` asks for data updated *after* the last sync.
+
+- **Scenario**: You create a task at 10:00 AM.
+- **Push**: It is uploaded to Firestore.
+- **Pull**: The app asks Firestore for changes since 09:00 AM.
+- **Result**: Firestore returns your own 10:00 AM write.
+- **Why?**: This "echo" confirms the server has accepted the write. The app overwrites the local version with this server version, which has `isDirty = false`. This is the signal that the data is now safely synced.
+
+```mermaid
+sequenceDiagram
+    participant UI as User/UI
+    participant Hive as Local Hive
+    participant Sync as SyncService
+    participant F as Firestore
+
+    Note over UI, Hive: 10:00 AM - User creates Task
+    UI->>Hive: Save Task (isDirty=true)
+    UI->>Hive: Enqueue SyncOp (status=pending)
+
+    Note over Sync: _pushQueue()
+    Sync->>Hive: Read pending ops
+    Sync->>F: Upload Task (10:00 AM)
+    F-->>Sync: Success
+    Sync->>Hive: Mark op completed
+
+    Note over Sync: _pullTasks()
+    Sync->>F: Query(updatedAt > 09:00)
+    F-->>Sync: Return Task (10:00 AM)
+    
+    Note over Sync, Hive: "The Echo"
+    Sync->>Hive: Overwrite Task (isDirty=false)
+    Note over Hive: Data is now Confirmed Synced
+```
 
 ---
 
@@ -1753,3 +1866,61 @@ main.dart
 - **Service**: Cross-cutting infrastructure (notifications, connectivity, storage, debug logging, etc.).
 - **Attachment**: Any non-text asset (image, audio, file) associated with a Task or Note.
 - **Background service**: Long-lived object outside of widget tree that listens to system/app events and reacts (e.g. connectivity monitor).
+
+### 5. Sync Architecture (Refactored)
+
+The monolithic SyncService has been modularized using the **Strategy Pattern** and **Dependency Injection**.
+
+- **Core Orchestrator**: [`SyncService.dart`](lib/core/services/sync/sync_service.dart) (Handles queue & connectivity)
+- **Entity Handlers** (located in their respective features):
+  - `TaskSyncHandler` -> [`lib/features/tasks/sync/`](lib/features/tasks/sync/task_sync_handler.dart)
+  - `NoteSyncHandler` -> [`lib/features/notes/sync/`](lib/features/notes/sync/note_sync_handler.dart)
+- **Reference docs**:
+  - [Sync Architecture Overview](lib/docs/REF_SYNC_ARCHITECTURE.md)
+  - [Dependency Injection Guide](lib/docs/REF_DEPENDENCY_INJECTION.md)
+
+---
+
+#### A. The "Manager vs Worker" Model
+
+Think of SyncService as the **Manager (Orchestrator)** and the Handlers as **Specialized Workers**.
+
+1. **Queue Management (Manager's Job)**:
+    - `_pushQueue` reads the list of pending operations (Hive queue).
+    - `_markFailed` handles retries and backoff if a worker fails.
+    - The handlers don't know about `HiveBox<SyncOperation>`, retry counts, or backoff timers. They just get told "Do this create operation".
+
+2. **Delegation (Manager's Job)**:
+    - `_processOperation` looks at the operation (`op.entityType`) and decides which worker to call (`_handlers[op.entityType]`).
+    - It acts as a router.
+
+3. **Coordination (Manager's Job)**:
+    - `_pullAll` ensures *everyone* gets a chance to pull updates.
+    - It loops through all registered handlers so you don't have to manually call each one.
+
+---
+
+#### B. Dependency Injection (Composition Root)
+
+Handlers are **not** created inside `SyncService`. They are **injected** via the constructor at app startup:
+
+```dart
+// In app_initializer.dart / provider_factory.dart (the Composition Root)
+final syncService = SyncService(
+  connectivity: connectivity,
+  handlers: [
+    TaskSyncHandler(firestore: ..., deviceId: ...),
+    NoteSyncHandler(firestore: ..., deviceId: ...),
+  ],
+);
+```
+
+This means `core/` never imports `features/`. See [technical_concepts.md Section 2](technical_concepts.md) for the full DI explanation.
+
+---
+
+#### C. Adding a New Synced Entity
+
+1. Create `lib/features/<entity>/sync/<entity>_sync_handler.dart` implementing `EntitySyncHandler`.
+2. Register it in `app_initializer.dart` and `provider_factory.dart` by adding it to the `handlers` list.
+3. No changes to `SyncService` needed.

@@ -1,83 +1,69 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/sync_metadata.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
+import 'package:nexus/core/services/sync/handlers/entity_sync_handler.dart';
+import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:nexus/core/utils/sync_backoff.dart';
-import 'package:nexus/core/utils/task_conflict_detector.dart';
 import 'package:nexus/features/notes/models/note.dart';
 import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_enums.dart';
 
-/// Represents a conflict between local and remote versions of an entity.
-/// See `developer_README.md` (Section 9.3) for conflict logic.
-class SyncConflict<T> {
-  SyncConflict({
-    required this.entityId,
-    required this.local,
-    required this.remote,
-  });
-
-  final String entityId;
-  final T local;
-  final T remote;
-}
-
-/// Core synchronization service for offline-first data management.
+/// Core synchronization service (Orchestrator).
 ///
-/// Core synchronization service.
-/// See `developer_README.md` (Section 9.3) for full architecture and usage.
-/// ```dart
-
+/// This service:
+/// 1. Manages the Sync Queue (Push)
+/// 2. Manages Connectivity events
+/// 3. Delegates entity-specific logic to [EntitySyncHandler] implementations.
 class SyncService {
   // Constructor & Dependencies
   SyncService({
-    required FirebaseFirestore firestore,
     required ConnectivityService connectivity,
-    required String deviceId,
-  }) : _firestore = firestore,
-       _connectivity = connectivity,
-       _deviceId = deviceId;
+    List<EntitySyncHandler> handlers = const [],
+  }) : _connectivity = connectivity {
+    for (final handler in handlers) {
+      _register(handler);
+    }
+  }
 
-  final FirebaseFirestore _firestore;
   final ConnectivityService _connectivity;
 
-  /// Device ID stamped on all synced documents for conflict detection.
-  final String _deviceId;
+  // Strategy Handlers
+  final Map<String, EntitySyncHandler> _handlers = {};
 
-  // Conflict Streams
-  /// Stream of task conflicts detected during pull operations.
-  /// Subscribe to this in your UI to show conflict resolution dialogs.
-  final _conflictsController =
-      StreamController<List<SyncConflict<Task>>>.broadcast();
-  Stream<List<SyncConflict<Task>>> get conflictsStream =>
-      _conflictsController.stream;
+  void _register(EntitySyncHandler handler) {
+    _handlers[handler.entityType] = handler;
+  }
 
-  /// Stream of note conflicts detected during pull operations.
-  final _noteConflictsController =
-      StreamController<List<SyncConflict<Note>>>.broadcast();
-  Stream<List<SyncConflict<Note>>> get noteConflictsStream =>
-      _noteConflictsController.stream;
+  // Conflict Streams (Delegated)
+  // Note: We use dynamic cast or we need to expose a generic way to get streams.
+  // For now, since consumers (SyncController) expect specific streams, we can expose
+  // them by looking up the handler.
+
+  Stream<List<SyncConflict<Task>>> get conflictsStream {
+    final handler = _handlers['task'];
+    if (handler != null) {
+      return (handler as dynamic).conflictsStream;
+    }
+    return const Stream.empty();
+  }
+
+  Stream<List<SyncConflict<Note>>> get noteConflictsStream {
+    final handler = _handlers['note'];
+    if (handler != null) {
+      return (handler as dynamic).conflictsStream;
+    }
+    return const Stream.empty();
+  }
 
   // Sync State
-  /// Guards against concurrent sync operations.
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  // Firestore Collection References
-  CollectionReference<Map<String, dynamic>> get _tasksCol =>
-      _firestore.collection('tasks');
-  CollectionReference<Map<String, dynamic>> get _notesCol =>
-      _firestore.collection('notes');
-
   // PUBLIC API
-  /// Starts automatic sync when connectivity is restored.
-  ///
-  /// Call this **once** at app startup. Sets up a listener on the connectivity
-  /// stream that triggers [syncOnce] whenever the device comes online.
   Future<void> startAutoSync() async {
     _connectivity.onlineStream().listen((online) {
       if (online) {
@@ -86,50 +72,38 @@ class SyncService {
     });
   }
 
-  /// Adds a sync operation to the queue for later processing.
-  ///
-  /// Operations are stored in Hive and processed in order during [syncOnce].
   Future<void> enqueueOperation(SyncOperation op) async {
     final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
     await box.put(op.id, op);
+    // Then this queue is pushed to firestore by _pushQueue()
   }
 
-  /// Executes a full sync cycle: push local changes, then pull remote updates.
-  ///
-  /// This method is idempotent and safe to call multiple times. It will:
-  /// 1. Skip if already syncing (prevents concurrent syncs)
-  /// 2. Skip if offline
-  /// 3. Push all pending operations to Firestore
-  /// 4. Pull all remote changes since last sync
-  /// 5. Update the last successful sync timestamp
+  /// Executes a full sync cycle: push queue → pull updates.
   Future<void> syncOnce() async {
-    // Guard: prevent concurrent sync operations
     if (_isSyncing) return;
-
-    // Guard: skip if offline
     if (!await _connectivity.isOnline) return;
 
     _isSyncing = true;
 
     try {
-      await _pushQueue(); // Push local → Firestore
-      await _pullTasks(); // Pull Firestore → local (tasks)
-      await _pullNotes(); // Pull Firestore → local (notes)
-      await _markSuccessfulSync(); // Update lastSuccessfulSyncAt
+      await _pushQueue();
+      await _pullAll();
+      await _markSuccessfulSync();
     } finally {
       _isSyncing = false;
     }
   }
 
-  // PUSH OPERATIONS (Local → Firestore)
-  /// Processes all pending sync operations in queue order.
-  ///
-  /// Operations are sorted by [createdAt] to maintain causality (e.g., create
-  /// before update). Each operation is processed individually with retry logic.
+  // PUSH OPERATIONS
+  // -----------------------------------------------------------------------------
+  // Orchestrator Role:
+  // 1. Reads the queue (Manager).
+  // 2. Directs work to the correct Handler (Worker).
+  // 3. Handles retries/backoff if the Worker fails (Supervisor).
+  // -----------------------------------------------------------------------------
   Future<void> _pushQueue() async {
     final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
 
-    // Get pending/failed operations, sorted by creation time
     final ops =
         box.values
             .where((o) => o.status != SyncOperationStatus.completed.index)
@@ -137,199 +111,61 @@ class SyncService {
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     for (final op in ops) {
-      // Re-check connectivity before each operation
       if (!await _connectivity.isOnline) return;
       await _processOperation(op);
     }
   }
 
-  /// Processes a single sync operation with retry and backoff.
-  ///
-  /// Flow:
-  /// 1. Mark operation as "syncing"
-  /// 2. Apply to Firestore based on entity type
-  /// 3. On success: delete from queue
-  /// 4. On failure: increment retry count, apply exponential backoff
   Future<void> _processOperation(SyncOperation op) async {
-    // Update status to "syncing"
     op.status = SyncOperationStatus.syncing.index;
     op.lastAttemptAt = DateTime.now();
     await op.save();
 
-    try {
-      // Route to appropriate handler based on entity type
-      if (op.entityType == 'task') {
-        await _applyTaskOperation(op);
-      } else if (op.entityType == 'note') {
-        await _applyNoteOperation(op);
-      } else {
-        throw StateError('Unknown entityType: ${op.entityType}');
-      }
+    final handler = _handlers[op.entityType];
+    if (handler == null) {
+      DebugLoggerService.instance.error(
+        'SyncService: No handler for entity type "${op.entityType}". Operation skipped.',
+      );
+      // Remove from queue so it doesn't block future syncs
+      await op.delete();
+      return;
+    }
 
-      // Success: mark complete and remove from queue
+    try {
+      // Delegate to the specialized worker
+      await handler.push(op);
+
       op.status = SyncOperationStatus.completed.index;
       await op.save();
       await op.delete();
     } catch (_) {
-      // Failure: increment retry count and apply backoff
-      op.retryCount += 1;
-      op.status = SyncOperationStatus.failed.index;
-      await op.save();
-
-      // Exponential backoff: 1s, 2s, 4s, 8s, 16s (capped at 5 retries)
-      if (op.retryCount <= 5) {
-        final seconds = computeBackoffSeconds(op.retryCount);
-        await Future<void>.delayed(Duration(seconds: seconds));
-      }
+      await _markFailed(op);
     }
   }
 
-  /// Applies a task sync operation to Firestore.
-  Future<void> _applyTaskOperation(SyncOperation op) async {
-    final doc = _tasksCol.doc(op.entityId);
-    final type = SyncOperationType.values[op.type];
+  Future<void> _markFailed(SyncOperation op) async {
+    op.retryCount += 1;
+    op.status = SyncOperationStatus.failed.index;
+    await op.save();
 
-    switch (type) {
-      case SyncOperationType.create:
-      case SyncOperationType.update:
-        // Merge data with device ID for conflict tracking
-        final data = (op.data ?? <String, dynamic>{})
-          ..['lastModifiedByDevice'] = _deviceId;
-        await doc.set(data, SetOptions(merge: true));
-      case SyncOperationType.delete:
-        await doc.delete();
+    if (op.retryCount <= 5) {
+      final seconds = computeBackoffSeconds(op.retryCount);
+      await Future<void>.delayed(Duration(seconds: seconds));
     }
   }
 
-  /// Applies a note sync operation to Firestore.
-  Future<void> _applyNoteOperation(SyncOperation op) async {
-    final doc = _notesCol.doc(op.entityId);
-    final type = SyncOperationType.values[op.type];
-
-    switch (type) {
-      case SyncOperationType.create:
-      case SyncOperationType.update:
-        final data = (op.data ?? <String, dynamic>{})
-          ..['lastModifiedByDevice'] = _deviceId;
-        await doc.set(data, SetOptions(merge: true));
-      case SyncOperationType.delete:
-        await doc.delete();
-    }
-  }
-
-  // PULL OPERATIONS (Firestore → Local)
-  /// Pulls task updates from Firestore since last sync.
-  ///
-  /// Uses incremental sync: only fetches documents with `updatedAt` greater
-  /// than our last successful sync timestamp. This reduces bandwidth and
-  /// processing time significantly.
-  ///
-  /// Conflict Detection:
-  /// - If local task has unsynced changes (isDirty) AND remote was updated
-  ///   after our last sync → emit conflict for user resolution
-  /// - Otherwise → accept remote as source of truth
-  Future<void> _pullTasks() async {
-    final tasksBox = Hive.box<Task>(HiveBoxes.tasks);
+  // PULL OPERATIONS
+  Future<void> _pullAll() async {
     final metaBox = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata);
     final meta = metaBox.get('default');
     final lastSyncAt = meta?.lastSuccessfulSyncAt;
 
-    // Build query: all tasks, or only those updated since last sync
-    Query<Map<String, dynamic>> q = _tasksCol;
-    if (lastSyncAt != null) {
-      q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
-    }
-
-    final snap = await q.get();
-    final conflicts = <SyncConflict<Task>>[];
-
-    for (final doc in snap.docs) {
-      final remote = Task.fromFirestoreJson(doc.data());
-      final local = tasksBox.get(remote.id);
-
-      // New task: just save it
-      if (local == null) {
-        await tasksBox.put(remote.id, remote);
-        continue;
-      }
-
-      // Check for conflict using TaskConflictDetector
-      if (TaskConflictDetector.hasConflict(local: local, remote: remote)) {
-        local.syncStatusEnum = SyncStatus.conflict;
-        await local.save();
-        conflicts.add(
-          SyncConflict(entityId: remote.id, local: local, remote: remote),
-        );
-        continue;
-      }
-
-      // No conflict: accept remote version
-      await tasksBox.put(remote.id, remote);
-    }
-
-    // Emit conflicts to stream for UI handling
-    if (conflicts.isNotEmpty) {
-      _conflictsController.add(conflicts);
+    // Pull for every registered handler
+    for (final handler in _handlers.values) {
+      await handler.pull(lastSyncAt);
     }
   }
 
-  /// Pulls note updates from Firestore since last sync.
-  ///
-  /// Similar to [_pullTasks] but with note-specific conflict detection:
-  /// - Conflict if local is dirty AND remote updatedAt > local lastSyncedAt
-  Future<void> _pullNotes() async {
-    final notesBox = Hive.box<Note>(HiveBoxes.notes);
-    final metaBox = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata);
-    final meta = metaBox.get('default');
-    final lastSyncAt = meta?.lastSuccessfulSyncAt;
-
-    Query<Map<String, dynamic>> q = _notesCol;
-    if (lastSyncAt != null) {
-      q = q.where('updatedAt', isGreaterThan: Timestamp.fromDate(lastSyncAt));
-    }
-
-    final snap = await q.get();
-    final conflicts = <SyncConflict<Note>>[];
-
-    for (final doc in snap.docs) {
-      final remote = Note.fromFirestoreJson(doc.data());
-      final local = notesBox.get(remote.id);
-
-      // New note: just save it
-      if (local == null) {
-        await notesBox.put(remote.id, remote);
-        continue;
-      }
-
-      // Conflict detection for notes
-      final localLastSync = local.lastSyncedAt;
-      final localDirty = local.isDirty;
-      final remoteNewerThanLocalSync =
-          localLastSync != null && remote.updatedAt.isAfter(localLastSync);
-
-      if (localDirty && remoteNewerThanLocalSync) {
-        local.syncStatusEnum = SyncStatus.conflict;
-        await local.save();
-        conflicts.add(
-          SyncConflict(entityId: remote.id, local: local, remote: remote),
-        );
-        continue;
-      }
-
-      // No conflict: accept remote version
-      await notesBox.put(remote.id, remote);
-    }
-
-    if (conflicts.isNotEmpty) {
-      _noteConflictsController.add(conflicts);
-    }
-  }
-
-  // SYNC METADATA
-  /// Updates the last successful sync timestamp.
-  ///
-  /// This timestamp is used for incremental pulls: next sync will only fetch
-  /// documents updated after this time, significantly reducing data transfer.
   Future<void> _markSuccessfulSync() async {
     final metaBox = Hive.box<SyncMetadata>(HiveBoxes.syncMetadata);
     final existing = metaBox.get('default');

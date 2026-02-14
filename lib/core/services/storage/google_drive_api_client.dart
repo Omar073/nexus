@@ -9,14 +9,14 @@ class GoogleDriveApiClient {
   GoogleDriveApiClient(this._auth);
 
   /// Creates an authenticated HTTP client for Google Drive API
-  /// 
+  ///
   /// IMPORTANT: Even though the Drive folder is set to "anyone with link can edit",
   /// the Google Drive API still requires authentication for ALL API calls, including uploads.
   /// Folder permissions (public/private) only affect web UI access, not API access.
-  /// 
+  ///
   /// NOTE: This is only needed for WRITE operations (upload, delete, create folders).
   /// READ operations (download) use public URLs and don't require authentication.
-  /// 
+  ///
   /// Throws DriveAuthRequiredException if user is not authenticated.
   Future<http.Client> createAuthenticatedClient() async {
     final authHeaders = await _auth.getAuthHeaders();
@@ -51,4 +51,3 @@ class _AuthenticatedHttpClient extends http.BaseClient {
     _inner.close();
   }
 }
-

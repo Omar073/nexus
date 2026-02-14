@@ -131,16 +131,18 @@ print(a == b);  // TRUE — same object!
 
 ## 2. Dependency Injection
 
-**Dependency Injection (DI)** means passing dependencies into a class instead of creating them inside.
+**Dependency Injection (DI)** means passing dependencies into a class instead of creating them inside. This makes classes testable, swappable, and decoupled.
 
-### Why use it?
+### 2.1 Why Use It?
 
 | Approach | Testable? | Flexible? |
 |----------|-----------|-----------|
 | Create inside: `final _conn = Connectivity()` | ❌ Can't mock | ❌ Hardcoded |
-| Inject via constructor: `MyClass({Connectivity? conn})` | ✅ Can mock | ✅ Swappable |
+| Inject via constructor: `MyClass({required Connectivity conn})` | ✅ Can mock | ✅ Swappable |
 
-### Pattern with optional parameter
+### 2.2 Pattern 1: Optional Parameter with Default
+
+The simplest form. Good for services with a single dependency:
 
 ```dart
 class ConnectivityService {
@@ -157,10 +159,123 @@ class ConnectivityService {
 | Production: `ConnectivityService()` | Uses real `Connectivity()` |
 | Testing: `ConnectivityService(connectivity: mock)` | Uses mock |
 
-### Do you need it?
+### 2.3 Pattern 2: Constructor Injection with List
 
-- **If writing unit tests**: Yes, inject mocks
-- **If not testing this class**: Optional, but costs nothing to keep
+When a class needs to work with **multiple implementations of the same interface**, inject them as a list. This is the **Strategy Pattern + DI** combination.
+
+```dart
+// The interface (defined in core/)
+abstract class EntitySyncHandler {
+  String get entityType;
+  Future<void> push(SyncOperation op);
+  Future<void> pull(DateTime? lastSyncAt);
+}
+
+// The orchestrator (defined in core/) — doesn't know about any specific handler
+class SyncService {
+  SyncService({
+    required ConnectivityService connectivity,
+    List<EntitySyncHandler> handlers = const [],  // ← DI via list
+  }) : _connectivity = connectivity {
+    for (final handler in handlers) {
+      _handlers[handler.entityType] = handler;
+    }
+  }
+
+  final Map<String, EntitySyncHandler> _handlers = {};
+}
+```
+
+**Key benefit:** `SyncService` lives in `core/` and has **zero imports** from any feature. New features register themselves without touching `SyncService`.
+
+### 2.4 The Composition Root
+
+The **Composition Root** is the one place in your app where all dependencies are created and wired together. In Nexus, this is the `splash` feature:
+
+```text
+features/splash/
+  ├── app_initializer.dart      ← Creates real services for production
+  └── provider_factory.dart     ← Wires everything into the Provider tree
+```
+
+**Example from `app_initializer.dart`:**
+
+```dart
+// 1. Create feature-specific handlers (Workers)
+final taskHandler = TaskSyncHandler(
+  firestore: FirebaseFirestore.instance,
+  deviceId: critical.deviceId,
+);
+final noteHandler = NoteSyncHandler(
+  firestore: FirebaseFirestore.instance,
+  deviceId: critical.deviceId,
+);
+
+// 2. Inject handlers into the core service (Manager)
+final syncService = SyncService(
+  connectivity: critical.connectivityService,
+  handlers: [taskHandler, noteHandler],
+);
+```
+
+### 2.5 Dependency Flow Visualization
+
+```text
+┌─────────────────────────────────────────────────┐
+│       Composition Root (splash/)                │
+│  Creates all dependencies and wires them        │
+└────────────┬──────────────────┬─────────────────┘
+             │                  │
+    ┌────────▼────────┐  ┌─────▼──────────┐
+    │  core/services/ │  │  features/     │
+    │  SyncService    │  │  TaskSyncHandler│
+    │  (Orchestrator) │  │  NoteSyncHandler│
+    │  Knows NOTHING  │  │  (Workers)     │
+    │  about features │  │                │
+    └─────────────────┘  └────────────────┘
+```
+
+**The arrows flow inward:** Features depend on Core (for the interface). Core depends on nothing. The Composition Root depends on everything (but that's its job).
+
+### 2.6 Adding a New Dependency
+
+To add sync for a new entity (e.g., Habits):
+
+1. Create `lib/features/habits/sync/habit_sync_handler.dart` implementing `EntitySyncHandler`.
+2. Register it in `app_initializer.dart` and `provider_factory.dart`:
+
+   ```dart
+   handlers: [taskHandler, noteHandler, habitHandler] // ← Just add here
+   ```
+
+3. **No changes to `SyncService` needed.** This is the Open/Closed Principle in action.
+
+### 2.7 DI in Tests
+
+```dart
+// Create a mock handler for testing
+class MockSyncHandler extends EntitySyncHandler {
+  @override String get entityType => 'test';
+  @override Future<void> push(SyncOperation op) async { /* track calls */ }
+  @override Future<void> pull(DateTime? lastSyncAt) async { /* return test data */ }
+}
+
+// Inject mock into SyncService
+final service = SyncService(
+  connectivity: MockConnectivity(),
+  handlers: [MockSyncHandler()],
+);
+```
+
+### 2.8 Summary
+
+| Concept | In Nexus |
+|---------|----------|
+| **Interface** | `EntitySyncHandler` (abstract class in `core/`) |
+| **Implementations** | `TaskSyncHandler`, `NoteSyncHandler` (in `features/`) |
+| **Consumer** | `SyncService` (in `core/`, receives handlers via constructor) |
+| **Composition Root** | `splash/` (creates and wires everything) |
+| **Benefit** | Core never imports Features; new entities = zero core changes |
 
 ---
 

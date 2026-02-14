@@ -12,7 +12,7 @@ void main() {
   test('Note delta json is stored as string and round-trips', () {
     final deltaJson = jsonEncode([
       {'insert': 'مرحبا'},
-      {'insert': '\n'}
+      {'insert': '\n'},
     ]);
     final note = Note(
       id: 'n1',
@@ -89,4 +89,3 @@ void main() {
     await tearDownTestHive();
   });
 }
-

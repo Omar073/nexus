@@ -92,33 +92,22 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
       child: Row(
         children: [
           Expanded(
-            child: _buildMarkdownEditor(
-              theme,
-              _markdownScrollController,
-            ),
+            child: _buildMarkdownEditor(theme, _markdownScrollController),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildMarkdownPreview(
-              theme,
-              _previewScrollController,
-            ),
+            child: _buildMarkdownPreview(theme, _previewScrollController),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMarkdownEditor(
-    ThemeData theme,
-    ScrollController? controller,
-  ) {
+  Widget _buildMarkdownEditor(ThemeData theme, ScrollController? controller) {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -128,9 +117,7 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
           maxLines: null,
           expands: true,
           keyboardType: TextInputType.multiline,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontFamily: 'monospace',
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
           decoration: const InputDecoration(
             border: InputBorder.none,
             hintText: 'Write markdown here...',
@@ -141,24 +128,19 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
     );
   }
 
-  Widget _buildMarkdownPreview(
-    ThemeData theme,
-    ScrollController? controller,
-  ) {
+  Widget _buildMarkdownPreview(ThemeData theme, ScrollController? controller) {
     try {
       return DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-          ),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Markdown(
           data: widget.controller.text,
           controller: controller,
-          styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-            p: theme.textTheme.bodyMedium,
-          ),
+          styleSheet: MarkdownStyleSheet.fromTheme(
+            theme,
+          ).copyWith(p: theme.textTheme.bodyMedium),
         ),
       );
     } catch (error, stack) {
@@ -169,9 +151,7 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
       return DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-          ),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: SingleChildScrollView(
           controller: controller,
@@ -195,7 +175,8 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
     if (message.contains('image')) {
       hint = 'Check your image syntax and that image URLs/paths are valid.';
     } else if (message.contains('link') || message.contains('href')) {
-      hint = 'Check that your link syntax is valid, e.g. [label](https://example.com).';
+      hint =
+          'Check that your link syntax is valid, e.g. [label](https://example.com).';
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -252,4 +233,3 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
     setState(() {});
   }
 }
-

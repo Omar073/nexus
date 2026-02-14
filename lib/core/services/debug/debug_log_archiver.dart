@@ -14,5 +14,3 @@ abstract class DebugLogArchiver {
 
 /// Factory for the best archiver implementation on the current platform.
 DebugLogArchiver createDebugLogArchiver() => createArchiver();
-
-

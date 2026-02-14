@@ -13,5 +13,3 @@ void main() {
     expect(computeBackoffSeconds(7), 32);
   });
 }
-
-

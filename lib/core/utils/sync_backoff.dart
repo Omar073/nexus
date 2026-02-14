@@ -7,5 +7,3 @@ int computeBackoffSeconds(int retryCount) {
   final exp = max(0, retryCount - 1);
   return min(32, pow(2, exp).toInt());
 }
-
-

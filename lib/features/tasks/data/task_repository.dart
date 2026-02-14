@@ -4,7 +4,7 @@ import 'package:nexus/features/tasks/models/task.dart';
 
 class TaskRepository {
   TaskRepository({TaskLocalDatasource? local})
-      : _local = local ?? TaskLocalDatasource();
+    : _local = local ?? TaskLocalDatasource();
 
   final TaskLocalDatasource _local;
 
@@ -18,4 +18,3 @@ class TaskRepository {
 
   ValueListenable listenable() => _local.listenable();
 }
-

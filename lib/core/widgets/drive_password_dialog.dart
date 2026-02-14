@@ -20,7 +20,10 @@ class _DrivePasswordDialogState extends State<DrivePasswordDialog> {
     super.dispose();
   }
 
-  Future<void> _submit(BuildContext context, Function(String) onAuthenticate) async {
+  Future<void> _submit(
+    BuildContext context,
+    Function(String) onAuthenticate,
+  ) async {
     final password = _controller.text.trim();
     if (password.isEmpty) {
       setState(() {
@@ -71,7 +74,9 @@ class _DrivePasswordDialogState extends State<DrivePasswordDialog> {
               labelText: 'Password',
               errorText: _errorMessage,
               suffixIcon: IconButton(
-                icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                icon: Icon(
+                  _obscureText ? Icons.visibility : Icons.visibility_off,
+                ),
                 onPressed: () {
                   setState(() {
                     _obscureText = !_obscureText;
@@ -94,13 +99,10 @@ class _DrivePasswordDialogState extends State<DrivePasswordDialog> {
         FilledButton(
           onPressed: _isLoading
               ? null
-              : () => _submit(
-                    context,
-                    (password) async {
-                      // This callback will be provided by the caller
-                      return false;
-                    },
-                  ),
+              : () => _submit(context, (password) async {
+                  // This callback will be provided by the caller
+                  return false;
+                }),
           child: _isLoading
               ? const SizedBox(
                   width: 16,
@@ -125,77 +127,37 @@ Future<bool> showDrivePasswordDialog(
   String? errorMessage;
 
   return await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('Drive Access'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Enter the password to access the Drive folder for media storage.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              obscureText: obscureText,
-              enabled: !isLoading,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: errorMessage,
-                suffixIcon: IconButton(
-                  icon: Icon(obscureText ? Icons.visibility : Icons.visibility_off),
-                  onPressed: () {
-                    setState(() {
-                      obscureText = !obscureText;
-                    });
-                  },
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Drive Access'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Enter the password to access the Drive folder for media storage.',
                 ),
-              ),
-              onSubmitted: (_) async {
-                final password = controller.text.trim();
-                if (password.isEmpty) {
-                  setState(() {
-                    errorMessage = 'Please enter a password';
-                  });
-                  return;
-                }
-
-                setState(() {
-                  isLoading = true;
-                  errorMessage = null;
-                });
-
-                try {
-                  final success = await authenticate(password);
-                  if (success && context.mounted) {
-                    Navigator.of(context).pop(true);
-                  } else {
-                    setState(() {
-                      isLoading = false;
-                      errorMessage = 'Incorrect password';
-                    });
-                  }
-                } catch (e) {
-                  setState(() {
-                    isLoading = false;
-                    errorMessage = 'Authentication failed. Please try again.';
-                  });
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: isLoading ? null : () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: isLoading
-                ? null
-                : () async {
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  obscureText: obscureText,
+                  enabled: !isLoading,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    errorText: errorMessage,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureText = !obscureText;
+                        });
+                      },
+                    ),
+                  ),
+                  onSubmitted: (_) async {
                     final password = controller.text.trim();
                     if (password.isEmpty) {
                       setState(() {
@@ -222,21 +184,67 @@ Future<bool> showDrivePasswordDialog(
                     } catch (e) {
                       setState(() {
                         isLoading = false;
-                        errorMessage = 'Authentication failed. Please try again.';
+                        errorMessage =
+                            'Authentication failed. Please try again.';
                       });
                     }
                   },
-            child: isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Authenticate'),
-          ),
-        ],
-      ),
-    ),
-  ) ?? false;
-}
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final password = controller.text.trim();
+                        if (password.isEmpty) {
+                          setState(() {
+                            errorMessage = 'Please enter a password';
+                          });
+                          return;
+                        }
 
+                        setState(() {
+                          isLoading = true;
+                          errorMessage = null;
+                        });
+
+                        try {
+                          final success = await authenticate(password);
+                          if (success && context.mounted) {
+                            Navigator.of(context).pop(true);
+                          } else {
+                            setState(() {
+                              isLoading = false;
+                              errorMessage = 'Incorrect password';
+                            });
+                          }
+                        } catch (e) {
+                          setState(() {
+                            isLoading = false;
+                            errorMessage =
+                                'Authentication failed. Please try again.';
+                          });
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Authenticate'),
+              ),
+            ],
+          ),
+        ),
+      ) ??
+      false;
+}

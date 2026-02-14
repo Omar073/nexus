@@ -8,6 +8,7 @@ import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/notes/models/note.dart';
 import 'package:nexus/features/tasks/models/task.dart';
+import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 
 class SyncController extends ChangeNotifier {
   SyncController({required SyncService syncService})

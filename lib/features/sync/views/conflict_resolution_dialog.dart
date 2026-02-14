@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';

@@ -71,10 +71,7 @@ class _CategorySectionState extends State<CategorySection>
   }
 
   void _handleAddTask() {
-    showTaskEditorDialog(
-      context,
-      categoryId: widget.categoryId,
-    );
+    showTaskEditorDialog(context, categoryId: widget.categoryId);
   }
 
   @override

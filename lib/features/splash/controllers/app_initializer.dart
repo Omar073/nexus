@@ -25,6 +25,8 @@ import 'package:nexus/features/settings/controllers/settings_controller.dart';
 import 'package:nexus/features/sync/controllers/sync_controller.dart';
 import 'package:nexus/features/tasks/controllers/task_controller.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
+import 'package:nexus/features/tasks/sync/task_sync_handler.dart';
+import 'package:nexus/features/notes/sync/note_sync_handler.dart';
 import 'package:nexus/firebase_setup/firebase_options.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:nexus/features/splash/models/app_initialization_result.dart';
@@ -84,10 +86,19 @@ class AppInitializer {
   static Future<AppInitializationResult> completeInitialization(
     CriticalInitializationResult critical,
   ) async {
-    final syncService = SyncService(
+    final taskHandler = TaskSyncHandler(
       firestore: FirebaseFirestore.instance,
-      connectivity: critical.connectivityService,
       deviceId: critical.deviceId,
+    );
+
+    final noteHandler = NoteSyncHandler(
+      firestore: FirebaseFirestore.instance,
+      deviceId: critical.deviceId,
+    );
+
+    final syncService = SyncService(
+      connectivity: critical.connectivityService,
+      handlers: [taskHandler, noteHandler],
     );
 
     final notificationService = NotificationService();

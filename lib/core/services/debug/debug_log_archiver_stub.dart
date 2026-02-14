@@ -9,5 +9,3 @@ class _StubDebugLogArchiver implements DebugLogArchiver {
 }
 
 DebugLogArchiver createArchiver() => _StubDebugLogArchiver();
-
-

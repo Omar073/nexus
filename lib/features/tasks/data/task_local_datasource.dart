@@ -16,4 +16,3 @@ class TaskLocalDatasource {
 
   ValueListenable<Box<Task>> listenable() => _box.listenable();
 }
-

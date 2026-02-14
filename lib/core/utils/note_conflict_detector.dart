@@ -1,7 +1,7 @@
-import 'package:nexus/features/tasks/models/task.dart';
+import 'package:nexus/features/notes/models/note.dart';
 
-class TaskConflictDetector {
-  static bool hasConflict({required Task local, required Task remote}) {
+class NoteConflictDetector {
+  static bool hasConflict({required Note local, required Note remote}) {
     final localLastSync = local.lastSyncedAt;
     final localDirty = local.isDirty;
     final remoteNewerThanLocalSync =

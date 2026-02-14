@@ -32,11 +32,7 @@ class VoiceNotesSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.mic,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.mic, size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Voice Notes',
@@ -71,4 +67,3 @@ class VoiceNotesSection extends StatelessWidget {
     );
   }
 }
-

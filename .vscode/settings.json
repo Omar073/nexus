@@ -1,4 +1,8 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.sourceDirectory": "E:/nexus/windows"
+    "cmake.sourceDirectory": "E:/nexus/windows",
+    "[dart]": {
+        "editor.defaultFormatter": "Dart-Code.dart-code",
+        "editor.formatOnSave": true
+    }
 }

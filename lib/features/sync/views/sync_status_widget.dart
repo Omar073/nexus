@@ -32,7 +32,9 @@ class SyncStatusWidget extends StatelessWidget {
     } else {
       icon = Icons.cloud_done_outlined;
       final ts = controller.lastSuccessfulSyncAt;
-      tooltip = ts == null ? 'Not synced yet' : 'Last sync: ${DateFormat.Hm().format(ts)}';
+      tooltip = ts == null
+          ? 'Not synced yet'
+          : 'Last sync: ${DateFormat.Hm().format(ts)}';
     }
 
     return IconButton(
@@ -60,5 +62,3 @@ class SyncStatusWidget extends StatelessWidget {
     );
   }
 }
-
-

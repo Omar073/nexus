@@ -23,7 +23,7 @@ class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     // Check if running in test mode via environment variable
     const isTesting = bool.fromEnvironment('TESTING', defaultValue: false);
-    
+
     if (kIsWeb) {
       return isTesting ? _webTest : _webLive;
     }
@@ -123,4 +123,3 @@ class DefaultFirebaseOptions {
     storageBucket: 'nexus-773.firebasestorage.app',
   );
 }
-

@@ -7,5 +7,3 @@ enum TaskDifficulty { low, medium, high }
 enum TaskRecurrenceRule { none, daily, weekly }
 
 enum SyncStatus { idle, syncing, synced, conflict, error }
-
-

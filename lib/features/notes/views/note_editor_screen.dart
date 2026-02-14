@@ -253,10 +253,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             ),
           ),
           // Attachments section
-          VoiceNotesSection(
-            note: note,
-            embedService: _embedService,
-          ),
+          VoiceNotesSection(note: note, embedService: _embedService),
         ],
       ),
     );

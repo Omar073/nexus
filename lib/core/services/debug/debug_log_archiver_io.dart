@@ -13,11 +13,14 @@ class _IoDebugLogArchiver implements DebugLogArchiver {
     try {
       if (kIsWeb) return;
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}${Platform.pathSeparator}debug_logs_archive.txt');
+      final file = File(
+        '${dir.path}${Platform.pathSeparator}debug_logs_archive.txt',
+      );
       if (await file.exists()) {
         await file.delete();
       }
-      final header = '=== Debug Logs Archive ===\n'
+      final header =
+          '=== Debug Logs Archive ===\n'
           'App Start: ${DateTime.now().toIso8601String()}\n'
           '${'-' * 50}\n\n';
       await file.writeAsString(header, flush: true);
@@ -40,5 +43,3 @@ class _IoDebugLogArchiver implements DebugLogArchiver {
 }
 
 DebugLogArchiver createArchiver() => _IoDebugLogArchiver();
-
-

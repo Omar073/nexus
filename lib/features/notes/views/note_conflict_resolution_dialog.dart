@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';

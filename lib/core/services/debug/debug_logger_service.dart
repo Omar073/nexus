@@ -27,7 +27,8 @@ class DebugLogEntry {
   }
 
   @override
-  String toString() => '[$formattedTime] [$source] ${level.name.toUpperCase()} $message';
+  String toString() =>
+      '[$formattedTime] [$source] ${level.name.toUpperCase()} $message';
 }
 
 /// Production-only debug logger with a hidden UI overlay.
@@ -168,13 +169,16 @@ class DebugLoggerService {
         // Common formats include:
         // #2   MyClass.myMethod (package:app/file.dart:12:34)
         // or ... file.dart:12:34
-        final fileMatch = RegExp(r'([A-Za-z0-9_]+\.dart):(\d+)').firstMatch(line);
+        final fileMatch = RegExp(
+          r'([A-Za-z0-9_]+\.dart):(\d+)',
+        ).firstMatch(line);
         if (fileMatch == null) continue;
         final fileName = fileMatch.group(1) ?? '';
         final lineNumber = fileMatch.group(2) ?? '';
 
-        final methodMatch =
-            RegExp(r'#\d+\s+([A-Za-z0-9_.$<>]+)\s+\(').firstMatch(line);
+        final methodMatch = RegExp(
+          r'#\d+\s+([A-Za-z0-9_.$<>]+)\s+\(',
+        ).firstMatch(line);
         final methodName = methodMatch?.group(1)?.split('.').last ?? '';
 
         if (methodName.isNotEmpty) {
@@ -191,5 +195,3 @@ class DebugLoggerService {
 
 /// Global shorthand function for easier logging.
 void mPrint(String message) => DebugLoggerService.instance.mPrint(message);
-
-

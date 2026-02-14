@@ -20,6 +20,8 @@ import 'package:nexus/features/tasks/controllers/category_controller.dart';
 import 'package:nexus/features/tasks/models/task_repository.dart';
 import 'package:nexus/features/splash/models/app_initialization_result.dart';
 import 'package:nexus/features/splash/models/critical_initialization_result.dart';
+import 'package:nexus/features/tasks/sync/task_sync_handler.dart';
+import 'package:nexus/features/notes/sync/note_sync_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -71,9 +73,17 @@ class AppProviderFactory {
           }
           // Create a minimal sync service for now (will be replaced)
           return SyncService(
-            firestore: FirebaseFirestore.instance,
             connectivity: connectivity,
-            deviceId: deviceId,
+            handlers: [
+              TaskSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+              NoteSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+            ],
           );
         },
       ),
@@ -176,9 +186,17 @@ class AppProviderFactory {
         return TaskController(
           repo: TaskRepository(),
           syncService: SyncService(
-            firestore: FirebaseFirestore.instance,
             connectivity: connectivity,
-            deviceId: deviceId,
+            handlers: [
+              TaskSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+              NoteSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+            ],
           ),
           googleDrive: GoogleDriveService(),
           settings: settings,
@@ -216,9 +234,17 @@ class AppProviderFactory {
         }
         return SyncController(
           syncService: SyncService(
-            firestore: FirebaseFirestore.instance,
             connectivity: connectivity,
-            deviceId: deviceId,
+            handlers: [
+              TaskSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+              NoteSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+            ],
           ),
         );
       },
@@ -285,9 +311,17 @@ class AppProviderFactory {
         return NoteController(
           repo: NoteRepository(),
           syncService: SyncService(
-            firestore: FirebaseFirestore.instance,
             connectivity: connectivity,
-            deviceId: deviceId,
+            handlers: [
+              TaskSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+              NoteSyncHandler(
+                firestore: FirebaseFirestore.instance,
+                deviceId: deviceId,
+              ),
+            ],
           ),
           googleDrive: GoogleDriveService(),
           deviceId: deviceId,
@@ -359,9 +393,17 @@ class AppProviderFactory {
           tasks: TaskController(
             repo: TaskRepository(),
             syncService: SyncService(
-              firestore: FirebaseFirestore.instance,
               connectivity: connectivity,
-              deviceId: deviceId,
+              handlers: [
+                TaskSyncHandler(
+                  firestore: FirebaseFirestore.instance,
+                  deviceId: deviceId,
+                ),
+                NoteSyncHandler(
+                  firestore: FirebaseFirestore.instance,
+                  deviceId: deviceId,
+                ),
+              ],
             ),
             googleDrive: GoogleDriveService(),
             settings: settings,
@@ -412,9 +454,17 @@ class AppProviderFactory {
           tasks: TaskController(
             repo: TaskRepository(),
             syncService: SyncService(
-              firestore: FirebaseFirestore.instance,
               connectivity: connectivity,
-              deviceId: deviceId,
+              handlers: [
+                TaskSyncHandler(
+                  firestore: FirebaseFirestore.instance,
+                  deviceId: deviceId,
+                ),
+                NoteSyncHandler(
+                  firestore: FirebaseFirestore.instance,
+                  deviceId: deviceId,
+                ),
+              ],
             ),
             googleDrive: GoogleDriveService(),
             settings: settings,
@@ -438,3 +488,5 @@ class AppProviderFactory {
     );
   }
 }
+
+//TODO: refactor

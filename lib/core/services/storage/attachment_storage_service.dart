@@ -28,9 +28,11 @@ class AttachmentStorageService {
     return source.copy(dest.path);
   }
 
-  Future<String> newAudioPath({required String taskId, String ext = '.m4a'}) async {
+  Future<String> newAudioPath({
+    required String taskId,
+    String ext = '.m4a',
+  }) async {
     final dir = await _taskDir(taskId);
     return p.join(dir.path, '${_uuid.v4()}$ext');
   }
 }
-

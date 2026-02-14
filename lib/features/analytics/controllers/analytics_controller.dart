@@ -27,9 +27,9 @@ class AnalyticsController extends ChangeNotifier {
     required TaskController tasks,
     required ReminderController reminders,
     required HabitController habits,
-  })  : _tasks = tasks,
-        _reminders = reminders,
-        _habits = habits {
+  }) : _tasks = tasks,
+       _reminders = reminders,
+       _habits = habits {
     _tasks.addListener(_recompute);
     _reminders.addListener(_recompute);
     _habits.addListener(_recompute);
@@ -64,7 +64,9 @@ class AnalyticsController extends ChangeNotifier {
     final upcomingReminders = _reminders.upcoming.length;
 
     final habits = _habits.habits.where((h) => h.active).toList();
-    final doneToday = habits.where((h) => _habits.isCompletedToday(h.id)).length;
+    final doneToday = habits
+        .where((h) => _habits.isCompletedToday(h.id))
+        .length;
 
     _snapshot = AnalyticsSnapshot(
       activeTasks: active,
@@ -85,5 +87,3 @@ class AnalyticsController extends ChangeNotifier {
     super.dispose();
   }
 }
-
-

@@ -14,5 +14,3 @@ class DeviceIdStore {
     return created;
   }
 }
-
-
