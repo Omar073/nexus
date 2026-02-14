@@ -30,6 +30,9 @@ jobs:
       - name: Create app_secrets.dart from template
         run: cp lib/app_secrets/app_secrets.dart.example lib/app_secrets/app_secrets.dart
 
+      - name: Create apiKeys.dart from template
+        run: cp lib/firebase_setup/apiKeys.dart.example lib/firebase_setup/apiKeys.dart
+
       - name: Hygiene check (unused imports, deprecated APIs, etc.)
         run: dart fix --dry-run .
 
