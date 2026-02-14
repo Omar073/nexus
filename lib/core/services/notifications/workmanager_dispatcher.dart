@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/services/notifications/notification_service.dart';
+import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/models/reminder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -50,7 +51,7 @@ void workmanagerCallbackDispatcher() {
 /// Testable logic for checking due reminders
 Future<bool> handleBackgroundCheck({
   required Box<Reminder> box,
-  required NotificationService notifications,
+  required ReminderNotifications notifications,
 }) async {
   // 5. Check for due reminders
   final now = DateTime.now();

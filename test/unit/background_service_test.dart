@@ -1,23 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:nexus/core/services/notifications/notification_service.dart';
+import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/core/services/notifications/workmanager_dispatcher.dart';
 import 'package:nexus/features/reminders/models/reminder.dart';
 
 class MockBox extends Mock implements Box<Reminder> {}
 
-class MockNotificationService extends Mock implements NotificationService {}
+class MockReminderNotifications extends Mock implements ReminderNotifications {}
 
 class MockReminder extends Mock implements Reminder {}
 
 void main() {
   late MockBox mockBox;
-  late MockNotificationService mockNotifications;
+  late MockReminderNotifications mockNotifications;
 
   setUp(() {
     mockBox = MockBox();
-    mockNotifications = MockNotificationService();
+    mockNotifications = MockReminderNotifications();
     // Register fallback values if needed
     registerFallbackValue(
       Reminder(
