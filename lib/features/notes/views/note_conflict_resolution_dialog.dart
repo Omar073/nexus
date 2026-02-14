@@ -16,6 +16,7 @@ class NoteConflictResolutionDialog extends StatefulWidget {
   const NoteConflictResolutionDialog({super.key});
 
   @override
+  /// Creates the mutable state for this dialog.
   State<NoteConflictResolutionDialog> createState() =>
       _NoteConflictResolutionDialogState();
 }
@@ -26,6 +27,7 @@ class _NoteConflictResolutionDialogState
   static const _uuid = Uuid();
 
   @override
+  /// Builds the conflict resolution dialog: dropdown to pick conflict, side-by-side note cards, and Keep Local/Remote actions.
   Widget build(BuildContext context) {
     final sync = context.watch<SyncController>();
     final conflicts = sync.noteConflicts;
@@ -107,6 +109,7 @@ class _NoteConflictResolutionDialogState
     );
   }
 
+  /// Accepts the remote version: writes it to Hive, marks synced, and removes the conflict.
   Future<void> _keepRemote(
     BuildContext context,
     SyncConflict<Note> conflict,
@@ -121,6 +124,7 @@ class _NoteConflictResolutionDialogState
     _removeConflict(context, conflict.entityId);
   }
 
+  /// Keeps the local version: saves it, enqueues an update sync op, and removes the conflict.
   Future<void> _keepLocal(
     BuildContext context,
     SyncConflict<Note> conflict,
@@ -145,6 +149,7 @@ class _NoteConflictResolutionDialogState
     _removeConflict(context, conflict.entityId);
   }
 
+  /// Removes the resolved conflict from the list; closes the dialog if no conflicts remain.
   void _removeConflict(BuildContext context, String entityId) {
     final sync = context.read<SyncController>();
     final remaining = sync.noteConflicts
@@ -162,7 +167,9 @@ class _NoteSnapshotCard extends StatelessWidget {
   final Note note;
 
   @override
+  /// Builds a card showing note title and a plain-text preview of the content.
   Widget build(BuildContext context) {
+    /// Extracts plain text from note contentDeltaJson for preview (max 400 chars).
     String preview(Note n) {
       try {
         final decoded = jsonDecode(n.contentDeltaJson);

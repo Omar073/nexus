@@ -63,6 +63,7 @@ dependencies:
   googleapis_auth: ^2.0.0
   flutter_timezone: ^5.0.1
   flutter_quill: ^11.0.0
+  flutter_markdown: ^0.7.7+1
   fl_chart: ^1.1.1
   table_calendar: ^3.1.2
   device_calendar: ^4.3.3

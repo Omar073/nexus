@@ -18,6 +18,7 @@ class Note extends HiveObject {
     this.lastSyncedAt,
     this.syncStatus = 0,
     this.categoryId,
+    this.isMarkdown = false,
   });
 
   @HiveField(0)
@@ -55,6 +56,10 @@ class Note extends HiveObject {
   @HiveField(10)
   String? categoryId;
 
+  /// Whether this note's content should be treated as markdown text.
+  @HiveField(11)
+  bool isMarkdown;
+
   SyncStatus get syncStatusEnum => SyncStatus.values[syncStatus];
   set syncStatusEnum(SyncStatus v) => syncStatus = v.index;
 
@@ -67,6 +72,7 @@ class Note extends HiveObject {
     'lastModifiedByDevice': lastModifiedByDevice,
     'attachments': attachments.map((a) => a.toJson()).toList(),
     'categoryId': categoryId,
+    'isMarkdown': isMarkdown,
   };
 
   static Note fromFirestoreJson(Map<String, dynamic> json) {
@@ -87,6 +93,7 @@ class Note extends HiveObject {
       lastSyncedAt: DateTime.now(),
       syncStatus: SyncStatus.synced.index,
       categoryId: json['categoryId'] as String?,
+      isMarkdown: json['isMarkdown'] as bool? ?? false,
     );
   }
 }
@@ -116,13 +123,15 @@ class NoteAdapter extends TypeAdapter<Note> {
       lastSyncedAt: fields[8] as DateTime?,
       syncStatus: (fields[9] as int?) ?? 0,
       categoryId: fields[10] as String?,
+      isMarkdown: (fields[11] as bool?) ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(10)
+      // Number of fields written below.
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -144,6 +153,8 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(9)
       ..write(obj.syncStatus)
       ..writeByte(10)
-      ..write(obj.categoryId);
+      ..write(obj.categoryId)
+      ..writeByte(11)
+      ..write(obj.isMarkdown);
   }
 }

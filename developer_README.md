@@ -817,61 +817,417 @@ void workmanagerCallbackDispatcher() {
 
 ### Sync Architecture
 
-**Key files:**
+The sync system is what makes Nexus **offline-first** instead of “online-required”. It is built as a **local push queue + incremental pull** engine that is fully decoupled from feature controllers (Tasks, Notes, etc.).
 
-- Queue model: [`lib/core/data/sync_queue.dart`](lib/core/data/sync_queue.dart)
-- Sync engine: [`lib/core/services/sync/sync_service.dart`](lib/core/services/sync/sync_service.dart)
-- UI state: [`lib/features/sync/controllers/sync_controller.dart`](lib/features/sync/controllers/sync_controller.dart)
-- Sync icon: [`lib/features/sync/views/sync_status_widget.dart`](lib/features/sync/views/sync_status_widget.dart)
-- Task conflicts: [`lib/features/sync/views/conflict_resolution_dialog.dart`](lib/features/sync/views/conflict_resolution_dialog.dart)
-- Note conflicts: [`lib/features/notes/views/note_conflict_resolution_dialog.dart`](lib/features/notes/views/note_conflict_resolution_dialog.dart)
+At a high level:
 
-### How Sync works
+| Layer | Responsibility | Key Components |
+|-------|----------------|----------------|
+| **Data** | Store queued operations + sync metadata | [`SyncOperation`](lib/core/data/sync_queue.dart), [`SyncMetadata`](lib/core/data/sync_metadata.dart), [`SyncOperationAdapter`](lib/core/data/sync_operation_adapter.dart) |
+| **Engine** | Push local → Firestore, pull remote → Hive, detect conflicts | [`SyncService`](lib/core/services/sync/sync_service.dart) |
+| **Producers** | Enqueue operations when entities change | [`TaskController`](lib/features/tasks/controllers/task_controller.dart), [`NoteController`](lib/features/notes/controllers/note_controller.dart), [`ReminderController`](lib/features/reminders/controllers/reminder_controller.dart) |
+| **Consumers** | Surface conflicts to the user | [`SyncController`](lib/features/sync/controllers/sync_controller.dart), [`NoteConflictResolutionDialog`](lib/features/notes/views/note_conflict_resolution_dialog.dart), UI badges |
 
-- Controllers enqueue `SyncOperation` entries.
-- `SyncService` pushes ops to Firestore, then pulls changes since last sync.
-- Conflicts occur when local is dirty and remote updated after local last sync.
-- User resolves by choosing **Keep Local** or **Keep Remote**.
+---
 
-**Enqueueing a sync operation (typical shape):**
+### 1. Data Model (Sync Queue + Metadata)
 
-```dart
-await syncQueue.enqueue(
-  SyncOperation(
-    entityType: 'task',
-    entityId: task.id,
-    operation: SyncOperationType.upsert,
-    createdAt: DateTime.now(),
-  ),
-);
+#### SyncOperation ([`sync_queue.dart`](lib/core/data/sync_queue.dart))
+
+Each write to Firestore is represented as a `SyncOperation` stored in a Hive box. Key fields:
+
+- `id`, `type` (create/update/delete), `entityType` ('task' | 'note' | 'reminder' | 'category'), `entityId`
+- `data`: JSON snapshot of the entity (for retries even if local entity is deleted)
+- `retryCount`, `status` (pending/syncing/failed/completed), `createdAt`, `lastAttemptAt`
+
+This makes the queue **self-contained**: even if a user deletes a Task locally, its queued delete operation still carries enough metadata (`entityId`, `entityType`, maybe `data`) to be applied remotely.
+
+#### SyncOperationAdapter ([`sync_operation_adapter.dart`](lib/core/data/sync_operation_adapter.dart))
+
+A custom Hive `TypeAdapter` handles binary serialization. Key responsibilities:
+
+- **On read**: Reconstructs `SyncOperation` from binary, with defensive defaults (e.g. `createdAt: (fields[6] as DateTime?) ?? DateTime.now()`)
+- **On write**: Recursively scans `data` and converts Firestore `Timestamp` objects to `DateTime` (Hive can't store Timestamps directly)
+
+This adapter keeps the queue **backwards-compatible**: missing fields default to sane values instead of throwing at runtime.
+
+#### SyncMetadata ([`sync_metadata.dart`](lib/core/data/sync_metadata.dart))
+
+[`SyncMetadata`](lib/core/data/sync_metadata.dart) stores the timestamp of the **last successful sync**:
+
+- `lastSuccessfulSyncAt`: a single `DateTime` field stored in its own Hive box.
+- Used by [`SyncService`](lib/core/services/sync/sync_service.dart) to pull only entities **updated since** that time from Firestore (incremental sync).
+
+---
+
+### 2. End-to-End Data Flow
+
+#### High-Level Pipeline
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 1. USER ACTION (e.g., create task)                                           │
+│    Controller writes to Hive → sets isDirty=true                             │
+│    Controller creates SyncOperation → adds to sync queue                     │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 2. SYNC QUEUE (Hive box: 'sync_ops')                                         │
+│    Stores pending operations: {id, type, entityType, entityId, data, ...}    │
+│    Persists across app restarts.                                             │
+│    Sorted by 'createdAt' to ensure operations run in order.                  │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 3. SYNC SERVICE (triggered when online)                                      │
+│    Reads pending operations from queue                                       │
+│    Pushes each to Firestore                                                  │
+│    On success: removes from queue, clears isDirty                            │
+│    On failure: increments retryCount, updates lastAttemptAt                  │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 9.4 Notes (Rich text + inline voice notes)
+#### A. Local Write → Enqueue Operation
+
+Controllers (e.g. [`TaskController`](lib/features/tasks/controllers/task_controller.dart), [`NoteController`](lib/features/notes/controllers/note_controller.dart)) enqueue sync operations when entities change:
+
+```dart
+final op = SyncOperation(
+  id: _uuid.v4(),
+  type: (isCreate ? SyncOperationType.create : SyncOperationType.update).index,
+  entityType: 'note',
+  entityId: note.id,
+  data: note.toFirestoreJson(),
+);
+await _syncService.enqueueOperation(op);
+```
+
+The pattern is the same for Tasks and other entities:
+
+1. Write to Hive (local-first).
+2. Mark entity as dirty (`isDirty = true`, `syncStatus = idle`).
+3. Enqueue `SyncOperation` in the sync queue.
+4. Optionally trigger `syncOnce()` immediately.
+
+> **Note on `isDirty` Lifecycle:**
+> The `isDirty` flag remains `true` until the **Pull Phase** completes. When `_pullTasks` fetches the latest version from Firestore (which matches the local version we just pushed), it overwrites the local entity with the remote one. Since the remote entity allows defaults to `isDirty = false`, this effectively "clears" the flag. This "Round-Trip Confirmation" ensures we only consider data synced when we verify it exists on the server.
+
+#### B. SyncService: Auto-sync on Connectivity
+
+[`SyncService`](lib/core/services/sync/sync_service.dart) subscribes to [`ConnectivityService.onlineStream()`](lib/core/services/platform/connectivity_service.dart) and runs `syncOnce()` when the device comes online:
+
+```dart
+_connectivity.onlineStream().listen((online) {
+  if (online) {
+    unawaited(syncOnce());
+  }
+});
+```
+
+`syncOnce()` orchestrates the full sync cycle: `_pushQueue()` → `_pullTasks()` → `_pullNotes()` → `_markSuccessfulSync()`, guarded by an `_isSyncing` flag to prevent concurrent syncs.
+
+#### C. Push Phase (`_pushQueue`)
+
+During push, `SyncService` iterates over pending `SyncOperation`s and applies them to Firestore. On success, operations are marked completed and removed from the queue. On failure, they're marked failed and stay in the queue for retry. `_applyOperationToFirestore` routes by `entityType` and `type` to the appropriate Firestore collection and verb (set/update/delete).
+
+#### D. Pull Phase (`_pullTasks`, `_pullNotes`)
+
+After pushing local changes, `SyncService` pulls remote changes where `updatedAt > lastSuccessfulSyncAt`:
+
+```dart
+final snapshots = await _firestore
+    .collection('notes')
+    .where('updatedAt', isGreaterThan: since)
+    .get();
+```
+
+`_applyRemoteNote`:
+
+1. Loads the local [`Note`](lib/features/notes/models/note.dart) (if any) by `id`.
+2. Compares `remote.updatedAt` vs local `lastSyncedAt` + `isDirty`.
+3. Either:
+   - Applies the remote update directly (no conflict), or
+   - Creates a `SyncConflict<Note>` if both sides changed.
+
+---
+
+### 3. Conflict Handling Strategy
+
+We mix **automatic resolution** for simple cases with **explicit user choice** for true conflicts.
+
+#### Automatic Resolution (No Local Edits)
+
+If:
+
+- Local entity `isDirty == false`, OR
+- Local `lastSyncedAt` is `null` (never synced),
+
+then remote wins automatically:
+
+- Local entity is overwritten with `remote`.
+- `isDirty` is cleared and `syncStatus` is set to `synced`.
+
+This covers the common case where a user only edits from one device at a time.
+
+#### Manual Resolution (`SyncConflict<T>`)
+
+If the user has **unsynced local changes** (`local.isDirty == true`) and there is a newer remote version (`remote.updatedAt > local.lastSyncedAt`), we treat this as a conflict. `SyncService` does **not** overwrite local data in this case. Instead it:
+
+1. Builds a `SyncConflict<T>` (one per entity).
+2. Emits it on a `Stream<List<SyncConflict<T>>>` managed by [`SyncController`](lib/features/sync/controllers/sync_controller.dart) (for notes, tasks, etc.).
+3. Leaves both copies intact until the user decides.
+
+#### Conflict Resolution Dialog (Notes)
+
+For notes, conflicts are resolved via [`NoteConflictResolutionDialog`](lib/features/notes/views/note_conflict_resolution_dialog.dart):
+
+- UI presents a pair of cards: **Local** vs **Remote**.
+- Each card shows:
+  - Title
+  - A text preview built by deserializing `contentDeltaJson` and calling `.toPlainText()`.
+- User chooses:
+
+  - **Keep Remote**:
+    - Remote version is written to the local Hive box.
+    - `isDirty = false`, `syncStatus = synced`, `lastSyncedAt = now`.
+  - **Keep Local**:
+    - Local version is re-enqueued as a new `SyncOperation` (`update`).
+    - `syncStatus = idle`, `isDirty = true`.
+
+The same pattern can be re-used for other entity types (e.g. Tasks) with entity-specific dialogs.
+
+---
+
+### 4. Error Handling & Retries
+
+The sync engine is designed to be **eventually consistent** in the face of flaky networks:
+
+- Failed pushes increment `retryCount` and mark the operation as `failed`.
+- Future calls to `syncOnce()` will retry failed operations:
+  - There is no hard cap, but you can extend `SyncQueue` to back off or cap retries if needed.
+- Reads from Firestore (`_pullTasks`, `_pullNotes`) are wrapped in try/catch; failures simply mean “no new remote changes this round”.
+
+In all cases:
+
+- Local data remains available and editable.
+- The worst case is that remote copies lag behind until the next successful sync.
+
+This is what enables Nexus to behave like a **first-class offline app** while still keeping data in sync across devices.
+
+## 9.4 Notes (Rich text + markdown + inline voice notes)
 
 ### Notes Architecture
 
 **Key files:**
 
-- Models: [`lib/features/notes/models/note.dart`](lib/features/notes/models/note.dart), [`lib/features/notes/models/note_attachment.dart`](lib/features/notes/models/note_attachment.dart)
-- Controller: [`lib/features/notes/controllers/note_controller.dart`](lib/features/notes/controllers/note_controller.dart)
+- Models:
+  - [`lib/features/notes/models/note.dart`](lib/features/notes/models/note.dart)
+  - [`lib/features/notes/models/note_attachment.dart`](lib/features/notes/models/note_attachment.dart)
+- Controller:
+  - [`lib/features/notes/controllers/note_controller.dart`](lib/features/notes/controllers/note_controller.dart)
 - UI:
   - [`lib/features/notes/views/notes_list_screen.dart`](lib/features/notes/views/notes_list_screen.dart): List of all notes.
-  - [`lib/features/notes/views/note_editor_screen.dart`](lib/features/notes/views/note_editor_screen.dart): Rich text editor with Quill. **Save button exits editor automatically.**
-- RTL helper: [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart)
-- Voice helper: [`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart)
+  - [`lib/features/notes/views/widgets/note_tile.dart`](lib/features/notes/views/widgets/note_tile.dart): Single note card + preview text.
+  - [`lib/features/notes/views/note_editor_screen.dart`](lib/features/notes/views/note_editor_screen.dart): Editor screen coordinating rich text and markdown.
+  - [`lib/features/notes/views/editor/markdown_editor_area.dart`](lib/features/notes/views/editor/markdown_editor_area.dart): Markdown editor + preview (tabs/split).
+  - [`lib/features/notes/views/editor/voice_notes_section.dart`](lib/features/notes/views/editor/voice_notes_section.dart): Voice notes section in the editor.
+- Helpers:
+  - [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart): RTL-aware text rendering.
+  - [`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart): Voice note playback/recording.
 
-### Storage format & Rich Text
+At a high level, the Notes feature is split into three layers:
 
-- **Rich Text Engine**: [flutter_quill](https://pub.dev/packages/flutter_quill)
-- **Data Model**: `Note.contentDeltaJson` stores the document as a **Quill Delta** JSON string.
-  - *Delta* is a format representing changes (inserts, attributes) rather than HTML.
-  - Example: `[{"insert":"Hello\n"}]`
-- **Read-Only Previews**:
-  - The list view and conflict dialogs render previews by parsing the Delta JSON and extracting plain text via `doc.toPlainText()`.
-  - Conflict resolution shows a read-only Quill editor to display formatting without allowing edits.
-- **Voice Notes**:
-  - Stored as `NoteAttachment` entries referencing local file paths.
-  - Synced to Google Drive (best-effort) with a reference ID in the attachment model.
+| Layer | Responsibility | Key Components |
+|-------|----------------|----------------|
+| **Model** | Persistence, sync payloads | [`Note`](lib/features/notes/models/note.dart), [`NoteAttachment`](lib/features/notes/models/note_attachment.dart), `NoteAdapter` |
+| **Controller** | Business logic, sync queue, search/filter | [`NoteController`](lib/features/notes/controllers/note_controller.dart) |
+| **View** | Editing UI, markdown/rich text translation, voice UI | [`NoteEditorScreen`](lib/features/notes/views/note_editor_screen.dart), [`MarkdownEditorArea`](lib/features/notes/views/editor/markdown_editor_area.dart), [`VoiceNotesSection`](lib/features/notes/views/editor/voice_notes_section.dart) |
+
+The **controller** never needs to know whether the user is in rich text or markdown mode; it always receives a `QuillController` and serializes its Delta to JSON. All mode-specific logic lives in the editor view layer.
+
+---
+
+### 1. Data Model (`Note`)
+
+The [`Note`](lib/features/notes/models/note.dart) model is a Hive object and the single source of truth for note data. Key fields:
+
+- `id`, `title`, `contentDeltaJson` (Quill Delta JSON string), `createdAt`, `updatedAt`
+- `attachments` (list of `NoteAttachment`), `categoryId`
+- `isMarkdown` (view hint: `false` = rich text, `true` = markdown)
+- Sync fields: `isDirty`, `lastSyncedAt`, `syncStatus`, `lastModifiedByDevice`
+
+**Key points:**
+
+- `contentDeltaJson` is the **only** content field. It always stores a Quill Delta JSON string.
+- `isMarkdown` is a **view hint**:
+  - `false`: interpret `contentDeltaJson` as rich text.
+  - `true`: interpret `contentDeltaJson` as a plain-text markdown string wrapped in a single Delta insert.
+- Sync uses `Note.toFirestoreJson()` / `Note.fromFirestoreJson()` and **never branches on `isMarkdown`**.
+
+Firestore snapshot example for a markdown note:
+
+```jsonc
+{
+  "id": "note-123",
+  "title": "Release plan",
+  "contentDeltaJson": "[{\"insert\":\"# v1.2.0\\n- [x] Feature A\\n\"}]",
+  "isMarkdown": true,
+  "createdAt": "...",
+  "updatedAt": "...",
+  "lastModifiedByDevice": "device-abc",
+  "attachments": [],
+  "categoryId": null
+}
+```
+
+This keeps tooling simple: every downstream consumer just deserializes a Delta and calls `.toPlainText()` if it needs search/preview text.
+
+---
+
+### 2. Editor Coordination (Rich Text + Markdown)
+
+[`NoteEditorScreen`](lib/features/notes/views/note_editor_screen.dart) is a **coordinator** that owns:
+
+- `QuillController? _controller` — always present, regardless of mode.
+- `TextEditingController _markdownController` — used only in markdown mode.
+- `bool _isMarkdown` — local UI state, mirrored to `note.isMarkdown` on toggle.
+- `MarkdownLayout _markdownLayout` — whether markdown is in tabs or split view.
+
+**Initialization flow:**
+
+1. `NoteEditorScreen` loads the `Note` from `NoteController.byId(noteId)`.
+2. It builds `_controller` from `note.contentDeltaJson`:
+   - If parsing fails, it falls back to a blank document.
+3. It reads `note.isMarkdown`:
+   - If `false` → stays in rich text mode.
+   - If `true` → populates `_markdownController.text` from `_controller.document.toPlainText()`.
+
+**Runtime mode switching:**
+
+When the user toggles "Markdown mode":
+
+- **Rich Text → Markdown**:
+  - `_isMarkdown` is set to `true` and `note.isMarkdown = true`.
+  - If `_markdownController.text` is empty, it is initialized from `_controller.document.toPlainText()`.
+  - The Quill toolbar is hidden and `MarkdownEditorArea` is displayed instead.
+- **Markdown → Rich Text** (conceptually):
+  - Currently, the primary transition back happens on **Save** (see below) by converting markdown text into a simple Quill document.
+
+**Saving flow (central invariant):**
+
+All saves go through `NoteController.saveEditor(controller: QuillController)`. Inside `NoteEditorScreen`, before this call:
+
+- If `_isMarkdown == true`: A temporary `quill.Document` is created, the entire markdown text is inserted as a single block, and `_controller` is replaced with a new `QuillController` wrapping this document.
+- If `_isMarkdown == false`: `_controller` is the live rich text document.
+
+`NoteController.saveEditor` itself is markdown-agnostic:
+
+- Serializes `controller.document.toDelta().toJson()` to `contentDeltaJson`.
+- Updates `updatedAt`, `lastModifiedByDevice`, `isDirty`, `syncStatus`.
+- Saves the note in Hive and enqueues a `SyncOperation` for push to Firestore.
+
+This gives a clean separation:
+
+- **View layer** handles translation between rich text and markdown.
+- **Controller + data layer** only understand Quill Deltas and JSON.
+
+---
+
+### 3. Markdown Editor UX (`MarkdownEditorArea`)
+
+[`MarkdownEditorArea`](lib/features/notes/views/editor/markdown_editor_area.dart) is a reusable widget that handles **editing + previewing markdown**, accepting a `TextEditingController` and a `MarkdownLayout` (tabs or split). It supports two layouts:
+
+| Layout | UX | Implementation |
+|--------|----|----------------|
+| **Tabs** | Top `TabBar` with `Edit` / `Preview`, body switches between editor and preview | `DefaultTabController` + `NestedScrollView` so the TabBar scrolls off as you scroll content |
+| **Split** | Side-by-side editor + preview with linked scrolling | Two `Expanded` columns with linked `ScrollController`s |
+
+**Live preview:**
+
+- `MarkdownEditorArea` listens to `controller.addListener(_onMarkdownChanged)`.
+- On any text change, it calls `setState()`, causing the preview to re-render.
+- No save is required to see markdown changes.
+
+**Error handling:**
+
+- Markdown rendering is wrapped in a `try/catch`.
+- If `flutter_markdown` throws (e.g. due to malformed input or an unsupported construct):
+  - A **Snackbar** is shown once per editor session with a tailored hint (e.g. check image URLs or link syntax).
+  - The preview falls back to a plain-text view of the markdown, so the user never sees a crash or blank screen.
+  - The full error + stack trace are printed to the console for debugging.
+
+**RTL awareness:**
+
+- The widget inspects `controller.text` and uses the same rune-based `_looksArabic` heuristic as the rich text editor.
+- Directionality is applied to both the editor and preview areas, ensuring correct layout for RTL languages.
+
+---
+
+### 4. Note List & Preview (`NoteTile`)
+
+The notes list screen shows a preview for each note via [`NoteTile`](lib/features/notes/views/widgets/note_tile.dart):
+
+- Uses `Note.title ?? 'Untitled'` as the primary label.
+- Shows a relative timestamp (e.g. `5m ago`, `Yesterday`).
+- Extracts a plain-text preview from `contentDeltaJson` by iterating Delta ops and concatenating `insert` strings.
+- If `note.isMarkdown == true`, it shows a small `"MD"` badge next to the title so markdown notes are visually distinct.
+
+This works for both rich text and markdown because:
+
+- Rich text Deltas carry plain text in `insert` operations alongside formatting attributes.
+- Markdown notes store the raw markdown string as a single `insert` op, so preview text is trivially the markdown source (flattened and trimmed).
+
+Search in `NoteController.visibleNotes` also relies on this plain-text extraction, so searching works the same regardless of mode.
+
+---
+
+### 5. Attachment Pipeline (Voice & Images)
+
+Attachments (images/audio) are **related entities**, not inlined payloads inside the Delta JSON.
+
+**Components:**
+
+- [`NoteEmbedService`](lib/core/services/note_embed_service.dart): Platform-specific recording/picking and local playback.
+- [`AttachmentStorageService`](lib/core/services/storage/attachment_storage_service.dart): Local filesystem layout (`ApplicationDocuments/attachments/...`).
+- [`GoogleDriveService`](lib/core/services/storage/google_drive_service.dart): Cloud mirror for attachments.
+- [`NoteAttachment`](lib/features/notes/models/note_attachment.dart): Lightweight metadata object stored on the `Note`.
+
+**Offline-first pipeline:**
+
+1. **User action**: user taps "Record Voice Note" in the editor.
+2. **Local write (`NoteEmbedService`)**:
+   - Audio is recorded to a temporary cache path.
+   - File is moved into permanent storage: `attachments/notes/{noteId}/{uuid}.m4a`.
+3. **Entity update (`NoteController.addVoiceAttachment`)**:
+   - A `NoteAttachment` is created with:
+     - `localUri` → file path in app documents directory.
+     - `driveFileId` → `null` initially.
+     - `uploaded` / `synced` flags set to `false`.
+   - `note.attachments` is updated and saved to Hive.
+   - **UI immediately shows the new attachment** in `VoiceNotesSection` (optimistic UI).
+4. **Background upload (`GoogleDriveService`)**:
+   - Controller kicks off an async upload if:
+     - The user is authenticated with Drive.
+     - The local file still exists.
+   - On success:
+     - `attachment.driveFileId` is populated.
+     - `uploaded: true` is saved back to Hive.
+   - On failure (offline or transient error):
+     - Attachment stays present locally.
+     - A future sync/upload pass can retry using the metadata stored in the note.
+
+**Why keep attachments separate from `contentDeltaJson`?**
+
+- **Performance**: Large binaries never bloat the Delta JSON; notes stay small and fast to load/search.
+- **Flexibility**: We can change the cloud backend (Drive → S3, etc.) without migrating note content.
+- **Reliability**: Sync conflicts only deal with structured metadata, not huge blobs.
+
+In the UI, [`VoiceNotesSection`](lib/features/notes/views/editor/voice_notes_section.dart) simply receives the `Note` and a `NoteEmbedService` instance, and renders:
+
+- A header row with icon + count.
+- A list of [`VoiceNoteItem`](lib/features/notes/views/editor/voice_note_item.dart) widgets, each wired to play via `NoteEmbedService.playLocal(localUri)`.
+
+This keeps the editor layout declarative, while all platform-specific audio logic stays in `NoteEmbedService`.
 
 ## 9.5 Habits
 
