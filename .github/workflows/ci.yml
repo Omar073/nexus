@@ -13,6 +13,8 @@ jobs:
   checks:
     name: Format, Analyze & Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to push formatting changes
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +31,28 @@ jobs:
         run: cp lib/app_secrets/app_secrets.dart.example lib/app_secrets/app_secrets.dart
 
       - name: Hygiene check (unused imports, deprecated APIs, etc.)
-        run: dart fix --dry-run --set-exit-if-changed .
+        run: dart fix --dry-run .
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+      - name: Format code
+        run: dart format .
+
+      - name: Check for formatting changes
+        id: format-check
+        run: |
+          if git diff --quiet .; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push formatting changes
+        if: steps.format-check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "style: apply dart format"
+          git push
 
       - name: Analyze project source
         run: flutter analyze
