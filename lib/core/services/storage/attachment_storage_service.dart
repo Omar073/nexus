@@ -6,9 +6,15 @@ import 'package:uuid/uuid.dart';
 
 class AttachmentStorageService {
   static const _uuid = Uuid();
+  final Future<Directory> Function()? _docDirProvider;
+
+  AttachmentStorageService({Future<Directory> Function()? docDirProvider})
+    : _docDirProvider = docDirProvider;
 
   Future<Directory> _taskDir(String taskId) async {
-    final base = await getApplicationDocumentsDirectory();
+    final base = _docDirProvider != null
+        ? await _docDirProvider()
+        : await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(base.path, 'attachments', 'tasks', taskId));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
