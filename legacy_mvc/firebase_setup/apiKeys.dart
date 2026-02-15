@@ -1,0 +1,34 @@
+// ignore_for_file: file_names
+// Copy this file to apiKeys.dart and fill in real values. Do NOT commit real keys.
+//
+// INSTRUCTIONS:
+// 1. Copy this file: cp apiKeys.dart.example apiKeys.dart
+// 2. Get your Firebase API keys from Firebase Console
+// 3. Replace the placeholder values below with your actual keys
+// 4. Never commit apiKeys.dart to Git (it's in .gitignore)
+
+// Live (production)
+const String webLiveApiKey = 'YOUR_WEB_LIVE_API_KEY';
+const String webLiveAppId = 'YOUR_WEB_LIVE_APP_ID';
+
+const String androidLiveApiKey = 'YOUR_ANDROID_LIVE_API_KEY';
+const String androidLiveAppId = 'YOUR_ANDROID_LIVE_APP_ID';
+
+const String iosLiveApiKey = 'YOUR_IOS_LIVE_API_KEY';
+const String iosLiveAppId = 'YOUR_IOS_LIVE_APP_ID';
+
+const String windowsLiveApiKey = 'YOUR_WINDOWS_LIVE_API_KEY';
+const String windowsLiveAppId = 'YOUR_WINDOWS_LIVE_APP_ID';
+
+// Test (testing/staging) - Optional: Use same values as Live if you don't have separate test project
+const String webTestApiKey = 'YOUR_WEB_TEST_API_KEY';
+const String webTestAppId = 'YOUR_WEB_TEST_APP_ID';
+
+const String androidTestApiKey = 'YOUR_ANDROID_TEST_API_KEY';
+const String androidTestAppId = 'YOUR_ANDROID_TEST_APP_ID';
+
+const String iosTestApiKey = 'YOUR_IOS_TEST_API_KEY';
+const String iosTestAppId = 'YOUR_IOS_TEST_APP_ID';
+
+const String windowsTestApiKey = 'YOUR_WINDOWS_TEST_API_KEY';
+const String windowsTestAppId = 'YOUR_WINDOWS_TEST_APP_ID';
