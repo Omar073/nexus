@@ -56,7 +56,7 @@ void main() {
     await tearDownTestHive();
   });
 
-  Task _makeTask({
+  Task makeTask({
     required String id,
     required String title,
     String? description,
@@ -86,9 +86,9 @@ void main() {
 
   group('TaskController', () {
     test('tasksForStatus returns filtered list by status', () async {
-      await repo.upsert(_makeTask(id: 't1', title: 'Active'));
+      await repo.upsert(makeTask(id: 't1', title: 'Active'));
       await repo.upsert(
-        _makeTask(id: 't2', title: 'Done', status: TaskStatus.completed),
+        makeTask(id: 't2', title: 'Done', status: TaskStatus.completed),
       );
 
       final active = controller.tasksForStatus(TaskStatus.active);
@@ -101,15 +101,15 @@ void main() {
     });
 
     test('setQuery filters by title/description substring', () async {
-      await repo.upsert(_makeTask(id: 't1', title: 'Buy groceries'));
+      await repo.upsert(makeTask(id: 't1', title: 'Buy groceries'));
       await repo.upsert(
-        _makeTask(
+        makeTask(
           id: 't2',
           title: 'Read book',
           description: 'groceries list inside',
         ),
       );
-      await repo.upsert(_makeTask(id: 't3', title: 'Exercise'));
+      await repo.upsert(makeTask(id: 't3', title: 'Exercise'));
 
       controller.setQuery('groceries');
       final result = controller.tasksForStatus(TaskStatus.active);
@@ -123,12 +123,12 @@ void main() {
       final tomorrow = DateTime.now().add(const Duration(days: 3));
 
       await repo.upsert(
-        _makeTask(id: 't1', title: 'Overdue', dueDate: yesterday),
+        makeTask(id: 't1', title: 'Overdue', dueDate: yesterday),
       );
       await repo.upsert(
-        _makeTask(id: 't2', title: 'Upcoming', dueDate: tomorrow),
+        makeTask(id: 't2', title: 'Upcoming', dueDate: tomorrow),
       );
-      await repo.upsert(_makeTask(id: 't3', title: 'No due date'));
+      await repo.upsert(makeTask(id: 't3', title: 'No due date'));
 
       controller.setOverdueOnly(true);
       final result = controller.tasksForStatus(TaskStatus.active);
@@ -139,12 +139,12 @@ void main() {
 
     test('setPriorityFilter filters by priority enum', () async {
       await repo.upsert(
-        _makeTask(id: 't1', title: 'Low', priority: TaskPriority.low.index),
+        makeTask(id: 't1', title: 'Low', priority: TaskPriority.low.index),
       );
       await repo.upsert(
-        _makeTask(id: 't2', title: 'High', priority: TaskPriority.high.index),
+        makeTask(id: 't2', title: 'High', priority: TaskPriority.high.index),
       );
-      await repo.upsert(_makeTask(id: 't3', title: 'None'));
+      await repo.upsert(makeTask(id: 't3', title: 'None'));
 
       controller.setPriorityFilter(TaskPriority.high);
       final result = controller.tasksForStatus(TaskStatus.active);
@@ -154,7 +154,7 @@ void main() {
     });
 
     test('byId returns correct task or null', () async {
-      await repo.upsert(_makeTask(id: 't1', title: 'Exists'));
+      await repo.upsert(makeTask(id: 't1', title: 'Exists'));
 
       expect(controller.byId('t1')?.title, 'Exists');
       expect(controller.byId('missing'), isNull);
@@ -162,7 +162,7 @@ void main() {
 
     test('highestPriorityActive skips completed tasks', () async {
       await repo.upsert(
-        _makeTask(
+        makeTask(
           id: 't1',
           title: 'Completed high',
           status: TaskStatus.completed,
@@ -170,14 +170,14 @@ void main() {
         ),
       );
       await repo.upsert(
-        _makeTask(
+        makeTask(
           id: 't2',
           title: 'Active medium',
           priority: TaskPriority.medium.index,
         ),
       );
       await repo.upsert(
-        _makeTask(
+        makeTask(
           id: 't3',
           title: 'Active low',
           priority: TaskPriority.low.index,
@@ -192,7 +192,7 @@ void main() {
 
     test('clearCategoryOnTasks nullifies matching IDs', () async {
       await repo.upsert(
-        _makeTask(
+        makeTask(
           id: 't1',
           title: 'Categorised',
           categoryId: 'cat-1',
@@ -200,7 +200,7 @@ void main() {
         ),
       );
       await repo.upsert(
-        _makeTask(id: 't2', title: 'Other', categoryId: 'cat-2'),
+        makeTask(id: 't2', title: 'Other', categoryId: 'cat-2'),
       );
 
       await controller.clearCategoryOnTasks(['cat-1', 'sub-1']);
@@ -221,14 +221,14 @@ void main() {
 
         final oldDate = DateTime.now().subtract(const Duration(days: 60));
         await repo.upsert(
-          _makeTask(
+          makeTask(
             id: 't-old',
             title: 'Old completed',
             status: TaskStatus.completed,
             completedAt: oldDate,
           ),
         );
-        await repo.upsert(_makeTask(id: 't-active', title: 'Still active'));
+        await repo.upsert(makeTask(id: 't-active', title: 'Still active'));
 
         // tasksForStatus triggers the purge internally.
         controller.tasksForStatus(TaskStatus.active);

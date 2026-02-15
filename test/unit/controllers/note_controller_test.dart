@@ -53,7 +53,7 @@ void main() {
     await tearDownTestHive();
   });
 
-  Note _makeNote({
+  Note makeNote({
     required String id,
     String? title,
     String content = 'hello',
@@ -86,11 +86,11 @@ void main() {
     });
 
     test('visibleNotes filters by query (title + plain text)', () async {
-      await repo.upsert(_makeNote(id: 'n1', title: 'Shopping list'));
+      await repo.upsert(makeNote(id: 'n1', title: 'Shopping list'));
       await repo.upsert(
-        _makeNote(id: 'n2', title: 'Meeting notes', content: 'buy groceries'),
+        makeNote(id: 'n2', title: 'Meeting notes', content: 'buy groceries'),
       );
-      await repo.upsert(_makeNote(id: 'n3', title: 'Workout plan'));
+      await repo.upsert(makeNote(id: 'n3', title: 'Workout plan'));
 
       controller.setQuery('groceries');
       final results = controller.visibleNotes;
@@ -102,10 +102,10 @@ void main() {
 
     test('setCategoryFilter restricts to matching categoryId', () async {
       await repo.upsert(
-        _makeNote(id: 'n1', title: 'Work', categoryId: 'cat-work'),
+        makeNote(id: 'n1', title: 'Work', categoryId: 'cat-work'),
       );
       await repo.upsert(
-        _makeNote(id: 'n2', title: 'Personal', categoryId: 'cat-personal'),
+        makeNote(id: 'n2', title: 'Personal', categoryId: 'cat-personal'),
       );
 
       controller.setCategoryFilter('cat-work');
