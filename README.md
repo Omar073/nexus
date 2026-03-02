@@ -1,109 +1,123 @@
-# Nexus (App Overview)
+# Nexus — Your Life, in One Place
 
-Nexus is a personal life management app that helps you **capture, organize, and follow through** on the things you care about—without turning your system into a complicated project.
+Nexus is a personal life management app that helps you **capture, organize, and follow through** on the things you care about—without turning your day into a project.
 
-It's built to feel fast and reliable day‑to‑day: you can keep using it even when your device is offline, and it will catch up later when it can.
+It's built to feel **fast, reliable, and calm**: you can keep using it even when your device is offline, and it quietly syncs when it can.
+
+---
 
 ## What Nexus is for
 
-- **One place for your life**: tasks, reminders, notes, habits, calendar view, and simple analytics.
-- **Less mental load**: capture quickly, organize lightly, and trust your system.
-- **Works anywhere**: designed for Android and Windows.
+- **One place for your life**: tasks, reminders, notes, habits, a simple calendar view, and light analytics.
+- **Less mental load**: capture quickly, organize just enough, and trust that nothing falls through the cracks.
+- **Works where you are**: designed for Android and Windows.
 
-## How it helps (in plain terms)
+---
 
-- **Stop forgetting things**: reminders and due dates make sure important items come back at the right time.
-- **Stop losing ideas**: notes let you dump thoughts quickly and build them into something later.
-- **Stay consistent**: habit tracking turns "I should" into "I did".
-- **See progress**: simple analytics help you notice patterns and improve.
+## Why Nexus is different
+
+- **Offline-first by design**: everything is saved locally first, so the app stays usable and responsive even with poor or no connection.
+- **Simple, opinionated flow**: Nexus focuses on a small set of powerful building blocks instead of trying to be a heavy project-management suite.
+- **All-in-one, not all-at-once**: tasks, reminders, notes, habits, calendar, and analytics are tightly integrated, but you can start with just one and grow as you need.
+- **Thoughtful visuals**: multiple navigation bar styles, theme customization, and a clean dashboard help the app feel "yours" without endless tweaking.
+
+---
 
 ## Core features
 
 ### Tasks
 
-- Create tasks with titles, details, due dates, priority, difficulty, and recurrence.
-- Organize work and life in one list.
-- Add attachments (like images or voice notes) to keep everything related to a task together.
-- Filter tasks by status (overdue) or priority.
-- Search tasks by title or description.
+Capture and organize everything you need to do with powerful task management:
+
+- **Rich task details**: titles, descriptions, due dates, priority levels, difficulty ratings, and recurrence patterns.
+- **Attachments**: attach images or voice notes directly to tasks—perfect for capturing context like photos of receipts, screenshots of requirements, or quick voice memos.
+- **Smart organization**: filter by status, priority, category, or search across all your tasks to find what matters quickly.
+- **Categories and subcategories**: organize tasks hierarchically for better structure.
 
 ### Reminders
 
-- Schedule reminders so your phone/PC nudges you at the right time.
-- Update or cancel reminders easily when plans change.
+Never miss an important moment with reliable notification reminders:
+
+- **Smart notifications**: get notified at exactly the right time with reliable background scheduling that works even when the app is closed.
+- **Flexible scheduling**: set one-time or recurring reminders, snooze when needed, and reschedule as plans change.
+- **Background reliability**: uses multiple strategies (AlarmManager, in-app timers, and Workmanager) to ensure notifications fire reliably across different Android devices and battery optimization settings.
 
 ### Notes
 
-- Write notes for ideas, plans, meeting notes, journaling, and more.
-- Add voice attachments when typing isn't convenient.
-- Supports mixed-language notes (including Arabic text rendering nicely when used).
+Capture ideas and reference material with powerful note-taking:
+
+- **Markdown support**: toggle between rich text editing and markdown mode with live preview—perfect for structured notes, documentation, or formatted text.
+- **Rich text editor**: full-featured editor with formatting options when you need more than plain text.
+- **Voice notes**: add voice snippets when typing isn't convenient.
+- **Multilingual support**: mixed-language notes (including Arabic) render naturally with automatic text direction detection.
 
 ### Habits
 
-- Track daily habits with a simple "done/not done" flow.
-- View streaks and momentum so you can keep consistency.
+Build consistency with habit tracking that keeps you motivated:
 
-### Calendar view
+- **Streak tracking**: see your current streak for each habit and watch it grow day by day.
+- **Visual progress**: view completion trends over time with charts and heatmaps.
+- **Link to tasks**: connect habits to recurring tasks for seamless workflow integration.
+- **Simple daily check-in**: mark habits as done with a single tap.
 
-- See your tasks and reminders in a timeline-like view.
-- Useful for planning your week and spotting overload early.
+### Calendar
+
+See your life at a glance with integrated calendar views:
+
+- **Unified view**: see tasks and reminders laid out over days to spot overload early and plan ahead.
+- **Native calendar integration**: export events to your device's native calendar app (Google Calendar, Samsung Calendar, etc.) so they appear alongside your other appointments.
+- **Filter by type**: view all items, or filter to see only tasks, reminders, or habits.
 
 ### Analytics
 
-- Lightweight insights (not overwhelming dashboards).
-- View task completion rates, overdue counts, and habit progress.
-- Pie chart showing task status distribution (active, completed, overdue).
-- Habits progress circle showing daily completion percentage.
-- Quick stats for completion rate, on-time rate, and active habits.
+Understand your productivity patterns with light, actionable insights:
 
-### Dashboard (Home)
+- **Task insights**: see completion rates, overdue load, task velocity trends, and priority distribution at a glance.
+- **Habit analytics**: track consistency with heatmaps and progress circles showing your habit completion over time.
+- **Visual charts**: pie charts for task status breakdown, line charts for completion trends, and habit heatmaps—all designed to be human-scale, not overwhelming.
+- **Quick stats**: overview cards showing active tasks, completed items, overdue tasks, and upcoming reminders.
 
-- **At-a-glance overview**: See your day in one view.
-- **Quick Actions**: Access to today's tasks and upcoming reminders.
-- **Aggregated View**: A meaningful summary of your productivity across tasks, habits, and notes.
+### Settings & customization
 
-### Navigation
+- Choose between multiple navigation bar styles (standard, Google-like, curved, animated notch).
+- Toggle light/dark themes or follow the system.
+- Tune retention for completed items and manage app permissions in one place.
 
-- **Bottom Navigation**: Quick access to core screens.
-- **Customizable Styles**: Choose your preferred look in Settings:
-  - **Standard**: Classic material design.
-  - **Google**: Modern, floating style.
-  - **Curved**: Stylish curved cutout.
-  - **Animated Notch**: Dynamic interaction.
-- **App Drawer**: Access secondary features like Analytics, Calendar, and detailed Settings.
-
-### Settings
-
-- **Theme & Appearance**:
-  - Toggle Light/Dark modes or follow system.
-  - **Accent Colors**: customize the app's primary color.
-  - **Navigation Bar Style**: Switch between 4 distinct visual styles.
-- **Sync & Data**:
-  - **Status Indicators**: Real-time status of Firebase (Cloud), Hive (Local), and Google Drive.
-  - **Drive Integration**: Manage your Google Drive connection for attachment backups.
-- **Task Management**: Configure retention policies for completed items.
-- **Permissions**: centralized control over app permissions (Notifications, Alarms, etc.).
+---
 
 ## Who Nexus is great for
 
-- Students managing assignments, exams, and personal tasks
-- Busy professionals juggling projects and personal obligations
-- Anyone who wants a simple daily system: tasks + reminders + notes + habits in one place
+- Students managing classes, assignments, exams, and personal errands.
+- Busy professionals balancing projects, meetings, and home life.
+- Anyone who wants a simple daily system: **tasks + reminders + notes + habits** in one place.
 
-## A quick example workflow
+---
 
-- Capture tasks as they appear ("Pay rent", "Call dentist", "Finish report").
-- Add a reminder for time-sensitive items.
-- Set priority and difficulty to focus on what matters.
-- Attach a photo, screenshot, or voice note if it matters.
-- Review the calendar view to plan the next few days.
-- Check habits and streaks to stay consistent.
-- Use the dashboard for a quick daily overview.
+## A quick day with Nexus
+
+1. Capture tasks as they appear ("Pay rent", "Call dentist", "Finish report").
+2. Add reminders for time- or date-sensitive items.
+3. Use priorities and due dates to focus your next actions.
+4. Attach photos, screenshots, or voice notes when extra context matters.
+5. Glance at the calendar and dashboard to plan the next few days.
+6. Check off habits and watch your streaks grow.
+
+---
 
 ## What Nexus is not trying to be
 
 - Not a complex project-management tool.
-- Not a social app.
-- Not a "setup-heavy" productivity system.
+- Not a social or collaboration app.
+- Not a "setup-heavy" productivity system that needs hours of configuration.
 
-The goal is **clarity and follow-through**, with minimal friction.
+The goal is **clarity and follow-through**, with as little friction as possible.
+
+---
+
+## Want technical details?
+
+If you're interested in how Nexus is built (architecture, data flow, and contribution guidelines), see:
+
+- `developer_README.md` — developer onboarding and deep architecture guide.
+- `docs/nexus_knowledge_base.md` — high-level project knowledge and structure.
+- `docs/CLEAN_ARCHITECTURE_MIGRATION.md` — full walkthrough of the move to a Domain/Data/Presentation clean architecture.

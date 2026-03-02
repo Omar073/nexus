@@ -18,11 +18,14 @@ Write-Host "  Running full CI pipeline locally"
 Write-Host "========================================="
 Write-Host ""
 
-$root = $PSScriptRoot
+# Project root = parent of scripts folder
+$root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 
-# 1. Install dependencies
-Write-Host "[1/8] Installing dependencies..."
+# 1. Update dependencies
+Write-Host "[1/8] Updating dependencies..."
+flutter pub upgrade ; Assert-ExitCode
+flutter pub outdated
 flutter pub get ; Assert-ExitCode
 Write-Host "  Done"
 Write-Host ""

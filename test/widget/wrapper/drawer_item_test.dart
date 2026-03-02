@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/wrapper/views/widgets/drawer_item.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/drawer_item.dart';
 
 void main() {
   testWidgets('DrawerItem renders icon and label', (WidgetTester tester) async {

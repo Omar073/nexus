@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/features/splash/views/splash_wrapper.dart';
+import 'package:nexus/features/splash/presentation/pages/splash_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

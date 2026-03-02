@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/dashboard/views/widgets/stat_card.dart';
+import 'package:nexus/features/dashboard/presentation/widgets/stat_card.dart';
 
 void main() {
   testWidgets('StatCard renders correctly', (WidgetTester tester) async {

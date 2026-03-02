@@ -8,9 +8,9 @@ import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/data/sync_metadata.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
-import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_attachment.dart';
-import 'package:nexus/features/tasks/sync/task_sync_handler.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
+import 'package:nexus/features/tasks/data/models/task_attachment.dart';
+import 'package:nexus/features/tasks/data/sync/task_sync_handler.dart';
 
 import '../helpers/fake_connectivity_service.dart';
 

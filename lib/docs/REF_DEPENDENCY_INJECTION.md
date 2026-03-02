@@ -56,7 +56,7 @@ Handlers are created and injected at app startup, in two places:
 
 ### 1. `AppInitializer` (Production startup)
 
-**File:** [`app_initializer.dart`](../../features/splash/controllers/app_initializer.dart)
+**File:** [`app_initializer.dart`](../../features/splash/presentation/bootstrap/app_initializer.dart)
 
 ```dart
 final taskHandler = TaskSyncHandler(
@@ -76,7 +76,7 @@ final syncService = SyncService(
 
 ### 2. `AppProviderFactory` (Provider tree)
 
-**File:** [`provider_factory.dart`](../../features/splash/controllers/provider_factory.dart)
+**File:** [`provider_factory.dart`](../../features/splash/presentation/bootstrap/provider_factory.dart)
 
 Every `SyncService` instantiation in the provider tree follows the same pattern — handlers are created inline and passed to the constructor.
 
@@ -86,8 +86,8 @@ Every `SyncService` instantiation in the provider tree follows the same pattern 
 
 ```
 features/splash/       (Composition Root)
-  ├── Creates TaskSyncHandler    (from features/tasks/sync/)
-  ├── Creates NoteSyncHandler    (from features/notes/sync/)
+  ├── Creates TaskSyncHandler    (from features/tasks/data/sync/)
+  ├── Creates NoteSyncHandler    (from features/notes/data/sync/)
   └── Injects both into SyncService (from core/services/sync/)
 ```
 
@@ -100,7 +100,7 @@ features/splash/       (Composition Root)
 To add sync for a new entity (e.g., Habits):
 
 1. **Create the handler** in the feature directory:
-   - `lib/features/habits/sync/habit_sync_handler.dart`
+   - `lib/features/habits/data/sync/habit_sync_handler.dart`
    - Implement `EntitySyncHandler` (define `entityType`, `push`, `pull`)
 
 2. **Register it** at the composition root:
@@ -128,7 +128,7 @@ To add sync for a new entity (e.g., Habits):
 |------|------|
 | [`sync_service.dart`](../core/services/sync/sync_service.dart) | Core orchestrator (receives handlers) |
 | [`entity_sync_handler.dart`](../core/services/sync/handlers/entity_sync_handler.dart) | Abstract interface for handlers |
-| [`task_sync_handler.dart`](../../features/tasks/sync/task_sync_handler.dart) | Task-specific sync logic |
-| [`note_sync_handler.dart`](../../features/notes/sync/note_sync_handler.dart) | Note-specific sync logic |
-| [`provider_factory.dart`](../../features/splash/controllers/provider_factory.dart) | Composition root (where injection happens) |
+| [`task_sync_handler.dart`](../../features/tasks/data/sync/task_sync_handler.dart) | Task-specific sync logic |
+| [`note_sync_handler.dart`](../../features/notes/data/sync/note_sync_handler.dart) | Note-specific sync logic |
+| [`provider_factory.dart`](../../features/splash/presentation/bootstrap/provider_factory.dart) | Composition root (where injection happens) |
 | [`REF_SYNC_ARCHITECTURE.md`](REF_SYNC_ARCHITECTURE.md) | Full sync architecture overview |

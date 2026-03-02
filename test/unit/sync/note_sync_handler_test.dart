@@ -6,9 +6,9 @@ import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/data/sync_queue.dart';
-import 'package:nexus/features/notes/models/note.dart';
-import 'package:nexus/features/notes/models/note_attachment.dart';
-import 'package:nexus/features/notes/sync/note_sync_handler.dart';
+import 'package:nexus/features/notes/data/models/note.dart';
+import 'package:nexus/features/notes/data/models/note_attachment.dart';
+import 'package:nexus/features/notes/data/sync/note_sync_handler.dart';
 
 void main() {
   late FakeFirebaseFirestore firestore;

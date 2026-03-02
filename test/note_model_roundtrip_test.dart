@@ -6,7 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
-import 'package:nexus/features/notes/models/note.dart';
+import 'package:nexus/features/notes/data/models/note.dart';
 
 void main() {
   test('Note delta json is stored as string and round-trips', () {

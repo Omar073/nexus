@@ -3,14 +3,16 @@ import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
-import 'package:nexus/features/reminders/models/reminder.dart';
-import 'package:nexus/features/reminders/models/reminder_repository.dart';
-import 'package:nexus/features/reminders/services/reminder_timer_service.dart';
+import 'package:nexus/features/reminders/data/models/reminder.dart';
+import 'package:nexus/features/reminders/data/mappers/reminder_mapper.dart';
+import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
+import 'package:nexus/features/reminders/data/repositories/reminder_repository_impl.dart';
+import 'package:nexus/features/reminders/data/services/reminder_timer_service.dart';
 
 import '../../helpers/fake_notification_service.dart';
 
 void main() {
-  late ReminderRepository repo;
+  late ReminderRepositoryInterface repo;
   late FakeNotificationService notifications;
   late ReminderTimerService timerService;
 
@@ -20,7 +22,7 @@ void main() {
       Hive.registerAdapter(ReminderAdapter());
     }
     await Hive.openBox<Reminder>(HiveBoxes.reminders);
-    repo = ReminderRepository();
+    repo = ReminderRepositoryImpl();
     notifications = FakeNotificationService();
     timerService = ReminderTimerService(
       repo: repo,
@@ -37,13 +39,15 @@ void main() {
     test('fires immediately for very recently past reminder', () async {
       final justNow = DateTime.now().subtract(const Duration(seconds: 10));
       await repo.upsert(
-        Reminder(
-          id: 'r1',
-          notificationId: 1,
-          title: 'Just Passed',
-          time: justNow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+        ReminderMapper.toEntity(
+          Reminder(
+            id: 'r1',
+            notificationId: 1,
+            title: 'Just Passed',
+            time: justNow,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
         ),
       );
 
@@ -56,14 +60,16 @@ void main() {
 
     test('skips completed reminders', () async {
       await repo.upsert(
-        Reminder(
-          id: 'r2',
-          notificationId: 2,
-          title: 'Completed',
-          time: DateTime.now().subtract(const Duration(seconds: 5)),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          completedAt: DateTime.now(),
+        ReminderMapper.toEntity(
+          Reminder(
+            id: 'r2',
+            notificationId: 2,
+            title: 'Completed',
+            time: DateTime.now().subtract(const Duration(seconds: 5)),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            completedAt: DateTime.now(),
+          ),
         ),
       );
 
@@ -76,13 +82,15 @@ void main() {
     test('resetFiredStatus allows re-fire', () async {
       final justNow = DateTime.now().subtract(const Duration(seconds: 10));
       await repo.upsert(
-        Reminder(
-          id: 'r3',
-          notificationId: 3,
-          title: 'Resettable',
-          time: justNow,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+        ReminderMapper.toEntity(
+          Reminder(
+            id: 'r3',
+            notificationId: 3,
+            title: 'Resettable',
+            time: justNow,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
         ),
       );
 

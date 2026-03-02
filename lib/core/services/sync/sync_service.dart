@@ -7,10 +7,7 @@ import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
 import 'package:nexus/core/services/sync/handlers/entity_sync_handler.dart';
-import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:nexus/core/utils/sync_backoff.dart';
-import 'package:nexus/features/notes/models/note.dart';
-import 'package:nexus/features/tasks/models/task.dart';
 
 /// Core synchronization service (Orchestrator).
 ///
@@ -38,21 +35,11 @@ class SyncService {
     _handlers[handler.entityType] = handler;
   }
 
-  // Conflict Streams (Delegated)
-  // Note: We use dynamic cast or we need to expose a generic way to get streams.
-  // For now, since consumers (SyncController) expect specific streams, we can expose
-  // them by looking up the handler.
-
-  Stream<List<SyncConflict<Task>>> get conflictsStream {
-    final handler = _handlers['task'];
-    if (handler != null) {
-      return (handler as dynamic).conflictsStream;
-    }
-    return const Stream.empty();
-  }
-
-  Stream<List<SyncConflict<Note>>> get noteConflictsStream {
-    final handler = _handlers['note'];
+  /// Returns the conflict stream for [entityType] if a handler is registered.
+  /// Type is untyped so core has no dependency on feature entities/models.
+  /// Consumers (e.g. [SyncController]) cast to the concrete type (e.g. [Stream<List<SyncConflict<Task>>>]).
+  Stream getConflictStream(String entityType) {
+    final handler = _handlers[entityType];
     if (handler != null) {
       return (handler as dynamic).conflictsStream;
     }

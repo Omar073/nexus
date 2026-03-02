@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/wrapper/views/app_drawer.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/app_drawer.dart';
 
 void main() {
   group('AppDrawer', () {

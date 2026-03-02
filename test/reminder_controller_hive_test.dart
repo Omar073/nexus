@@ -2,12 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
-import 'package:nexus/core/services/notifications/reminder_notifications.dart';
-import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
-import 'package:nexus/features/reminders/models/reminder.dart';
-import 'package:nexus/features/reminders/models/reminder_repository.dart';
-
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
+import 'package:nexus/core/data/sync_queue.dart';
+import 'package:nexus/core/services/notifications/reminder_notifications.dart';
+import 'package:nexus/core/services/platform/connectivity_service.dart';
+import 'package:nexus/core/services/sync/sync_service.dart';
+import 'package:nexus/features/reminders/data/models/reminder.dart';
+import 'package:nexus/features/reminders/data/repositories/reminder_repository_impl.dart';
+import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 
 class _FakeNotificationService implements ReminderNotifications {
   final scheduled = <int, DateTime>{};
@@ -54,12 +56,14 @@ void main() {
   test(
     'ReminderController schedules on create and cancels on delete',
     () async {
-      final repo = ReminderRepository();
+      final repo = ReminderRepositoryImpl();
       final notifications = _FakeNotificationService();
+      final syncService = _FakeSyncService();
 
       final controller = ReminderController(
         repo: repo,
         notifications: notifications,
+        syncService: syncService,
       );
 
       final when = DateTime.now().add(const Duration(minutes: 10));
@@ -73,12 +77,14 @@ void main() {
   );
 
   test('ReminderController can uncomplete a reminder', () async {
-    final repo = ReminderRepository();
+    final repo = ReminderRepositoryImpl();
     final notifications = _FakeNotificationService();
+    final syncService = _FakeSyncService();
 
     final controller = ReminderController(
       repo: repo,
       notifications: notifications,
+      syncService: syncService,
     );
 
     // Create a reminder in the future
@@ -87,7 +93,8 @@ void main() {
 
     // Complete it
     await controller.complete(r);
-    expect(r.completedAt, isNotNull);
+    final completed = controller.reminders.firstWhere((x) => x.id == r.id);
+    expect(completed.completedAt, isNotNull);
     expect(notifications.canceled.contains(r.notificationId), true);
 
     // Clear tracking
@@ -96,8 +103,23 @@ void main() {
 
     // Uncomplete it
     await controller.uncomplete(r);
-    expect(r.completedAt, isNull);
+    final uncompleted = controller.reminders.firstWhere((x) => x.id == r.id);
+    expect(uncompleted.completedAt, isNull);
     // Should be rescheduled because it's in the future
     expect(notifications.scheduled.containsKey(r.notificationId), true);
   });
+}
+
+class _FakeSyncService extends SyncService {
+  _FakeSyncService() : super(connectivity: ConnectivityService());
+
+  @override
+  Future<void> enqueueOperation(SyncOperation op) async {
+    // no-op for tests
+  }
+
+  @override
+  Future<void> syncOnce() async {
+    // no-op for tests
+  }
 }

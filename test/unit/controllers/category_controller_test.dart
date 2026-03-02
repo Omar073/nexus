@@ -3,11 +3,12 @@ import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
-import 'package:nexus/features/tasks/controllers/category_controller.dart';
-import 'package:nexus/features/tasks/models/category.dart';
-import 'package:nexus/features/tasks/models/category_sort_option.dart';
-import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_attachment.dart';
+import 'package:nexus/features/categories/data/models/category.dart';
+import 'package:nexus/features/categories/domain/category_sort_option.dart';
+import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
+import 'package:nexus/features/tasks/data/mappers/task_mapper.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
+import 'package:nexus/features/tasks/data/models/task_attachment.dart';
 
 void main() {
   setUp(() async {
@@ -125,7 +126,7 @@ void main() {
 
       final sorted = controller.getSortedCategories(
         sortOption: CategorySortOption.recentlyModified,
-        tasks: tasks,
+        sortableItems: tasks.map(TaskMapper.toEntity).toList(),
       );
 
       // Category with most recent task should be first

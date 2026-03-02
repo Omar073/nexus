@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/tasks/views/widgets/sections/subcategory_section.dart';
-import 'package:nexus/features/tasks/controllers/task_controller.dart';
+import 'package:nexus/features/tasks/presentation/widgets/sections/subcategory_section.dart';
+import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 
 // Simple fake TaskController for testing (no actual implementation needed)
 class FakeTaskController extends ChangeNotifier implements TaskController {

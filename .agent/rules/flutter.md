@@ -45,6 +45,7 @@ You are an expert in Flutter and Dart development. Your goal is to build beautif
 
 * **Best Practices:** Always adhere to best practices of software engineering.
 * **Modularity:** Make your files short, modular, and maintainable.
+* **File Size:** Aim to keep Dart files under **300 lines** where practical. If a file grows beyond this, strongly consider splitting it into smaller, feature-focused files.
 * **Scalability:** Always put scalability and long-term consequences in perspective.
 * **Code Structure:** Adhere to maintainable code structure and separation of concerns (e.g., UI logic separate from business logic).
 * **Naming Conventions:** Avoid abbreviations and use meaningful, consistent, descriptive names for variables, functions, and classes.
@@ -82,7 +83,7 @@ You are an expert in Flutter and Dart development. Your goal is to build beautif
 * **Immutability:** Widgets (especially StatelessWidget) are immutable; when the UI needs to change, Flutter rebuilds the widget tree.
 * **Composition:** Prefer composing smaller widgets over extending existing ones. Use this to avoid deep widget nesting.
 * **Private Widgets:** Use small, private Widget classes instead of private helper methods that return a Widget.
-* **Build Methods:** Break down large build() methods into smaller, reusable private Widget classes.
+* **Build Methods:** Break down large build() methods into smaller, reusable private Widget classes. Avoid “Blob widgets” or screens that contain many widgets and methods in a single file; favor splitting UI into multiple files/components with clear responsibilities.
 * **List Performance:** Use ListView.builder or SliverList for long lists to create lazy-loaded lists for performance.
 * **Isolates:** Use compute() to run expensive calculations in a separate isolate to avoid blocking the UI thread, such as JSON parsing.
 * **Const Constructors:** Use const constructors for widgets and in build() methods whenever possible to reduce rebuilds.
@@ -588,6 +589,23 @@ textTheme: const TextTheme(
   labelSmall: TextStyle(fontSize: 11.0, color: Colors.grey),
 ),
 ```
+
+## Completion Checklist
+
+When completing any big change or new feature:
+
+1. **Run CI locally**: Always run `scripts/run_ci_locally.ps1` to verify that:
+   - All tests pass (`flutter test`)
+   - Code analysis passes (`flutter analyze`)
+   - The app builds successfully (`flutter build`)
+   - No regressions are introduced
+
+2. **Update documentation**: If CI runs successfully, update the following documentation files as needed:
+   - `README.md` - Update user-facing features, capabilities, or app overview
+   - `developer_README.md` - Update technical details, architecture, setup instructions, or developer workflows
+   - `docs/nexus_knowledge_base.md` - Update project knowledge, structure, or key concepts
+
+   Documentation should reflect the current state of the codebase and help both users and developers understand the changes.
 
 ## Documentation
 

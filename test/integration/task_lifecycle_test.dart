@@ -5,18 +5,19 @@ import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/data/sync_operation_adapter.dart';
 import 'package:nexus/core/data/sync_queue.dart';
-import 'package:nexus/features/tasks/controllers/task_controller.dart';
-import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_attachment.dart';
-import 'package:nexus/features/tasks/models/task_enums.dart';
-import 'package:nexus/features/tasks/models/task_repository.dart';
+import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
+import 'package:nexus/features/tasks/data/models/task_attachment.dart';
+import 'package:nexus/features/tasks/domain/task_enums.dart';
+import 'package:nexus/features/tasks/domain/repositories/task_repository_interface.dart';
+import 'package:nexus/features/tasks/data/repositories/task_repository_impl.dart';
 
 import '../helpers/fake_google_drive_service.dart';
 import '../helpers/fake_settings_controller.dart';
 import '../helpers/fake_sync_service.dart';
 
 void main() {
-  late TaskRepository repo;
+  late TaskRepositoryInterface repo;
   late FakeSyncService syncService;
   late FakeGoogleDriveService driveService;
   late FakeSettingsController settings;
@@ -37,7 +38,7 @@ void main() {
     await Hive.openBox<Task>(HiveBoxes.tasks);
     await Hive.openBox<SyncOperation>(HiveBoxes.syncOps);
 
-    repo = TaskRepository();
+    repo = TaskRepositoryImpl();
     syncService = FakeSyncService();
     driveService = FakeGoogleDriveService();
     settings = FakeSettingsController();
@@ -69,13 +70,15 @@ void main() {
 
       // 2. Update
       await controller.updateTask(task, title: 'Updated Title');
-      expect(task.title, 'Updated Title');
-      expect(task.isDirty, isTrue);
+      var refreshed = controller.byId(task.id)!;
+      expect(refreshed.title, 'Updated Title');
+      expect(refreshed.isDirty, isTrue);
 
       // 3. Toggle Complete
-      await controller.toggleCompleted(task, true);
-      expect(task.status, TaskStatus.completed.index);
-      expect(task.completedAt, isNotNull);
+      await controller.toggleCompleted(refreshed, true);
+      refreshed = controller.byId(task.id)!;
+      expect(refreshed.status, TaskStatus.completed.index);
+      expect(refreshed.completedAt, isNotNull);
 
       // Verify persistence
       final stored = repo.getById(task.id)!;
@@ -95,15 +98,13 @@ void main() {
       await controller.toggleCompleted(task, true);
 
       // 3. Verify original is completed
-      expect(task.status, TaskStatus.completed.index);
+      final completedTask = controller.byId(task.id)!;
+      expect(completedTask.status, TaskStatus.completed.index);
 
-      // 4. Verify new task created
-      final allTasks = repo.getAll();
-      final activeTasks = allTasks
-          .where(
-            (t) =>
-                t.status == TaskStatus.active.index && t.title == 'Daily Habit',
-          )
+      // 4. Verify new task created (next occurrence)
+      final activeTasks = controller
+          .tasksForStatus(TaskStatus.active)
+          .where((t) => t.title == 'Daily Habit')
           .toList();
 
       expect(activeTasks.length, 1);

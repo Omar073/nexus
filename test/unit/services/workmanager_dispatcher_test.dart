@@ -3,12 +3,12 @@ import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
-import 'package:nexus/features/reminders/models/reminder.dart';
+import 'package:nexus/features/reminders/data/models/reminder.dart';
 
 import '../../helpers/fake_notification_service.dart';
 
 // Import the testable function from workmanager_dispatcher.
-import 'package:nexus/core/services/notifications/workmanager_dispatcher.dart';
+import 'package:nexus/features/reminders/data/services/reminder_workmanager_callback.dart';
 
 void main() {
   late Box<Reminder> box;

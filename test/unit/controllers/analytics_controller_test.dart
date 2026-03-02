@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:nexus/features/analytics/controllers/analytics_controller.dart';
-import 'package:nexus/features/habits/controllers/habit_controller.dart';
-import 'package:nexus/features/habits/models/habit.dart';
-import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
-import 'package:nexus/features/reminders/models/reminder.dart';
-import 'package:nexus/features/tasks/controllers/task_controller.dart';
-import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_enums.dart';
+import 'package:nexus/features/analytics/presentation/state_management/analytics_controller.dart';
+import 'package:nexus/features/habits/presentation/state_management/habit_controller.dart';
+import 'package:nexus/features/habits/data/models/habit.dart';
+import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
+import 'package:nexus/features/reminders/data/models/reminder.dart';
+import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
+import 'package:nexus/features/tasks/data/mappers/task_mapper.dart';
+import 'package:nexus/features/tasks/domain/task_enums.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
+import 'package:nexus/features/reminders/data/mappers/reminder_mapper.dart';
+import 'package:nexus/features/habits/data/mappers/habit_mapper.dart';
 
 class MockTaskController extends Mock implements TaskController {}
 
@@ -86,10 +89,10 @@ void main() {
 
       when(
         () => mockTasks.tasksForStatus(TaskStatus.active),
-      ).thenReturn([activeTask]);
+      ).thenReturn([TaskMapper.toEntity(activeTask)]);
       when(
         () => mockTasks.tasksForStatus(TaskStatus.completed),
-      ).thenReturn([completedTask]);
+      ).thenReturn([TaskMapper.toEntity(completedTask)]);
 
       createController();
 
@@ -117,9 +120,10 @@ void main() {
         lastModifiedByDevice: 'test',
       );
 
-      when(
-        () => mockTasks.tasksForStatus(TaskStatus.active),
-      ).thenReturn([overdueTask, futureTask]);
+      when(() => mockTasks.tasksForStatus(TaskStatus.active)).thenReturn([
+        TaskMapper.toEntity(overdueTask),
+        TaskMapper.toEntity(futureTask),
+      ]);
 
       createController();
 
@@ -137,7 +141,9 @@ void main() {
         updatedAt: DateTime.now(),
       );
 
-      when(() => mockReminders.upcoming).thenReturn([reminder]);
+      when(
+        () => mockReminders.upcoming,
+      ).thenReturn([ReminderMapper.toEntity(reminder)]);
 
       createController();
 
@@ -160,7 +166,10 @@ void main() {
         updatedAt: DateTime.now(),
       );
 
-      when(() => mockHabits.habits).thenReturn([habit1, habit2]);
+      when(() => mockHabits.habits).thenReturn([
+        HabitMapper.toEntity(habit1),
+        HabitMapper.toEntity(habit2),
+      ]);
       when(() => mockHabits.isCompletedToday('1')).thenReturn(true);
       when(() => mockHabits.isCompletedToday('2')).thenReturn(false);
 

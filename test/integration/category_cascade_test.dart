@@ -3,8 +3,8 @@ import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
-import 'package:nexus/features/tasks/controllers/category_controller.dart';
-import 'package:nexus/features/tasks/models/category.dart';
+import 'package:nexus/features/categories/data/models/category.dart';
+import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 
 /// Integration test: Category + Task controller interaction.
 void main() {
