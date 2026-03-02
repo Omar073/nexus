@@ -47,7 +47,6 @@ dependencies:
   path: ^1.9.1
   intl: ^0.20.2
   shared_preferences: ^2.3.2
-  flutter_slidable: ^4.0.3
   connectivity_plus: ^7.0.0
   uuid: ^4.5.1
   collection: ^1.19.0
@@ -105,10 +104,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - app_logos/app_icon_black.png
-    - app_logos/app_icon_white.png
-    - app_logos/app_name_black.jpg
-    - app_logos/app_name_white.jpg
+    - app_logos/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -140,7 +136,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "app_logos/app_icon_black_ rounded.png"
+  image_path: "app_logos/app_icon_black_rounded.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "app_logos/app_icon_black_ rounded.png"
+  adaptive_icon_foreground: "app_logos/app_icon_black_rounded.png"

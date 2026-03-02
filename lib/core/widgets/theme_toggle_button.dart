@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 
 /// A theme toggle button that switches between light and dark themes
 class ThemeToggleButton extends StatelessWidget {

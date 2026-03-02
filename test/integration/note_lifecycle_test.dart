@@ -7,16 +7,18 @@ import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/data/sync_operation_adapter.dart';
 import 'package:nexus/core/data/sync_queue.dart';
-import 'package:nexus/features/notes/controllers/note_controller.dart';
-import 'package:nexus/features/notes/models/note.dart';
-import 'package:nexus/features/notes/models/note_attachment.dart';
-import 'package:nexus/features/notes/models/note_repository.dart';
+import 'package:nexus/features/notes/presentation/state_management/note_controller.dart';
+import 'package:nexus/features/notes/data/models/note.dart';
+import 'package:nexus/features/notes/data/models/note_attachment.dart';
+import 'package:nexus/features/notes/data/mappers/note_mapper.dart';
+import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
+import 'package:nexus/features/notes/data/repositories/note_repository_impl.dart';
 
 import '../helpers/fake_google_drive_service.dart';
 import '../helpers/fake_sync_service.dart';
 
 void main() {
-  late NoteRepository repo;
+  late NoteRepositoryInterface repo;
   late FakeSyncService syncService;
   late FakeGoogleDriveService driveService;
   late NoteController controller;
@@ -36,7 +38,7 @@ void main() {
     await Hive.openBox<Note>(HiveBoxes.notes);
     await Hive.openBox<SyncOperation>(HiveBoxes.syncOps);
 
-    repo = NoteRepository();
+    repo = NoteRepositoryImpl();
     syncService = FakeSyncService();
     driveService = FakeGoogleDriveService();
 
@@ -91,8 +93,8 @@ void main() {
         lastModifiedByDevice: 'test-device',
       );
 
-      await repo.upsert(n1);
-      await repo.upsert(n2);
+      await repo.upsert(NoteMapper.toEntity(n1));
+      await repo.upsert(NoteMapper.toEntity(n2));
 
       controller.setQuery('Flutter');
       var results = controller.visibleNotes;

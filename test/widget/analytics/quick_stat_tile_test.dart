@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/analytics/views/widgets/quick_stat_tile.dart';
+import 'package:nexus/features/analytics/presentation/widgets/quick_stat_tile.dart';
 
 void main() {
   testWidgets('QuickStatTile renders icon, label, and value', (

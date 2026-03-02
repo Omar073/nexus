@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/settings/models/nav_bar_style.dart';
-import 'package:nexus/features/wrapper/views/widgets/nav_bar_builder.dart';
+import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_builder.dart';
 
 void main() {
   Widget buildTestWidget(NavBarStyle style) {

@@ -4,7 +4,6 @@ import 'package:nexus/features/reminders/controllers/reminder_controller.dart';
 import 'package:nexus/features/reminders/views/widgets/reminder_editor_dialog.dart';
 import 'package:nexus/features/reminders/views/widgets/reminder_tile.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
-import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/views/app_wrapper.dart';
 import 'package:provider/provider.dart';
 

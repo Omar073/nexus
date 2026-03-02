@@ -6,7 +6,6 @@ import 'package:nexus/features/notes/controllers/note_controller.dart';
 import 'package:nexus/features/notes/views/note_editor_screen.dart';
 import 'package:nexus/features/notes/views/widgets/note_tile.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
-import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:provider/provider.dart';
 
 /// Notes list screen following Nexus design system.

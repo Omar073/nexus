@@ -4,7 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:nexus/app/router/app_router.dart';
 import 'package:nexus/app/services/app_services_composer.dart';
 import 'package:nexus/app/theme/app_theme.dart';
-import 'package:nexus/features/settings/controllers/settings_controller.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/app/app_globals.dart';
 

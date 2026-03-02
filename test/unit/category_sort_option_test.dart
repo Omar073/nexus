@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/tasks/models/category_sort_option.dart';
+import 'package:nexus/features/categories/domain/category_sort_option.dart';
 
 void main() {
   group('CategorySortOption', () {

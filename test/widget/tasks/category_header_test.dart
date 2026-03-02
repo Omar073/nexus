@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/tasks/views/widgets/sections/category_header.dart';
+import 'package:nexus/features/tasks/presentation/widgets/sections/category_header.dart';
 
 void main() {
   group('CategoryHeader', () {

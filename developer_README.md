@@ -1,4 +1,4 @@
-﻿# Nexus — Developer Contributor Guide
+# Nexus — Developer Contributor Guide
 
 Nexus is an **offline-first** personal life management app (Tasks, Reminders, Notes, Habits, Calendar, Analytics) built with **Flutter**.
 
@@ -60,6 +60,38 @@ flutter analyze; flutter test
 ```bash
 flutter build apk; flutter build windows
 ```
+
+### 4) Regenerate launcher icons (optional)
+
+When you change app icon or splash assets in [`app_logos/`](app_logos/) or the `flutter_launcher_icons` section in `pubspec.yaml`, regenerate the Android launcher and adaptive icons:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+This overwrites the default and adaptive Android launcher icons under `android/app/src/main/res/` (mipmap drawables and `mipmap-anydpi-v26` XML). It does **not** run as part of CI; run it manually whenever you update the icon assets or config.
+
+### 5) JDK for Android Gradle (optional)
+
+Android builds and `./gradlew signingReport` require a JDK that Kotlin’s tooling supports (e.g. JDK 17). If you have **JDK 25** (or similar) as default and see errors like `IllegalArgumentException: 25.0.1` when running `gradlew signingReport`, point Gradle at JDK 17:
+
+- **Option A:** Set `org.gradle.java.home` in [`android/gradle.properties`](android/gradle.properties) to your JDK 17 install path (e.g. `C:/Program Files/Eclipse Adoptium/jdk-17.0.13.11-hotspot`). Adjust the path to match your machine.
+- **Option B:** Before running Gradle, set `JAVA_HOME` to the JDK 17 directory (e.g. in PowerShell: `$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.13.11-hotspot"`).
+
+### 6) Package name change and local-only data
+
+Changing the Android application id (e.g. from `com.example.nexus` to `com.life.nexus`) gives the app a **new data directory**. The new install cannot see the old app’s files, so:
+
+- **Hive** (and any other app-local storage) starts **empty** in the new install.
+- Data that is **only stored locally** and not synced to Firebase is **lost** on reinstall or after a package-name change.
+
+Currently **categories** are local-only (no Firestore sync). So custom category names and structure are lost when you migrate to a new Firebase project and change the package name, or when you reinstall the app. Tasks, notes, and reminders that are synced to Firebase can be restored after signing in; category names cannot unless we add a category sync pipeline. See [Feature sync status](docs/feature_sync_status.md) and the Firebase user data model doc for details.
+
+**Recovering categories from the old package (if the old app’s data still exists):**
+
+1. **If the old app (e.g. `com.example.nexus`) is still installed** on the same device: Build the current app with the **old** application id (temporarily change `applicationId` in `android/app/build.gradle.kts` back to the old value). Install and run it — it will use the old app’s data directory and load the old Hive data. In **Settings → Categories backup**, tap **Export categories**. Use the share sheet to save the JSON file (e.g. to Drive or email). Then reinstall the app with the **new** package name and in **Settings → Categories backup** tap **Import categories** and pick the saved file. Category ids are preserved, so existing tasks will again show under the correct category names.
+
+2. **If the old app was already uninstalled**, the old data directory is usually deleted and the categories cannot be recovered unless you have a backup (e.g. from `adb backup` or a device backup). Export/Import is still useful for future backups.
 
 ## 2. High-level architecture
 
@@ -606,6 +638,37 @@ git check-ignore lib/firebase_setup/apiKeys.dart
 
 - In Firebase console, enable **Cloud Firestore** (Spark plan compatible).
 
+### Android: Add debug SHA-1 in Firebase Console
+
+If you use **Firebase Auth** or see `DEVELOPER_ERROR` / `ConnectionResult{statusCode=DEVELOPER_ERROR}` in logs, add your debug keystore SHA-1 in Firebase:
+
+1. Get your debug SHA-1 (PowerShell):
+   ```powershell
+   keytool -list -v -keystore "$env:USERPROFILE\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
+   ```
+   Copy the **SHA-1** line (and SHA-256 if needed).
+2. Firebase Console → Project settings → Your apps → Android app (`com.life.nexus`) → **Add fingerprint** → paste SHA-1 → Save.
+
+**SHA-1 already in Firebase but still seeing DEVELOPER_ERROR?**
+
+- **Confirm the fingerprint matches** – Run the `keytool` command above on the machine where you build/run the app. The SHA-1 must match exactly (including colons, same casing). If you build on a different PC or CI, that keystore’s SHA-1 must also be added in Firebase.
+- **Clean rebuild** – After changing fingerprints, run `flutter clean` then `flutter run` (or rebuild the APK). Old builds can cache config.
+- **Re-download google-services.json** – In Firebase → Project settings → Your apps → download the latest `google-services.json`, replace `android/app/google-services.json`, then rebuild.
+- **Google Sign-In** – If you use Google Sign-In, the **Google Cloud Console** (same project as Firebase) must have an **OAuth 2.0 Client ID** of type **Android** with package name `com.life.nexus` and the same SHA-1. Firebase “Add fingerprint” is not enough for Sign-In; the Android OAuth client must exist and match.
+
+### Debug: Understanding Android run logs
+
+When you `flutter run` or install the debug APK, you may see:
+
+| Log message | Meaning | Action |
+|-------------|---------|--------|
+| `ConnectionResult{statusCode=DEVELOPER_ERROR}` / `Unknown calling package name 'com.google.android.gms'` | Your app’s signing cert (debug SHA-1) is not registered for Firebase/Google APIs. | Add debug SHA-1 in Firebase Console (see **Android: Add debug SHA-1** above). |
+| `FlutterJNI.loadLibrary called more than once` | Flutter engine init can run twice (e.g. main + background isolate). | Safe to ignore in normal runs. |
+| `Width is zero. 0,0` | Very early frame before layout. | Normal at startup; ignore. |
+| `Phenotype.API is not available` / `FlagRegistrar` | Google Play Services config; often same as DEVELOPER_ERROR. | Fix SHA-1 in Firebase; then these usually stop. |
+
+After adding the debug SHA-1 and re-running, the DEVELOPER_ERROR and related warnings should go away. The app can still run without it; Firestore and other APIs may work, but Google Sign-In and some GMS features will fail until the fingerprint is added.
+
 ### Firestore collections used
 
 - `tasks/{taskId}`: task docs
@@ -716,9 +779,7 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in [`l
 - Widgets:
   - [`lib/features/tasks/views/widgets/task_tile.dart`](lib/features/tasks/views/widgets/task_tile.dart)
   - [`lib/features/tasks/views/widgets/task_search_bar.dart`](lib/features/tasks/views/widgets/task_search_bar.dart)
-  - [`lib/features/tasks/views/widgets/task_editor_dialog.dart`](lib/features/tasks/views/widgets/task_editor_dialog.dart): **Main Task Editor**. Handles creation and editing logic.
-- [`lib/features/tasks/views/task_detail_sheet/`](lib/features/tasks/views/task_detail_sheet/): Modular components for the task detail bottom sheet.
-- [`lib/features/tasks/views/utils/attachment_picker_utils.dart`](lib/features/tasks/views/utils/attachment_picker_utils.dart): Helper for picking files/images.
+  - Task editor functionality is in the **`task_editor`** feature (`lib/features/task_editor/`): `task_editor_dialog.dart` (dialog wrapper), `task_editor_sheet.dart` (main editor UI), and related widgets.
 
 ### How Tasks work
 
@@ -826,7 +887,7 @@ At a high level:
 | **Data** | Store queued operations + sync metadata | [`SyncOperation`](lib/core/data/sync_queue.dart), [`SyncMetadata`](lib/core/data/sync_metadata.dart), [`SyncOperationAdapter`](lib/core/data/sync_operation_adapter.dart) |
 | **Engine** | Push local → Firestore, pull remote → Hive, detect conflicts | [`SyncService`](lib/core/services/sync/sync_service.dart) |
 | **Producers** | Enqueue operations when entities change | [`TaskController`](lib/features/tasks/controllers/task_controller.dart), [`NoteController`](lib/features/notes/controllers/note_controller.dart), [`ReminderController`](lib/features/reminders/controllers/reminder_controller.dart) |
-| **Consumers** | Surface conflicts to the user | [`SyncController`](lib/features/sync/controllers/sync_controller.dart), [`NoteConflictResolutionDialog`](lib/features/notes/views/note_conflict_resolution_dialog.dart), UI badges |
+| **Consumers** | Surface conflicts to the user | [`SyncController`](lib/features/sync/presentation/state_management/sync_controller.dart) (conflicts exposed for future UI) |
 
 ---
 
@@ -1038,24 +1099,17 @@ If `TaskConflictDetector` or `NoteConflictDetector` determines that the user has
 2. Emits it on a `Stream<List<SyncConflict<T>>>` managed by [`SyncController`](lib/features/sync/controllers/sync_controller.dart) (for notes, tasks, etc.).
 3. Leaves both copies intact until the user decides.
 
-#### Conflict Resolution Dialog (Notes)
+#### Conflict Resolution (Notes / Tasks)
 
-For notes, conflicts are resolved via [`NoteConflictResolutionDialog`](lib/features/notes/views/note_conflict_resolution_dialog.dart):
+Conflict detection is implemented in the sync layer; `SyncController` exposes conflicts. Conflict-resolution UI is available via:
 
-- UI presents a pair of cards: **Local** vs **Remote**.
-- Each card shows:
-  - Title
-  - A text preview built by deserializing `contentDeltaJson` and calling `.toPlainText()`.
-- User chooses:
+- **`TaskConflictResolutionDialog`** (`lib/features/tasks/presentation/widgets/task_conflict_resolution_dialog.dart`): Dialog for resolving task conflicts, accessible from the Sync section in Settings when task conflicts exist.
+- **`NoteConflictResolutionDialog`** (`lib/features/notes/presentation/widgets/note_conflict_resolution_dialog.dart`): Dialog for resolving note conflicts, accessible from the Sync section in Settings when note conflicts exist.
 
-  - **Keep Remote**:
-    - Remote version is written to the local Hive box.
-    - `isDirty = false`, `syncStatus = synced`, `lastSyncedAt = now`.
-  - **Keep Local**:
-    - Local version is re-enqueued as a new `SyncOperation` (`update`).
-    - `syncStatus = idle`, `isDirty = true`.
-
-The same pattern can be re-used for other entity types (e.g. Tasks) with entity-specific dialogs.
+Both dialogs follow the same pattern:
+- UI presents **Local** vs **Remote** cards (title, preview for notes; full task fields for tasks).
+- **Keep Remote**: write remote to Hive, clear dirty/sync status, remove conflict from controller.
+- **Keep Local**: save local, re-enqueue local as a new `SyncOperation` (update), set dirty, remove conflict from controller.
 
 ---
 
@@ -1704,7 +1758,7 @@ main.dart
 
 - **User flow**:
   1. User opens Tasks screen ([`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart)), which subscribes to `TaskController`.
-  2. User taps "Add" or edits an existing task → `TaskEditorDialog` (and related sheet widgets) opens.
+  2. User taps "Add" or edits an existing task → `showTaskEditorDialog()` (from `task_editor` feature) opens `TaskEditorSheet`.
   3. On save:
      - Controller validates input,
      - Writes to Hive via `TaskRepository`,

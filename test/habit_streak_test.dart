@@ -2,11 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_test/hive_test.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
-import 'package:nexus/features/habits/controllers/habit_controller.dart';
-import 'package:nexus/features/habits/models/habit.dart';
-import 'package:nexus/features/habits/models/habit_log.dart';
-import 'package:nexus/features/habits/models/habit_log_repository.dart';
-import 'package:nexus/features/habits/models/habit_repository.dart';
+import 'package:nexus/core/data/sync_queue.dart';
+import 'package:nexus/core/services/platform/connectivity_service.dart';
+import 'package:nexus/core/services/sync/sync_service.dart';
+import 'package:nexus/features/habits/presentation/state_management/habit_controller.dart';
+import 'package:nexus/features/habits/domain/entities/habit_log_entity.dart';
+import 'package:nexus/features/habits/data/models/habit.dart';
+import 'package:nexus/features/habits/data/models/habit_log.dart';
+import 'package:nexus/features/habits/data/repositories/habit_repository_impl.dart';
+import 'package:nexus/features/habits/data/repositories/habit_log_repository_impl.dart';
 
 void main() {
   test('currentStreak counts consecutive completed days', () async {
@@ -16,9 +20,14 @@ void main() {
     await Hive.openBox<Habit>(HiveBoxes.habits);
     await Hive.openBox<HabitLog>(HiveBoxes.habitLogs);
 
-    final habits = HabitRepository();
-    final logs = HabitLogRepository();
-    final controller = HabitController(habits: habits, logs: logs);
+    final habits = HabitRepositoryImpl();
+    final logs = HabitLogRepositoryImpl();
+    final syncService = _FakeSyncService();
+    final controller = HabitController(
+      habits: habits,
+      logs: logs,
+      syncService: syncService,
+    );
 
     final habit = await controller.createHabit(title: 'Test');
 
@@ -27,28 +36,28 @@ void main() {
     final twoDays = today.subtract(const Duration(days: 2));
 
     await logs.upsert(
-      HabitLog(
+      HabitLogEntity(
         id: '1',
         habitId: habit.id,
-        dayKey: HabitController.dayKey(today),
+        date: today,
         completed: true,
         createdAt: DateTime.now(),
       ),
     );
     await logs.upsert(
-      HabitLog(
+      HabitLogEntity(
         id: '2',
         habitId: habit.id,
-        dayKey: HabitController.dayKey(yesterday),
+        date: yesterday,
         completed: true,
         createdAt: DateTime.now(),
       ),
     );
     await logs.upsert(
-      HabitLog(
+      HabitLogEntity(
         id: '3',
         habitId: habit.id,
-        dayKey: HabitController.dayKey(twoDays),
+        date: twoDays,
         completed: false,
         createdAt: DateTime.now(),
       ),
@@ -58,4 +67,18 @@ void main() {
 
     await tearDownTestHive();
   });
+}
+
+class _FakeSyncService extends SyncService {
+  _FakeSyncService() : super(connectivity: ConnectivityService());
+
+  @override
+  Future<void> enqueueOperation(SyncOperation op) async {
+    // no-op for tests
+  }
+
+  @override
+  Future<void> syncOnce() async {
+    // no-op for tests
+  }
 }

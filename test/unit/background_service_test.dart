@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nexus/core/services/notifications/reminder_notifications.dart';
-import 'package:nexus/core/services/notifications/workmanager_dispatcher.dart';
-import 'package:nexus/features/reminders/models/reminder.dart';
+import 'package:nexus/features/reminders/data/services/reminder_workmanager_callback.dart';
+import 'package:nexus/features/reminders/data/models/reminder.dart';
 
 class MockBox extends Mock implements Box<Reminder> {}
 

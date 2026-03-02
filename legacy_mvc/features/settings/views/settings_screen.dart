@@ -4,7 +4,6 @@ import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/features/settings/controllers/settings_connectivity_mixin.dart';
 import 'package:nexus/features/settings/controllers/settings_connectivity_helper.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
-import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:nexus/features/settings/views/sections/theme_section.dart';
 import 'package:nexus/features/settings/views/sections/task_management_section.dart';
 import 'package:nexus/features/settings/views/sections/sync_section.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/tasks/models/category.dart';
-import 'package:nexus/features/tasks/models/category_sort_option.dart';
-import 'package:nexus/features/tasks/models/task.dart';
-import 'package:nexus/features/tasks/models/task_enums.dart';
+import 'package:nexus/features/categories/data/models/category.dart';
+import 'package:nexus/features/categories/domain/category_sort_option.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
+import 'package:nexus/features/tasks/domain/task_enums.dart';
 
 void main() {
   group('Category Sorting for Jump to Category Menu', () {

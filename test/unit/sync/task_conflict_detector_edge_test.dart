@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus/core/utils/task_conflict_detector.dart';
-import 'package:nexus/features/tasks/models/task.dart';
+import 'package:nexus/features/tasks/data/models/task.dart';
 
 void main() {
   Task makeTask({

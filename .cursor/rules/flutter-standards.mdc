@@ -1,0 +1,11 @@
+---
+description: Flutter widget coding standards
+alwaysApply: true
+---
+
+# Flutter Widget Standards
+
+- Prefer defining and using **widget global keys** (`GlobalKey`) when you need to reference a widget or its state from outside its immediate build context (for example, shared snackbars, navigation, top-level forms, or other app-wide UI controllers).
+- When a suitable global key already exists for a concern (such as snackbars or navigation), prefer using it instead of introducing new ad-hoc access patterns.
+- Keep the number of `GlobalKey` instances reasonable by **reusing existing keys** for the same responsibility rather than creating duplicates.
+

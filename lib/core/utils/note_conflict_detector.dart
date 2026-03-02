@@ -1,7 +1,10 @@
-import 'package:nexus/features/notes/models/note.dart';
+import 'package:nexus/core/utils/conflict_detectable.dart';
 
 class NoteConflictDetector {
-  static bool hasConflict({required Note local, required Note remote}) {
+  static bool hasConflict({
+    required ConflictDetectable local,
+    required ConflictDetectable remote,
+  }) {
     final localLastSync = local.lastSyncedAt;
     final localDirty = local.isDirty;
     final remoteNewerThanLocalSync =

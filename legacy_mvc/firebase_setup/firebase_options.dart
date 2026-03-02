@@ -75,7 +75,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '994254093528',
     projectId: 'nexus-773',
     storageBucket: 'nexus-773.firebasestorage.app',
-    iosBundleId: 'com.example.nexus',
+    iosBundleId: 'com.life.nexus',
   );
 
   static const FirebaseOptions _windowsLive = FirebaseOptions(
@@ -111,7 +111,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '994254093528',
     projectId: 'nexus-773',
     storageBucket: 'nexus-773.firebasestorage.app',
-    iosBundleId: 'com.example.nexus',
+    iosBundleId: 'com.life.nexus',
   );
 
   static const FirebaseOptions _windowsTest = FirebaseOptions(

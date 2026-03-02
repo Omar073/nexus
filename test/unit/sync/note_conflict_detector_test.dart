@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus/core/utils/note_conflict_detector.dart';
-import 'package:nexus/features/notes/models/note.dart';
+import 'package:nexus/features/notes/data/models/note.dart';
 
 void main() {
   Note makeNote({

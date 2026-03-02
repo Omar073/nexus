@@ -5,7 +5,6 @@ import 'package:nexus/features/habits/controllers/habit_controller.dart';
 import 'package:nexus/features/habits/views/widgets/habit_card.dart';
 import 'package:nexus/features/habits/views/widgets/habit_create_dialog.dart';
 import 'package:nexus/features/settings/controllers/settings_controller.dart';
-import 'package:nexus/features/settings/models/nav_bar_style.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/core/widgets/app_drawer_button.dart';
 import 'package:nexus/features/wrapper/views/app_drawer.dart';

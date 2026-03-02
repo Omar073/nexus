@@ -71,8 +71,8 @@ abstract class EntitySyncHandler<T> {
 
 Handlers live inside their **feature directories**, not in `core/`:
 
-- `TaskSyncHandler` → `lib/features/tasks/sync/task_sync_handler.dart`
-- `NoteSyncHandler` → `lib/features/notes/sync/note_sync_handler.dart`
+- `TaskSyncHandler` → `lib/features/tasks/data/sync/task_sync_handler.dart`
+- `NoteSyncHandler` → `lib/features/notes/data/sync/note_sync_handler.dart`
 
 Each handler contains the specific business logic for its entity:
 
@@ -87,8 +87,8 @@ Handlers are **not** created inside `SyncService`. They are injected via the con
 
 The **Composition Root** is in `features/splash/`:
 
-- [`app_initializer.dart`](../../features/splash/controllers/app_initializer.dart) — production startup
-- [`provider_factory.dart`](../../features/splash/controllers/provider_factory.dart) — Provider tree wiring
+- [`app_initializer.dart`](../../features/splash/presentation/bootstrap/app_initializer.dart) — production startup
+- [`provider_factory.dart`](../../features/splash/presentation/bootstrap/provider_factory.dart) — Provider tree wiring
 
 ```dart
 final syncService = SyncService(
@@ -106,7 +106,7 @@ This means `core/` has **zero imports** from `features/`. See [REF_DEPENDENCY_IN
 
 You do **not** need to touch `SyncService.dart`!
 
-1. Create `lib/features/habits/sync/habit_sync_handler.dart` implementing `EntitySyncHandler<Habit>`.
+1. Create `lib/features/habits/data/sync/habit_sync_handler.dart` implementing `EntitySyncHandler<Habit>`.
 2. Register it at the composition root (`app_initializer.dart` and `provider_factory.dart`):
 
     ```dart

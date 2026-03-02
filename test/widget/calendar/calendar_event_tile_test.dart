@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexus/features/calendar/controllers/calendar_controller.dart';
-import 'package:nexus/features/calendar/views/widgets/calendar_event_tile.dart';
+import 'package:nexus/features/calendar/presentation/state_management/calendar_controller.dart';
+import 'package:nexus/features/calendar/presentation/widgets/calendar_event_tile.dart';
 
 void main() {
   testWidgets('CalendarEventTile renders task item correctly', (
