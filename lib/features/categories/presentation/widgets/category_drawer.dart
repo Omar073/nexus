@@ -14,104 +14,108 @@ class CategoryDrawer extends StatelessWidget {
     required this.taskCountByCategory,
     required this.sortedCategories,
     required this.onClearTasks,
+    this.scrollController,
   });
 
   final ValueChanged<String?> onCategorySelected;
   final Map<String?, int> taskCountByCategory;
   final List<Category> sortedCategories;
   final Future<void> Function(List<String> categoryIds) onClearTasks;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categoryController = context.watch<CategoryController>();
     final categories = sortedCategories;
-    final screenHeight = MediaQuery.of(context).size.height;
+    bool gestureStartedAtTop = false;
 
-    return SizedBox(
-      height: screenHeight * 0.6,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(
-                  alpha: 0.3,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
             ),
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.format_list_bulleted,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Jump to Category',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                // Only allow overscroll-to-dismiss if the gesture STARTED at the top.
+                // This prevents \"scroll up from bottom → reach top → dismiss\" in the same gesture.
+                if (notification is ScrollStartNotification) {
+                  gestureStartedAtTop = notification.metrics.pixels <= 0;
+                }
+                if (notification is ScrollEndNotification) {
+                  gestureStartedAtTop = false;
+                }
+                if (notification is OverscrollNotification &&
+                    gestureStartedAtTop &&
+                    notification.metrics.pixels <= 0 &&
+                    notification.overscroll < 0) {
+                  Navigator.of(context).maybePop();
+                }
+                return false;
+              },
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  Icon(
-                    Icons.format_list_bulleted,
-                    color: theme.colorScheme.primary,
+                  CategoryTile(
+                    name: 'Uncategorized',
+                    count: taskCountByCategory[null] ?? 0,
+                    icon: Icons.inbox_outlined,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onCategorySelected(null);
+                    },
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Jump to Category',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  ...categories.map((category) {
+                    final subcategories = categoryController.getSubcategories(
+                      category.id,
+                    );
+                    return CategoryDrawerItem(
+                      category: category,
+                      subcategories: subcategories,
+                      taskCountByCategory: taskCountByCategory,
+                      onClearTasks: onClearTasks,
+                      onCategorySelected: onCategorySelected,
+                      categoryController: categoryController,
+                    );
+                  }),
                 ],
               ),
             ),
-            const Divider(height: 1),
-            // Category list
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification is OverscrollNotification &&
-                      notification.metrics.pixels <= 0 &&
-                      notification.overscroll < 0) {
-                    Navigator.of(context).maybePop();
-                  }
-                  return false;
-                },
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  children: [
-                    CategoryTile(
-                      name: 'Uncategorized',
-                      count: taskCountByCategory[null] ?? 0,
-                      icon: Icons.inbox_outlined,
-                      onTap: () {
-                        Navigator.pop(context);
-                        onCategorySelected(null);
-                      },
-                    ),
-                    ...categories.map((category) {
-                      final subcategories = categoryController.getSubcategories(
-                        category.id,
-                      );
-                      return CategoryDrawerItem(
-                        category: category,
-                        subcategories: subcategories,
-                        taskCountByCategory: taskCountByCategory,
-                        onClearTasks: onClearTasks,
-                        onCategorySelected: onCategorySelected,
-                        categoryController: categoryController,
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-          ],
-        ),
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+        ],
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
-/// Represents a saved color preset combination
+/// Hive model for a named saved color palette.
 class ColorPreset {
   final String id;
   final String name;

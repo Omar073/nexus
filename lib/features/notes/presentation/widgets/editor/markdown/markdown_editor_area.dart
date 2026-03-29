@@ -3,6 +3,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 enum MarkdownLayout { tabs, split }
 
+/// Markdown mode editor surface for a note.
+
 class MarkdownEditorArea extends StatefulWidget {
   const MarkdownEditorArea({
     super.key,

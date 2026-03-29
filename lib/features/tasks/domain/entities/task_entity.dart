@@ -1,7 +1,7 @@
 import 'package:nexus/features/categories/domain/category_sortable_item.dart';
 import 'package:nexus/features/tasks/domain/entities/task_attachment_entity.dart';
 
-/// Domain entity for a task (pure Dart, no Hive).
+/// Domain task with category, due, reminders, and sync fields.
 class TaskEntity implements CategorySortableItem {
   const TaskEntity({
     required this.id,

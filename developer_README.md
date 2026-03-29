@@ -63,7 +63,7 @@ flutter build apk; flutter build windows
 
 ### 4) Regenerate launcher icons (optional)
 
-When you change app icon or splash assets in [`app_logos/`](app_logos/) or the `flutter_launcher_icons` section in `pubspec.yaml`, regenerate the Android launcher and adaptive icons:
+When you change app icon or splash assets in [`assets/app_logos/`](assets/app_logos/) or the `flutter_launcher_icons` section in `pubspec.yaml`, regenerate the Android launcher and adaptive icons:
 
 ```bash
 dart run flutter_launcher_icons

@@ -1,3 +1,4 @@
+/// Names and helpers for opening typed Hive boxes.
 class HiveBoxes {
   static const String tasks = 'tasks';
   static const String categories = 'categories';

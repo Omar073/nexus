@@ -9,6 +9,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Adds a file-backed attachment and updates the note.
+
 class AddNoteAttachmentUseCase {
   AddNoteAttachmentUseCase(
     this._repo,

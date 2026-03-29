@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/data/models/custom_colors_store.dart';
 
+/// Tappable color swatches for theme customization.
+
 class ColorOptionGrid extends StatelessWidget {
   final List<ColorOption> options;
   final Color selectedColor;

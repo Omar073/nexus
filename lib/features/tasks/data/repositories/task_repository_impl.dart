@@ -5,7 +5,7 @@ import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/domain/repositories/task_repository_interface.dart';
 import 'package:nexus/features/tasks/data/data_sources/task_local_datasource.dart';
 
-/// Implements [TaskRepositoryInterface] using [TaskLocalDatasource] and [TaskMapper].
+/// Implements task persistence via [TaskLocalDatasource].
 class TaskRepositoryImpl implements TaskRepositoryInterface {
   TaskRepositoryImpl({TaskLocalDatasource? local})
     : _local = local ?? TaskLocalDatasource() {

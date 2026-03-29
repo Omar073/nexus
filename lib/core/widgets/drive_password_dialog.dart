@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Dialog for entering Drive access password
+/// Collects encryption/password input for Drive flows.
 class DrivePasswordDialog extends StatefulWidget {
   const DrivePasswordDialog({super.key});
 

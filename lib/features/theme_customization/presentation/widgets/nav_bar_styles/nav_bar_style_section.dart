@@ -5,7 +5,7 @@ import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_
 import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_styles/nav_bar_preview.dart';
 import 'package:provider/provider.dart';
 
-/// Widget section to select navigation bar style with visual previews.
+/// Settings rows linking to nav bar customization.
 class NavBarStyleSection extends StatelessWidget {
   const NavBarStyleSection({super.key, required this.isLight});
 

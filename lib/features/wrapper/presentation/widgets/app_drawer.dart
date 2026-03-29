@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nexus/app/router/app_routes.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/drawer_item.dart';
 
+/// Navigation drawer destinations and header.
+
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 

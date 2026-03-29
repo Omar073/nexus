@@ -7,6 +7,8 @@ import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+/// Schedules, shows, and cancels local reminder notifications.
+
 class NotificationService implements ReminderNotifications {
   NotificationService({FlutterLocalNotificationsPlugin? plugin})
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();

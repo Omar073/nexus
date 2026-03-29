@@ -2,6 +2,8 @@ import 'package:intl/intl.dart';
 import 'package:nexus/features/habits/domain/entities/habit_log_entity.dart';
 import 'package:nexus/features/habits/data/models/habit_log.dart';
 
+/// Maps [HabitLog] Hive model to domain entity and back.
+
 class HabitLogMapper {
   static String _dayKey(DateTime d) {
     final local = DateTime(d.year, d.month, d.day);

@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
+/// Hive model: one attachment path, MIME, and optional Drive id.
+
 @HiveType(typeId: HiveTypeIds.noteAttachment)
 class NoteAttachment extends HiveObject {
   NoteAttachment({
@@ -52,6 +54,8 @@ class NoteAttachment extends HiveObject {
     );
   }
 }
+
+/// Serializes [NoteAttachment] for Hive.
 
 class NoteAttachmentAdapter extends TypeAdapter<NoteAttachment> {
   @override

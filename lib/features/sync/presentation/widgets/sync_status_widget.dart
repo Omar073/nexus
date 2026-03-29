@@ -5,6 +5,8 @@ import 'package:nexus/features/tasks/presentation/widgets/task_conflict_resoluti
 import 'package:nexus/features/notes/presentation/widgets/dialogs/note_conflict_resolution_dialog.dart';
 import 'package:provider/provider.dart';
 
+/// Compact sync progress / error indicator for the shell.
+
 class SyncStatusWidget extends StatelessWidget {
   const SyncStatusWidget({super.key});
 

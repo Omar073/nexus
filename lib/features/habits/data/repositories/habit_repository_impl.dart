@@ -8,6 +8,8 @@ import 'package:nexus/features/habits/domain/repositories/habit_repository_inter
 import 'package:nexus/features/habits/data/data_sources/habit_local_datasource.dart';
 import 'package:nexus/features/habits/data/models/habit.dart';
 
+/// Implements habit persistence via local datasource.
+
 class HabitRepositoryImpl implements HabitRepositoryInterface {
   HabitRepositoryImpl({HabitLocalDatasource? local})
     : _local = local ?? HabitLocalDatasource() {

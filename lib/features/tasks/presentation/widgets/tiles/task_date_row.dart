@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/presentation/utils/task_date_formatter.dart';
 
-/// Row displaying task date information with optional overdue indicator.
+/// Due date and reminder icons for a task row.
 class TaskDateRow extends StatelessWidget {
   const TaskDateRow({
     super.key,

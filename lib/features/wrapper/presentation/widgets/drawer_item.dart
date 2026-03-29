@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// A reusable drawer item widget for navigation drawers.
+/// Icon + label row used in [AppDrawer].
 class DrawerItem extends StatelessWidget {
   const DrawerItem({
     super.key,

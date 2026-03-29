@@ -4,6 +4,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 import 'package:provider/provider.dart';
 
+/// Dropdown of categories for the note editor toolbar.
+
 class CategorySelector extends StatelessWidget {
   const CategorySelector({super.key, required this.note});
 

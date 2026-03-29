@@ -10,6 +10,9 @@ import 'package:nexus/core/utils/note_conflict_detector.dart';
 import 'package:nexus/features/notes/data/models/note.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Entity handler that serializes [Note] for [SyncService] push/pull.
+/// Translates remote documents to local rows and enqueues outbound changes.
+
 class NoteSyncHandler implements EntitySyncHandler<Note> {
   NoteSyncHandler({
     required FirebaseFirestore firestore,

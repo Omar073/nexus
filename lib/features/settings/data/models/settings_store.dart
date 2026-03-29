@@ -3,6 +3,8 @@ import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Key-value access for theme, sort, nav bar, and retention prefs.
+
 class SettingsStore {
   static const _keyThemeMode = 'settings.theme_mode';
   static const _keyCompletedRetentionDays = 'settings.completed_retention_days';
@@ -58,6 +60,7 @@ class SettingsStore {
       'curved' => NavBarStyle.curved,
       'notch' => NavBarStyle.notch,
       'google' => NavBarStyle.google,
+      'rive' => NavBarStyle.rive,
       _ => NavBarStyle.standard,
     };
   }

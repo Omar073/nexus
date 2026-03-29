@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
+/// Hive model: file path and MIME for a task attachment.
+
 @HiveType(typeId: HiveTypeIds.taskAttachment)
 class TaskAttachment extends HiveObject {
   TaskAttachment({
@@ -58,6 +60,8 @@ class TaskAttachment extends HiveObject {
     );
   }
 }
+
+/// Serializes [TaskAttachment] for Hive.
 
 class TaskAttachmentAdapter extends TypeAdapter<TaskAttachment> {
   @override

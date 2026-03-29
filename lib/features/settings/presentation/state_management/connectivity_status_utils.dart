@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/backend_health_checker.dart';
 
-/// Utility functions for connectivity status UI display.
+/// Formats connectivity labels and detail strings.
 class ConnectivityStatusUtils {
   /// Returns the text representation of a connectivity status
   static String getStatusText(ConnectivityStatus? status) {

@@ -6,6 +6,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Removes a note locally and enqueues remote delete.
+
 class DeleteNoteUseCase {
   DeleteNoteUseCase(this._repo, this._syncService, {Uuid? uuid})
     : _uuid = uuid ?? const Uuid();

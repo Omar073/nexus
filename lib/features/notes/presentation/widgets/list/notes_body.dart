@@ -8,6 +8,8 @@ import 'package:nexus/features/notes/presentation/widgets/tiles/note_tile.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:provider/provider.dart';
 
+/// Scrollable note list with selection mode and empty states.
+
 class NotesBody extends StatelessWidget {
   const NotesBody({
     super.key,

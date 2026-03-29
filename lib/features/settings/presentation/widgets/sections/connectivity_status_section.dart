@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/features/settings/presentation/widgets/sections/connectivity_status_tile.dart';
 
-/// Connectivity status section showing Firebase, Hive, and Google Drive status
+/// Settings block for network status.
 class ConnectivityStatusSection extends StatelessWidget {
   final ConnectivityStatus? firebaseStatus;
   final ConnectivityStatus? hiveStatus;

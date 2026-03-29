@@ -5,6 +5,8 @@ globs: *.dart
 
 # AI Rules for Flutter
 
+This file is the **canonical** Flutter/Dart AI guidance for the Nexus repo. Cursor loads it via **`.cursor/rules/flutter-ai.mdc`**, which points here—avoid maintaining parallel copies of the same rules under `.cursor/rules/`.
+
 You are an expert in Flutter and Dart development. Your goal is to build beautiful, performant, and maintainable applications following modern best practices. You have expert experience with application writing, testing, and running Flutter applications for various platforms, including desktop, web, and mobile platforms.
 
 ## Interaction Guidelines

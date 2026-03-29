@@ -3,8 +3,9 @@ import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/animated_notch_nav_bar.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/google_nav_bar_wrapper.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_animated_nav_bar.dart';
 
-/// Builds the appropriate navigation bar based on the selected style.
+/// Selects curved, notch, Google, or Rive nav implementation.
 class NavBarBuilder extends StatelessWidget {
   const NavBarBuilder({
     super.key,
@@ -34,6 +35,12 @@ class NavBarBuilder extends StatelessWidget {
 
       case NavBarStyle.google:
         return GoogleNavBarWrapper(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onDestinationSelected,
+        );
+
+      case NavBarStyle.rive:
+        return RiveAnimatedNavBar(
           selectedIndex: selectedIndex,
           onDestinationSelected: onDestinationSelected,
         );

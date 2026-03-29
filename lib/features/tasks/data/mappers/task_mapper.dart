@@ -3,6 +3,8 @@ import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/data/models/task.dart';
 import 'package:nexus/features/tasks/data/models/task_attachment.dart';
 
+/// Maps [Task] Hive model to domain entity and back.
+
 class TaskMapper {
   static TaskEntity toEntity(Task t) {
     return TaskEntity(

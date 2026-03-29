@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Available navigation bar styles for the app shell.
 enum NavBarStyle {
   /// Flutter's default Material 3 NavigationBar
@@ -11,6 +13,9 @@ enum NavBarStyle {
 
   /// Google-style navigation bar with pill-shaped active indicator
   google,
+
+  /// Bottom navigation bar with animated Rive icons
+  rive,
 }
 
 /// Extension to provide display names for nav bar styles
@@ -25,6 +30,8 @@ extension NavBarStyleExtension on NavBarStyle {
         return 'Notch';
       case NavBarStyle.google:
         return 'Google';
+      case NavBarStyle.rive:
+        return 'Rive';
     }
   }
 
@@ -38,6 +45,8 @@ extension NavBarStyleExtension on NavBarStyle {
         return 'Animated notch indicator';
       case NavBarStyle.google:
         return 'Pill-shaped active state';
+      case NavBarStyle.rive:
+        return 'Animated Rive icons';
     }
   }
 
@@ -53,11 +62,15 @@ extension NavBarStyleExtension on NavBarStyle {
         return 56.0; // AnimatedNotchNavBar bottomBarHeight
       case NavBarStyle.google:
         return 56.0; // GNav with padding
+      case NavBarStyle.rive:
+        return 78.0; // 68 container height + 10 bottom margin
     }
   }
 
   /// Returns the offset for FAB positioning (navbar height + spacing buffer).
-  double get fabOffset => height + 40.0;
+  double fabOffset(BuildContext context) {
+    return height + MediaQuery.paddingOf(context).bottom + 8.0;
+  }
 
   /// Returns the padding for scrollable content to avoid navbar overlap.
   double get contentPadding => height + 16.0;

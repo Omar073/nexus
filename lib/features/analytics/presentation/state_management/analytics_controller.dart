@@ -4,6 +4,8 @@ import 'package:nexus/features/reminders/presentation/state_management/reminder_
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Immutable counts for tasks, reminders, and habits.
+
 class AnalyticsSnapshot {
   AnalyticsSnapshot({
     required this.activeTasks,
@@ -21,6 +23,9 @@ class AnalyticsSnapshot {
   final int totalHabits;
   final int habitsDoneToday;
 }
+
+/// Read-only view model for the analytics dashboard.
+/// Pulls counts from task, reminder, and habit controllers without owning their data.
 
 class AnalyticsController extends ChangeNotifier {
   AnalyticsController({

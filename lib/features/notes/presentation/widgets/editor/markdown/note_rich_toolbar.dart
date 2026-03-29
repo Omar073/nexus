@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 
-/// Wrapper for the Quill rich text toolbar.
+/// Formatting toolbar for the Quill-based editor.
 class NoteRichToolbar extends StatelessWidget {
   const NoteRichToolbar({super.key, required this.controller});
 

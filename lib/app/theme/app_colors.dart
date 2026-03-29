@@ -163,7 +163,7 @@ abstract class AppColors {
   static const AppColors dark = AppColorsDarkNavy();
 }
 
-/// Light theme color implementation - Nexus Design System
+/// Light theme seed [ColorScheme] and derived surfaces.
 class AppColorsLight implements AppColors {
   const AppColorsLight();
 

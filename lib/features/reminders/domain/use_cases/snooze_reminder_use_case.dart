@@ -6,6 +6,8 @@ import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 
+/// Moves fire time forward and reschedules.
+
 class SnoozeReminderUseCase {
   SnoozeReminderUseCase(this._repo, this._notifications, this._syncService);
 

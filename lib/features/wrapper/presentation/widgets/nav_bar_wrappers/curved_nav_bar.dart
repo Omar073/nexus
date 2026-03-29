@@ -2,7 +2,7 @@ import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter/material.dart';
 
-/// Curved navigation bar wrapper using curved_labeled_navigation_bar package.
+/// Hosts the curved labeled bottom navigation bar.
 class CurvedNavBarWrapper extends StatelessWidget {
   static const double height = 65.0;
 

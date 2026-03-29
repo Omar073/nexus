@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Title and notes text fields for a task.
+
 class TaskEditorInputs extends StatelessWidget {
   const TaskEditorInputs({
     super.key,

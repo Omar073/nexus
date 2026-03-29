@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Empty state widget for tabs with no tasks.
+/// Placeholder when a filter has no tasks.
 class EmptyTasksState extends StatelessWidget {
   const EmptyTasksState({super.key, required this.message, required this.icon});
 

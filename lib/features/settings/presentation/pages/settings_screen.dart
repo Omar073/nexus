@@ -50,59 +50,61 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     return Scaffold(
       appBar: AppBar(leading: const AppDrawerButton()),
-      body: ListView(
-        padding: EdgeInsets.only(bottom: navBarStyle.contentPadding),
-        children: [
-          const SettingsHeader(),
-          const SizedBox(height: 24),
+      body: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.only(bottom: navBarStyle.contentPadding),
+          children: [
+            const SettingsHeader(),
+            const SizedBox(height: 24),
 
-          const SettingsSection(title: 'Appearance', child: ThemeSection()),
-          const SizedBox(height: 24),
+            const SettingsSection(title: 'Appearance', child: ThemeSection()),
+            const SizedBox(height: 24),
 
-          const SettingsSection(
-            title: 'Task Management',
-            child: TaskManagementSection(),
-          ),
-          const SizedBox(height: 24),
-
-          const SettingsSection(title: 'Sync & Backup', child: SyncSection()),
-          const SizedBox(height: 24),
-
-          SettingsSection(
-            title: 'Connectivity',
-            child: ConnectivityStatusSection(
-              firebaseStatus: firebaseStatus,
-              hiveStatus: hiveStatus,
-              googleDriveStatus: googleDriveStatus,
-              lastChecked: lastChecked,
-              isChecking: isChecking,
-              onRefreshFirebase: refreshFirebaseStatus,
-              onRefreshHive: refreshHiveStatus,
-              onRefreshGoogleDrive: refreshGoogleDriveStatus,
+            const SettingsSection(
+              title: 'Task Management',
+              child: TaskManagementSection(),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          SettingsSection(
-            title: 'Cloud Storage',
-            child: DriveAccessSection(
-              isAuthenticated: driveAuthenticated,
-              isGoogleSignedIn: isGoogleSignedIn,
-              isSigningIn: isSigningIn,
-              onAuthenticate: handleAuthenticate,
-              onRevoke: handleRevoke,
-              onGoogleSignIn: handleGoogleSignIn,
-              onGoogleSignOut: handleGoogleSignOut,
+            const SettingsSection(title: 'Sync & Backup', child: SyncSection()),
+            const SizedBox(height: 24),
+
+            SettingsSection(
+              title: 'Connectivity',
+              child: ConnectivityStatusSection(
+                firebaseStatus: firebaseStatus,
+                hiveStatus: hiveStatus,
+                googleDriveStatus: googleDriveStatus,
+                lastChecked: lastChecked,
+                isChecking: isChecking,
+                onRefreshFirebase: refreshFirebaseStatus,
+                onRefreshHive: refreshHiveStatus,
+                onRefreshGoogleDrive: refreshGoogleDriveStatus,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          const SettingsSection(
-            title: 'Permissions',
-            child: PermissionsSection(),
-          ),
-          const SizedBox(height: 32),
-        ],
+            SettingsSection(
+              title: 'Cloud Storage',
+              child: DriveAccessSection(
+                isAuthenticated: driveAuthenticated,
+                isGoogleSignedIn: isGoogleSignedIn,
+                isSigningIn: isSigningIn,
+                onAuthenticate: handleAuthenticate,
+                onRevoke: handleRevoke,
+                onGoogleSignIn: handleGoogleSignIn,
+                onGoogleSignOut: handleGoogleSignOut,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const SettingsSection(
+              title: 'Permissions',
+              child: PermissionsSection(),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }

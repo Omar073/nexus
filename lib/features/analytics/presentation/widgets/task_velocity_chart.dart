@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:nexus/features/analytics/presentation/state_management/analytics_controller.dart';
 
-/// Bar chart showing task completion velocity (completed tasks per day/week).
+/// Time-series of completed tasks for velocity insight.
 class TaskVelocityChart extends StatelessWidget {
   const TaskVelocityChart({
     super.key,

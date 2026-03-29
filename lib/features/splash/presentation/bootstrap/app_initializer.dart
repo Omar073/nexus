@@ -35,7 +35,7 @@ import 'package:workmanager/workmanager.dart';
 import 'package:nexus/features/splash/presentation/models/app_initialization_result.dart';
 import 'package:nexus/features/splash/presentation/models/critical_initialization_result.dart';
 
-/// Service responsible for initializing app dependencies
+/// Runs Hive, Firebase, and notification setup in order.
 class AppInitializer {
   /// Initializes only critical services needed for the app to open
   ///

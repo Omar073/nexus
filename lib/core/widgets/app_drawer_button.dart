@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/wrapper/presentation/pages/app_wrapper.dart';
 
+/// Icon button that opens the navigation drawer.
+
 class AppDrawerButton extends StatelessWidget {
   const AppDrawerButton({super.key, this.color});
 

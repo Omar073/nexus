@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/analytics/presentation/state_management/analytics_controller.dart';
 
-/// Circular progress indicator showing habits completion percentage.
+/// Radial progress for habits completed this period.
 class HabitsProgressCircle extends StatelessWidget {
   const HabitsProgressCircle({
     super.key,

@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/habits/data/models/habit_log.dart';
 
+/// CRUD for per-day [HabitLog] completion rows.
+
 class HabitLogLocalDatasource {
   Box<HabitLog> get _box => Hive.box<HabitLog>(HiveBoxes.habitLogs);
 

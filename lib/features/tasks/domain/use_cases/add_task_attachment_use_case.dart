@@ -10,6 +10,8 @@ import 'package:nexus/features/tasks/domain/repositories/task_repository_interfa
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:uuid/uuid.dart';
 
+/// Attaches a file to a task and persists it.
+
 class AddTaskAttachmentUseCase {
   AddTaskAttachmentUseCase(
     this._repo,

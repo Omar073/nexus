@@ -8,6 +8,8 @@ import 'package:nexus/features/habits/domain/repositories/habit_log_repository_i
 import 'package:nexus/features/habits/domain/repositories/habit_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Marks today complete/incomplete for a habit.
+
 class ToggleHabitTodayUseCase {
   ToggleHabitTodayUseCase(
     this._habits,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart';
 
-/// Row with Markdown mode switch and layout toggle (tabs vs split).
+/// Toggles between markdown and rich text for a note.
 class NoteMarkdownToggleRow extends StatelessWidget {
   const NoteMarkdownToggleRow({
     super.key,

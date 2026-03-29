@@ -1,4 +1,4 @@
-/// Domain entity for a reminder (pure Dart, no Hive).
+/// Domain reminder with schedule and completion state.
 class ReminderEntity {
   const ReminderEntity({
     required this.id,

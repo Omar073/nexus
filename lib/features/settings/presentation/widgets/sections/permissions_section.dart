@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/permission_service.dart';
 import 'package:provider/provider.dart';
 
-/// Permissions section for notification access
+/// Explains and requests OS permissions.
 class PermissionsSection extends StatelessWidget {
   const PermissionsSection({super.key});
 

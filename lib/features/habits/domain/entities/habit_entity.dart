@@ -1,4 +1,4 @@
-/// Domain entity for a habit (pure Dart, no Hive).
+/// Domain habit: title, schedule, streaks, and sync fields.
 class HabitEntity {
   const HabitEntity({
     required this.id,

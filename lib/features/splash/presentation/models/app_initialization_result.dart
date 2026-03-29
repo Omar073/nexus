@@ -17,7 +17,7 @@ import 'package:nexus/features/sync/presentation/state_management/sync_controlle
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 import 'package:nexus/features/tasks/domain/repositories/task_repository_interface.dart';
 
-/// Result of complete initialization containing all providers and services
+/// Outcome and error details after bootstrap.
 class AppInitializationResult {
   final SettingsController settingsController;
   final String deviceId;

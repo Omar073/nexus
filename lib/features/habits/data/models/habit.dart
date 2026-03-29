@@ -4,6 +4,8 @@ import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/utils/conflict_detectable.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Hive model: habit definition, streak fields, sync metadata.
+
 @HiveType(typeId: HiveTypeIds.habit)
 class Habit extends HiveObject implements ConflictDetectable {
   Habit({
@@ -88,6 +90,8 @@ class Habit extends HiveObject implements ConflictDetectable {
     );
   }
 }
+
+/// Serializes [Habit] for Hive.
 
 class HabitAdapter extends TypeAdapter<Habit> {
   @override

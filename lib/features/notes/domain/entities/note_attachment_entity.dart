@@ -1,4 +1,4 @@
-/// Domain entity for a note attachment (pure Dart, no Hive).
+/// Domain attachment: path, MIME, Drive id, kind.
 class NoteAttachmentEntity {
   const NoteAttachmentEntity({
     required this.id,

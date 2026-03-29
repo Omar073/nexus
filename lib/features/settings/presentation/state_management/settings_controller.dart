@@ -22,6 +22,9 @@ import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/tasks/domain/task_sort_option.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 
+/// In-memory [AppSettingsEntity] plus theme/nav/task preference writes.
+/// Each `update*` method delegates to a small use case and notifies listeners.
+
 class SettingsController extends ChangeNotifier {
   SettingsController(SettingsRepositoryInterface repo)
     : _loadSettings = LoadSettingsUseCase(repo),

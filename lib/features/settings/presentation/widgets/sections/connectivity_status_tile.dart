@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/features/settings/presentation/state_management/connectivity_status_utils.dart';
 
+/// Shows online/offline and last connectivity change.
+
 class ConnectivityStatusTile extends StatelessWidget {
   final ConnectivityStatus? status;
   final String title;

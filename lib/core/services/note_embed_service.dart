@@ -5,7 +5,7 @@ import 'package:nexus/core/services/storage/attachment_storage_service.dart';
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 
-/// Manages inline voice notes for Notes (record + playback).
+/// Records and plays local voice attachments for notes (paths via [AttachmentStorageService]).
 class NoteEmbedService {
   NoteEmbedService({AttachmentStorageService? storage, AudioPlayer? player})
     : _storage = storage ?? AttachmentStorageService(),

@@ -10,6 +10,9 @@ import 'package:nexus/core/utils/task_conflict_detector.dart';
 import 'package:nexus/features/tasks/data/models/task.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Entity handler for [Task] in the shared sync pipeline.
+/// Converts Firestore maps to Hive models and enqueues local changes outbound.
+
 class TaskSyncHandler implements EntitySyncHandler<Task> {
   TaskSyncHandler({
     required FirebaseFirestore firestore,

@@ -32,7 +32,7 @@ import 'package:nexus/features/notes/data/sync/note_sync_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
-/// Factory for creating app providers from initialization results
+/// Builds the [MultiProvider] tree for the running app.
 class AppProviderFactory {
   /// Creates providers from critical initialization result
   ///

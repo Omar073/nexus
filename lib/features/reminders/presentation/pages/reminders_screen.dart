@@ -9,6 +9,8 @@ import 'package:nexus/features/settings/presentation/state_management/settings_c
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:provider/provider.dart';
 
+/// Tabbed reminder list with add/edit flows.
+
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
 
@@ -137,7 +139,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
       floatingActionButton: _selectionMode
           ? null
           : Padding(
-              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset(context)),
               child: FloatingActionButton(
                 heroTag: 'reminders_fab',
                 onPressed: () => showReminderEditorDialog(context),

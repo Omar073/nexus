@@ -7,6 +7,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Inserts a new blank note and returns its id.
+
 class CreateEmptyNoteUseCase {
   CreateEmptyNoteUseCase(
     this._repo,

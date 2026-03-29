@@ -4,7 +4,7 @@ import 'package:nexus/features/settings/presentation/state_management/settings_c
 import 'package:nexus/features/theme_customization/presentation/widgets/colors/color_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/presets/save_preset_dialog.dart';
 
-/// Screen for customizing app theme colors
+/// Colors, presets, and nav bar style tuning.
 class ThemeCustomizationScreen extends StatefulWidget {
   const ThemeCustomizationScreen({super.key});
 

@@ -1,150 +1,177 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:nexus/core/services/note_embed_service.dart';
+import 'package:nexus/features/notes/domain/entities/note_attachment_entity.dart';
 import 'package:nexus/features/notes/domain/entities/note_entity.dart';
+import 'package:nexus/features/notes/domain/note_attachment_kinds.dart';
 import 'package:nexus/features/notes/presentation/state_management/note_controller.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/category_selector.dart';
+import 'package:nexus/features/notes/presentation/widgets/editor/helpers/note_editor_autosave_controller.dart';
+import 'package:nexus/features/notes/presentation/widgets/editor/helpers/note_editor_marker_inserter.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/note_editor_app_bar.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/markdown/note_markdown_toggle_row.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/markdown/note_rich_toolbar.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/voice/voice_notes_section.dart';
-import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
+import 'package:nexus/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart';
 import 'package:provider/provider.dart';
 
 /// Main editor view with all state and logic for editing a note.
 /// Hosted by [NoteEditorScreen] which handles loading and "not found".
 class NoteEditorView extends StatefulWidget {
-  const NoteEditorView({
-    super.key,
-    required this.note,
-    required this.navBarStyle,
-  });
+  const NoteEditorView({super.key, required this.note});
 
   final NoteEntity note;
-  final NavBarStyle navBarStyle;
 
   @override
   State<NoteEditorView> createState() => _NoteEditorViewState();
 }
 
-class _NoteEditorViewState extends State<NoteEditorView> {
-  quill.QuillController? _controller;
+class _NoteEditorViewState extends State<NoteEditorView>
+    with WidgetsBindingObserver {
+  late quill.QuillController _controller;
   final _title = TextEditingController();
   final _embedService = NoteEmbedService();
   final _markdownController = TextEditingController();
 
-  bool _titleInitialized = false;
-  bool _markdownInitialized = false;
   bool _isMarkdown = false;
   MarkdownLayout _markdownLayout = MarkdownLayout.tabs;
+  NoteController? _notes;
+  late final NoteEditorMarkerInserter _markerInserter;
+  NoteEditorAutosaveController? _autosave;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _markerInserter = const NoteEditorMarkerInserter();
+    _initializeFromNote(widget.note);
+    _title.addListener(_onTitleChanged);
+    _markdownController.addListener(_onMarkdownChangedText);
+    _controller.addListener(_onQuillChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _notes ??= context.read<NoteController>();
+    _autosave ??= NoteEditorAutosaveController(
+      notes: _notes!,
+      noteId: widget.note.id,
+      titleController: _title,
+      markdownController: _markdownController,
+      quillController: _controller,
+      isMarkdown: () => _isMarkdown,
+    )..init();
+  }
+
+  @override
+  void didUpdateWidget(covariant NoteEditorView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.note.id != widget.note.id) {
+      _autosave?.dispose();
+      _autosave = null;
+      _controller.removeListener(_onQuillChanged);
+      _controller.dispose();
+      _initializeFromNote(widget.note);
+      _controller.addListener(_onQuillChanged);
+    }
+  }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _autosave?.dispose();
+    _controller.removeListener(_onQuillChanged);
+    _controller.dispose();
+    _title.removeListener(_onTitleChanged);
+    _markdownController.removeListener(_onMarkdownChangedText);
     _title.dispose();
     _markdownController.dispose();
     super.dispose();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _autosave?.cancelPending();
+      unawaited(_autosave?.flush(syncRemote: true) ?? Future.value());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final note = widget.note;
-    final notes = context.watch<NoteController>();
-
-    _controller ??= _buildController(note);
-    if (!_titleInitialized) {
-      _title.text = note.title ?? '';
-      _titleInitialized = true;
-    }
-    if (!_markdownInitialized) {
-      _isMarkdown = note.isMarkdown;
-      if (_isMarkdown && _controller != null) {
-        _markdownController.text = _controller!.document.toPlainText();
-      }
-      _markdownInitialized = true;
-    }
-
-    return Scaffold(
-      appBar: NoteEditorAppBar(
-        note: note,
-        titleController: _title,
-        onSave: () => _save(notes),
-      ),
-      body: Column(
-        children: [
-          CategorySelector(note: note),
-          NoteMarkdownToggleRow(
-            isMarkdown: _isMarkdown,
-            layout: _markdownLayout,
-            onMarkdownChanged: _onMarkdownChanged,
-            onLayoutChanged: (v) => setState(() => _markdownLayout = v),
-          ),
-          if (!_isMarkdown) NoteRichToolbar(controller: _controller!),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _isMarkdown
-                  ? MarkdownEditorArea(
-                      controller: _markdownController,
-                      layout: _markdownLayout,
-                    )
-                  : Directionality(
-                      textDirection:
-                          _looksArabic(_controller!.document.toPlainText())
-                          ? TextDirection.rtl
-                          : TextDirection.ltr,
-                      child: quill.QuillEditor.basic(
-                        controller: _controller!,
-                        config: const quill.QuillEditorConfig(),
-                      ),
-                    ),
-            ),
-          ),
-          VoiceNotesSection(note: note, embedService: _embedService),
-          SizedBox(height: widget.navBarStyle.contentPadding),
-        ],
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) return;
+        _autosave?.cancelPending();
+        unawaited(_autosave?.flush(syncRemote: true) ?? Future.value());
+      },
+      child: Scaffold(
+        appBar: NoteEditorAppBar(
+          note: note,
+          titleController: _title,
+          onAttachmentAdded: _insertAttachmentMarker,
+        ),
+        body: NoteEditorBody(
+          note: note,
+          isMarkdown: _isMarkdown,
+          markdownLayout: _markdownLayout,
+          onMarkdownChanged: _onMarkdownModeChanged,
+          onLayoutChanged: (v) => setState(() => _markdownLayout = v),
+          quillController: _controller,
+          markdownController: _markdownController,
+          embedService: _embedService,
+        ),
       ),
     );
   }
 
-  void _onMarkdownChanged(bool value) {
+  void _initializeFromNote(NoteEntity note) {
+    _controller = _buildController(note);
+    _title.text = note.title ?? '';
+    _isMarkdown = note.isMarkdown;
+    if (_isMarkdown) {
+      _markdownController.text = _controller.document.toPlainText();
+    }
+  }
+
+  void _onTitleChanged() {
+    _autosave?.scheduleLocalSave();
+  }
+
+  void _onQuillChanged() {
+    if (!_isMarkdown) {
+      _autosave?.scheduleLocalSave();
+    }
+  }
+
+  void _onMarkdownChangedText() {
+    if (_isMarkdown) {
+      _autosave?.scheduleLocalSave();
+    }
+  }
+
+  void _onMarkdownModeChanged(bool value) {
     setState(() {
       _isMarkdown = value;
-      if (_isMarkdown &&
-          _markdownController.text.isEmpty &&
-          _controller != null) {
-        _markdownController.text = _controller!.document.toPlainText();
+      if (_isMarkdown && _markdownController.text.isEmpty) {
+        _markdownController.text = _controller.document.toPlainText();
       }
     });
+    _autosave?.scheduleLocalSave();
   }
 
-  Future<void> _save(NoteController notes) async {
-    final navigator = Navigator.of(context);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    if (_isMarkdown) {
-      final text = _markdownController.text;
-      final doc = quill.Document()..insert(0, text.isEmpty ? '\n' : '$text\n');
-      _controller = quill.QuillController(
-        document: doc,
-        selection: const TextSelection.collapsed(offset: 0),
-      );
-    }
-
-    await notes.saveEditor(
-      noteId: widget.note.id,
-      title: _title.text,
-      contentDeltaJson: jsonEncode(_controller!.document.toDelta().toJson()),
+  void _insertAttachmentMarker(NoteAttachmentEntity attachment) {
+    _markerInserter.insert(
       isMarkdown: _isMarkdown,
+      markdownController: _markdownController,
+      quillController: _controller,
+      marker: NoteAttachmentKinds.inlineMarker(attachment),
     );
-
-    if (!mounted) return;
-    scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Saved')));
-    navigator.pop();
   }
 
   quill.QuillController _buildController(NoteEntity note) {
@@ -164,18 +191,5 @@ class _NoteEditorViewState extends State<NoteEditorView> {
         selection: const TextSelection.collapsed(offset: 0),
       );
     }
-  }
-
-  static bool _looksArabic(String s) {
-    for (final code in s.runes) {
-      final isArabic =
-          (code >= 0x0600 && code <= 0x06FF) ||
-          (code >= 0x0750 && code <= 0x077F) ||
-          (code >= 0x08A0 && code <= 0x08FF) ||
-          (code >= 0xFB50 && code <= 0xFDFF) ||
-          (code >= 0xFE70 && code <= 0xFEFF);
-      if (isArabic) return true;
-    }
-    return false;
   }
 }

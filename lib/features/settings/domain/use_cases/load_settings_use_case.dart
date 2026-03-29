@@ -1,6 +1,8 @@
 import 'package:nexus/features/settings/domain/entities/app_settings_entity.dart';
 import 'package:nexus/features/settings/domain/repositories/settings_repository_interface.dart';
 
+/// Builds the settings entity from repositories.
+
 class LoadSettingsUseCase {
   LoadSettingsUseCase(this._repo);
   final SettingsRepositoryInterface _repo;

@@ -158,13 +158,13 @@ class _NotesListScreenState extends State<NotesListScreen> {
       floatingActionButton: _selectionMode
           ? null
           : Padding(
-              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset(context)),
               child: FloatingActionButton(
                 heroTag: 'notes_fab',
                 onPressed: () async {
                   final note = await controller.createEmpty();
                   if (!context.mounted) return;
-                  await Navigator.of(context).push(
+                  await Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (_) => NoteEditorScreen(noteId: note.id),
                     ),

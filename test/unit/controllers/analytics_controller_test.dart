@@ -12,9 +12,15 @@ import 'package:nexus/features/tasks/data/models/task.dart';
 import 'package:nexus/features/reminders/data/mappers/reminder_mapper.dart';
 import 'package:nexus/features/habits/data/mappers/habit_mapper.dart';
 
+/// Mockito stub for [TaskController] in analytics tests.
+
 class MockTaskController extends Mock implements TaskController {}
 
+/// Mockito stub for [ReminderController] in analytics tests.
+
 class MockReminderController extends Mock implements ReminderController {}
+
+/// Mockito stub for [HabitController] in analytics tests.
 
 class MockHabitController extends Mock implements HabitController {}
 

@@ -7,7 +7,7 @@ import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/presentation/widgets/reminder_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// A premium list tile for displaying a reminder with actions.
+/// List row for one reminder with actions and schedule text.
 class ReminderTile extends StatelessWidget {
   const ReminderTile({
     super.key,

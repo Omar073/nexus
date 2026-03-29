@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nexus/app/theme/app_colors.dart';
 
-/// App theme configuration using centralized colors and modern styling.
+/// Builds [ThemeData] for light/dark from settings and seeds.
 class AppTheme {
   /// Builds light theme
   static ThemeData light({Color? customPrimary, Color? customSecondary}) {

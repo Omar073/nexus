@@ -1,6 +1,6 @@
 import 'package:nexus/features/notes/domain/entities/note_attachment_entity.dart';
 
-/// Domain entity for a note (pure Dart, no Hive/Flutter).
+/// Domain note: content, category, attachments, sync metadata.
 class NoteEntity {
   const NoteEntity({
     required this.id,

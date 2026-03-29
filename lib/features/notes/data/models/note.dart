@@ -5,6 +5,8 @@ import 'package:nexus/core/utils/conflict_detectable.dart';
 import 'package:nexus/features/notes/data/models/note_attachment.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Hive model: note body, category, attachments, sync/conflict fields.
+
 @HiveType(typeId: HiveTypeIds.note)
 class Note extends HiveObject implements ConflictDetectable {
   Note({
@@ -101,6 +103,8 @@ class Note extends HiveObject implements ConflictDetectable {
     );
   }
 }
+
+/// Serializes [Note] for Hive.
 
 class NoteAdapter extends TypeAdapter<Note> {
   @override

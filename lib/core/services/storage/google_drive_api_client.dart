@@ -2,7 +2,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:nexus/core/services/storage/google_drive_auth.dart';
 
-/// Creates and manages authenticated Google Drive API clients
+/// Low-level HTTP wrapper for Drive REST calls.
 class GoogleDriveApiClient {
   final GoogleDriveAuth _auth;
 

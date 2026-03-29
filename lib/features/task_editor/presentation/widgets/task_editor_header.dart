@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Title row and close/done actions for the task editor.
+
 class TaskEditorHeader extends StatelessWidget {
   const TaskEditorHeader({
     super.key,

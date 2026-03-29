@@ -13,6 +13,9 @@ import 'package:nexus/features/wrapper/presentation/pages/app_wrapper.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Single place for Nexus route paths, redirects, and deep links.
+/// Keeps shell vs full-screen routes (e.g. note editor) consistent.
+
 class AppRouter {
   static GoRouter create() {
     return GoRouter(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/calendar/presentation/state_management/calendar_controller.dart';
 
-/// A list tile for displaying a calendar event (task or reminder).
+/// One row for a task, reminder, or habit on a date.
 class CalendarEventTile extends StatelessWidget {
   const CalendarEventTile({super.key, required this.item});
 

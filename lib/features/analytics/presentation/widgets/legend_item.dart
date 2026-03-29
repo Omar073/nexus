@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// A legend item for charts, showing a colored dot with a label.
+/// Swatch + label for chart legends.
 class LegendItem extends StatelessWidget {
   const LegendItem({super.key, required this.color, required this.label});
 

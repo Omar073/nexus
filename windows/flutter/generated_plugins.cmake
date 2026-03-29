@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_timezone
   permission_handler_windows
   record_windows
+  rive_native
   url_launcher_windows
 )
 

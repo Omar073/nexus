@@ -2,7 +2,7 @@ import 'package:nexus/features/settings/domain/entities/app_settings_entity.dart
 import 'package:nexus/features/settings/domain/entities/color_preset_entity.dart';
 import 'package:nexus/features/settings/domain/repositories/settings_repository_interface.dart';
 
-/// Minimal [SettingsRepositoryInterface] for tests. Returns default entity from [load]; no-ops for saves.
+/// Returns defaults; no-op writes for settings tests.
 class FakeSettingsRepository implements SettingsRepositoryInterface {
   FakeSettingsRepository({AppSettingsEntity? loadResult})
     : _loadResult = loadResult ?? _defaultEntity;

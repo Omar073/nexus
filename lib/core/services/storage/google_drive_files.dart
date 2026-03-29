@@ -5,7 +5,7 @@ import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/services/storage/google_drive_api_client.dart';
 import 'package:nexus/core/services/storage/google_drive_folders.dart';
 
-/// Manages Google Drive file operations (upload, download, list, delete)
+/// Upload, download, and delete file operations on Drive.
 class GoogleDriveFiles {
   final GoogleDriveApiClient _apiClient;
   final GoogleDriveFolders _folders;

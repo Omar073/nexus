@@ -1,6 +1,8 @@
 import 'package:nexus/features/habits/domain/entities/habit_entity.dart';
 import 'package:nexus/features/habits/data/models/habit.dart';
 
+/// Maps [Habit] Hive model to domain entity and back.
+
 class HabitMapper {
   static HabitEntity toEntity(Habit h) {
     return HabitEntity(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Dialog for entering a name when saving a new preset
+/// Prompts for a name when saving the current colors.
 class SavePresetDialog extends StatefulWidget {
   const SavePresetDialog({super.key});
 

@@ -4,7 +4,7 @@ import 'package:nexus/features/settings/presentation/state_management/settings_c
 import 'package:nexus/features/theme_customization/presentation/pages/theme_customization_screen.dart';
 import 'package:provider/provider.dart';
 
-/// Theme mode selection section
+/// Theme mode, seeds, and nav bar style entry points.
 class ThemeSection extends StatelessWidget {
   const ThemeSection({super.key});
 

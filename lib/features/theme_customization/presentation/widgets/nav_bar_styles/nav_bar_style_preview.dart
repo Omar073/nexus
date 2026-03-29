@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 
-/// Custom painter for notch preview visualization
+/// Paints the notch-shaped preview for the notch style.
 class NotchPreviewPainter extends CustomPainter {
   final Color color;
   final Color notchColor;
@@ -50,7 +50,7 @@ class NotchPreviewPainter extends CustomPainter {
 }
 
 //todo: extract following code to a separate file
-/// Builds a mini preview of each nav bar style
+/// Static illustration for a nav bar style thumbnail.
 class NavBarStylePreview extends StatelessWidget {
   const NavBarStylePreview({
     super.key,
@@ -77,7 +77,58 @@ class NavBarStylePreview extends StatelessWidget {
         return _buildNotchPreview(primaryColor, surfaceColor, iconColor);
       case NavBarStyle.google:
         return _buildGooglePreview(primaryColor, surfaceColor, iconColor);
+      case NavBarStyle.rive:
+        return _buildRivePreview(primaryColor, surfaceColor, iconColor);
     }
+  }
+
+  Widget _buildRivePreview(
+    Color primaryColor,
+    Color surfaceColor,
+    Color iconColor,
+  ) {
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: surfaceColor.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: surfaceColor.withValues(alpha: 0.3),
+            offset: const Offset(0, 4),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Active icon with animated bar
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 1),
+              Icon(Icons.home, size: 14, color: primaryColor),
+            ],
+          ),
+          Icon(Icons.search, size: 12, color: iconColor.withValues(alpha: 0.5)),
+          Icon(
+            Icons.settings,
+            size: 12,
+            color: iconColor.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStandardPreview(

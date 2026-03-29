@@ -16,7 +16,7 @@ import 'package:nexus/features/tasks/presentation/widgets/sections/tasks_tab_bod
 import 'package:nexus/features/task_editor/presentation/widgets/dialogs/task_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// Main tasks screen with tab-based filtering and category grouping.
+/// Tabbed task views with categories and bulk actions.
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -73,12 +73,19 @@ class _TasksScreenState extends State<TasksScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CategoryDrawer(
-        onCategorySelected: (categoryId) =>
-            _scrollHelper.scrollToCategory(categoryId, mounted: mounted),
-        taskCountByCategory: taskCounts,
-        sortedCategories: sortedCategories,
-        onClearTasks: taskController.clearCategoryOnTasks,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.6,
+        minChildSize: 0.25,
+        builder: (context, scrollController) => CategoryDrawer(
+          scrollController: scrollController,
+          onCategorySelected: (categoryId) =>
+              _scrollHelper.scrollToCategory(categoryId, mounted: mounted),
+          taskCountByCategory: taskCounts,
+          sortedCategories: sortedCategories,
+          onClearTasks: taskController.clearCategoryOnTasks,
+        ),
       ),
     );
   }
@@ -132,7 +139,7 @@ class _TasksScreenState extends State<TasksScreen>
       floatingActionButton: selectionMode
           ? null
           : Padding(
-              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+              padding: EdgeInsets.only(bottom: navBarStyle.fabOffset(context)),
               child: FloatingActionButton(
                 heroTag: 'tasks_fab',
                 onPressed: () => showTaskEditorDialog(context),

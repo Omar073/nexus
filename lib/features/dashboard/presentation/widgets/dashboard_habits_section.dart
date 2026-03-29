@@ -3,7 +3,7 @@ import 'package:nexus/core/widgets/habit_pill.dart';
 import 'package:nexus/features/habits/presentation/state_management/habit_controller.dart';
 import 'package:provider/provider.dart';
 
-/// Dashboard section showing habit pills with completion status.
+/// Habit pills and shortcuts on the dashboard.
 class DashboardHabitsSection extends StatelessWidget {
   const DashboardHabitsSection({super.key});
 

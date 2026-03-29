@@ -4,7 +4,7 @@ import 'package:nexus/features/habits/domain/entities/habit_entity.dart';
 import 'package:nexus/features/habits/presentation/pages/habit_details_screen.dart';
 import 'package:provider/provider.dart';
 
-/// A list tile for displaying a habit with a checkbox and streak count.
+/// Dense habit row variant for lists and pickers.
 class HabitTile extends StatelessWidget {
   const HabitTile({super.key, required this.habit});
 

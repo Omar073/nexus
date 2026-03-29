@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:nexus/core/services/storage/attachment_cleanup_service.dart';
 import 'package:nexus/core/data/sync_queue.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -16,6 +17,10 @@ import 'package:nexus/features/notes/domain/use_cases/delete_note_use_case.dart'
 import 'package:nexus/features/notes/domain/use_cases/save_note_use_case.dart';
 import 'package:nexus/features/notes/domain/use_cases/update_note_category_use_case.dart';
 
+/// Notes feature facade: list, selection, search, and editor wiring.
+/// Owns attachment add/remove, category changes, and coordinates [SaveNoteUseCase].
+/// Listeners include [NotesListScreen], [NoteEditorView], and tiles.
+
 class NoteController extends ChangeNotifier {
   NoteController({
     required NoteRepositoryInterface repo,
@@ -24,6 +29,8 @@ class NoteController extends ChangeNotifier {
     required String deviceId,
   }) : _repo = repo,
        _syncService = syncService,
+       _googleDrive = googleDrive,
+       _deviceId = deviceId,
        _createEmpty = CreateEmptyNoteUseCase(
          repo,
          syncService,
@@ -47,6 +54,10 @@ class NoteController extends ChangeNotifier {
 
   final NoteRepositoryInterface _repo;
   final SyncService _syncService;
+  final GoogleDriveService _googleDrive;
+  final String _deviceId;
+  late final AttachmentCleanupService _attachmentCleanup =
+      AttachmentCleanupService(drive: _googleDrive);
   final CreateEmptyNoteUseCase _createEmpty;
   final SaveNoteUseCase _save;
   final UpdateNoteCategoryUseCase _updateCategory;
@@ -104,11 +115,13 @@ class NoteController extends ChangeNotifier {
     String? title,
     required String contentDeltaJson,
     bool isMarkdown = false,
+    bool enqueueSync = true,
   }) => _save.call(
     noteId: noteId,
     title: title,
     contentDeltaJson: contentDeltaJson,
     isMarkdown: isMarkdown,
+    enqueueSync: enqueueSync,
   );
 
   Future<void> delete(NoteEntity note) => _delete.call(note);
@@ -134,7 +147,114 @@ class NoteController extends ChangeNotifier {
   Future<void> addVoiceAttachment(
     NoteEntity note,
     NoteAttachmentEntity attachment,
+  ) => addAttachment(note, attachment);
+
+  Future<void> addAttachment(
+    NoteEntity note,
+    NoteAttachmentEntity attachment,
   ) => _addAttachment.call(note, attachment);
+
+  /// Removes any attachment (voice, image, etc.) by id and performs best-effort
+  /// cleanup for local + Drive files.
+  Future<void> removeAttachment({
+    required String noteId,
+    required String attachmentId,
+  }) async {
+    final existing = _repo.getById(noteId);
+    if (existing == null) return;
+
+    NoteAttachmentEntity? target;
+    for (final attachment in existing.attachments) {
+      if (attachment.id == attachmentId) {
+        target = attachment;
+        break;
+      }
+    }
+    if (target == null) return;
+
+    final updated = NoteEntity(
+      id: existing.id,
+      title: existing.title,
+      contentDeltaJson: existing.contentDeltaJson,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+      lastModifiedByDevice: _deviceId,
+      attachments: existing.attachments
+          .where((a) => a.id != attachmentId)
+          .toList(),
+      isDirty: true,
+      lastSyncedAt: existing.lastSyncedAt,
+      syncStatus: 0,
+      categoryId: existing.categoryId,
+      isMarkdown: existing.isMarkdown,
+    );
+
+    await _repo.upsert(updated);
+    await _enqueueUpsert(updated.id);
+
+    _attachmentCleanup.deleteLocalInBackground(target.localUri);
+    await _attachmentCleanup.deleteDriveIfPresent(target.driveFileId);
+  }
+
+  /// Backwards-compatible name (voice notes UI used this previously).
+  Future<void> removeVoiceAttachment({
+    required String noteId,
+    required String attachmentId,
+  }) => removeAttachment(noteId: noteId, attachmentId: attachmentId);
+
+  Future<void> cacheAttachmentLocalUri({
+    required String noteId,
+    required String attachmentId,
+    required String localUri,
+  }) async {
+    final existing = _repo.getById(noteId);
+    if (existing == null) return;
+
+    final updatedAttachments = existing.attachments.map((a) {
+      if (a.id != attachmentId) return a;
+      return NoteAttachmentEntity(
+        id: a.id,
+        mimeType: a.mimeType,
+        createdAt: a.createdAt,
+        localUri: localUri,
+        driveFileId: a.driveFileId,
+        uploaded: a.uploaded,
+      );
+    }).toList();
+
+    final updated = NoteEntity(
+      id: existing.id,
+      title: existing.title,
+      contentDeltaJson: existing.contentDeltaJson,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+      lastModifiedByDevice: existing.lastModifiedByDevice,
+      attachments: updatedAttachments,
+      isDirty: existing.isDirty,
+      lastSyncedAt: existing.lastSyncedAt,
+      syncStatus: existing.syncStatus,
+      categoryId: existing.categoryId,
+      isMarkdown: existing.isMarkdown,
+    );
+
+    // Local cache only: do not enqueue sync.
+    await _repo.upsert(updated);
+  }
+
+  Future<void> _enqueueUpsert(String noteId) async {
+    final payload = _repo.getSyncPayload(noteId);
+    if (payload == null) return;
+    final op = SyncOperation(
+      id: const Uuid().v4(),
+      type: SyncOperationType.update.index,
+      entityType: 'note',
+      entityId: noteId,
+      createdAt: DateTime.now(),
+      data: payload,
+    );
+    await _syncService.enqueueOperation(op);
+    unawaited(_syncService.syncOnce());
+  }
 
   String _plainText(NoteEntity n) {
     try {

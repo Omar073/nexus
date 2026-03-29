@@ -4,7 +4,7 @@ import 'package:nexus/core/services/debug/debug_logger_service.dart';
 
 void main() async {
   // Source icon path
-  final sourceIcon = File('app_logos/app_icon_black.png');
+  final sourceIcon = File('assets/app_logos/app_icon_black.png');
   if (!await sourceIcon.exists()) {
     mPrint('Error: Source icon not found at ${sourceIcon.path}');
     exit(1);

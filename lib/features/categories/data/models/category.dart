@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
+/// Hive model: id, display name, optional parent category.
+
 @HiveType(typeId: HiveTypeIds.category)
 class Category extends HiveObject {
   Category({required this.id, required this.name, this.parentId});
@@ -14,6 +16,8 @@ class Category extends HiveObject {
   @HiveField(2)
   final String? parentId;
 }
+
+/// Serializes [Category] for Hive.
 
 class CategoryAdapter extends TypeAdapter<Category> {
   @override

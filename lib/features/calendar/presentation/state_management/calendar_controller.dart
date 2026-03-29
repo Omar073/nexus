@@ -4,6 +4,8 @@ import 'package:nexus/features/tasks/presentation/state_management/task_controll
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+/// Unified list row: task, reminder, or habit for a date.
+
 class CalendarItem {
   CalendarItem({
     required this.id,
@@ -21,6 +23,9 @@ class CalendarItem {
   final bool isAllDay;
   final String? timeString;
 }
+
+/// Builds per-day agenda rows from tasks, reminders, and habits.
+/// Exposes a flat list of [CalendarItem] for the calendar UI to render.
 
 class CalendarController extends ChangeNotifier {
   CalendarController({

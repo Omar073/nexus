@@ -7,6 +7,8 @@ import 'package:nexus/features/tasks/domain/repositories/task_repository_interfa
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:uuid/uuid.dart';
 
+/// Persists field changes to an existing task and syncs.
+
 class UpdateTaskUseCase {
   UpdateTaskUseCase(
     this._repo,

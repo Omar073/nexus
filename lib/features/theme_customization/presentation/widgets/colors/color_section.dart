@@ -7,7 +7,7 @@ import 'package:nexus/features/theme_customization/presentation/widgets/presets/
 import 'package:nexus/features/theme_customization/presentation/widgets/preview/theme_preview_card.dart';
 import 'package:provider/provider.dart';
 
-/// Color customization section for a specific brightness (light/dark).
+/// Grouped color pickers for primary, secondary, and surfaces.
 class ColorSection extends StatelessWidget {
   const ColorSection({
     super.key,

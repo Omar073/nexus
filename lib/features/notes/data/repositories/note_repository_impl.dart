@@ -5,6 +5,9 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:nexus/features/notes/data/data_sources/note_local_datasource.dart';
 
+/// Hive-backed implementation of the notes repository contract.
+/// Maps models, applies conflict rules, and surfaces streams for the list UI.
+
 class NoteRepositoryImpl implements NoteRepositoryInterface {
   NoteRepositoryImpl({NoteLocalDatasource? local})
     : _local = local ?? NoteLocalDatasource() {
