@@ -5,6 +5,8 @@ import 'package:nexus/features/habits/domain/entities/habit_log_entity.dart';
 import 'package:nexus/features/habits/domain/repositories/habit_log_repository_interface.dart';
 import 'package:nexus/features/habits/data/data_sources/habit_log_local_datasource.dart';
 
+/// Implements habit log persistence via local datasource.
+
 class HabitLogRepositoryImpl implements HabitLogRepositoryInterface {
   HabitLogRepositoryImpl({HabitLogLocalDatasource? local})
     : _local = local ?? HabitLogLocalDatasource() {

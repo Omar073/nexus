@@ -1,4 +1,4 @@
-/// Domain entity for a saved color preset (pure Dart, no Flutter).
+/// Domain color preset with display metadata.
 class ColorPresetEntity {
   const ColorPresetEntity({
     required this.id,

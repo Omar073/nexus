@@ -11,6 +11,8 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+/// Resolves task edit conflicts (local vs remote).
+
 class TaskConflictResolutionDialog extends StatefulWidget {
   const TaskConflictResolutionDialog({super.key});
 

@@ -6,7 +6,7 @@ import 'package:nexus/features/categories/domain/category_sort_option.dart';
 import 'package:nexus/features/categories/domain/category_sortable_item.dart';
 import 'package:uuid/uuid.dart';
 
-/// Controller for managing task categories.
+/// Loads categories and coordinates drawer/list consumers.
 class CategoryController extends ChangeNotifier {
   CategoryController() {
     _box = Hive.box<Category>(HiveBoxes.categories);

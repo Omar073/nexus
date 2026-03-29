@@ -4,6 +4,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/curved_nav_bar.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_animated_nav_bar.dart';
 import 'package:provider/provider.dart';
 
 /// Interactive preview of the selected navigation bar style.
@@ -168,6 +169,15 @@ class _NavBarPreviewState extends State<NavBarPreview> {
                 itemLabel: 'Settings',
               ),
             ],
+          ),
+        );
+
+      case NavBarStyle.rive:
+        return SizedBox(
+          height: 80,
+          child: RiveAnimatedNavBar(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _onTap,
           ),
         );
     }

@@ -1,4 +1,4 @@
-/// Exception thrown when Drive access requires authentication
+/// Thrown when Drive operations need re-auth.
 class DriveAuthRequiredException implements Exception {
   const DriveAuthRequiredException(this.message);
   final String message;

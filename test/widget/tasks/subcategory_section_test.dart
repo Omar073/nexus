@@ -4,6 +4,7 @@ import 'package:nexus/features/tasks/presentation/widgets/sections/subcategory_s
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 
 // Simple fake TaskController for testing (no actual implementation needed)
+/// Minimal [TaskController] for widget tests.
 class FakeTaskController extends ChangeNotifier implements TaskController {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Overflow menu for per-task actions on the list.
+
 class TaskMoreMenu extends StatelessWidget {
   const TaskMoreMenu({super.key, required this.onDelete});
 

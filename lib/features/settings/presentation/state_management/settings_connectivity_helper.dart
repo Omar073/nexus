@@ -5,7 +5,7 @@ import 'package:nexus/core/widgets/common_snackbar.dart';
 import 'package:nexus/core/widgets/drive_password_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// Helper class for managing connectivity and Drive operations in settings screen.
+/// Wires settings UI to connectivity streams.
 class SettingsConnectivityHelper {
   final BuildContext context;
   final BackendHealthChecker connectivityStatusService;

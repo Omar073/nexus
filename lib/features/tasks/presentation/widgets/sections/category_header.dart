@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Expandable section header for a category on the tasks tab.
+
 class CategoryHeader extends StatelessWidget {
   const CategoryHeader({
     super.key,

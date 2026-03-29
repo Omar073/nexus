@@ -5,7 +5,7 @@ import 'package:nexus/features/habits/domain/entities/habit_entity.dart';
 import 'package:nexus/features/habits/presentation/pages/habit_details_screen.dart';
 import 'package:provider/provider.dart';
 
-/// Styled habit card widget showing habit info with icon and streak.
+/// Rich card layout for a habit on the habits screen.
 class HabitCard extends StatelessWidget {
   const HabitCard({super.key, required this.habit});
 

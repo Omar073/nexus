@@ -8,7 +8,7 @@ import 'package:nexus/features/tasks/presentation/widgets/sections/subcategory_s
 import 'package:nexus/features/task_editor/presentation/widgets/dialogs/task_editor_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// A section displaying tasks grouped under a category header.
+/// Collapsible block of tasks under one category.
 class CategorySection extends StatefulWidget {
   const CategorySection({
     super.key,

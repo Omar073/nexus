@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
 
+/// Fake [Connectivity] with controllable status.
+
 class MockConnectivity extends Fake implements Connectivity {
   List<ConnectivityResult> checkResults = [ConnectivityResult.wifi];
   final _controller = StreamController<List<ConnectivityResult>>.broadcast();

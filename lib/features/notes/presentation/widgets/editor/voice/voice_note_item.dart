@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/notes/domain/entities/note_attachment_entity.dart';
 
-/// Voice note item widget
+/// Play/pause, duration, and delete for one voice attachment.
 class VoiceNoteItem extends StatelessWidget {
   const VoiceNoteItem({
     super.key,
     required this.attachment,
     required this.onPlay,
+    required this.onDelete,
   });
 
   final NoteAttachmentEntity attachment;
   final VoidCallback onPlay;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +71,15 @@ class VoiceNoteItem extends StatelessWidget {
           ),
           if (attachment.uploaded)
             const Icon(Icons.cloud_done, size: 16, color: Colors.green),
+          IconButton(
+            tooltip: 'Delete voice note',
+            onPressed: onDelete,
+            icon: Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

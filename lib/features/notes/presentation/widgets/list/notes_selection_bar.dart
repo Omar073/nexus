@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Bulk actions when multiple notes are selected.
+
 class NotesSelectionBar extends StatelessWidget {
   const NotesSelectionBar({
     super.key,

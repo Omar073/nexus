@@ -7,6 +7,8 @@ import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Creates a reminder and schedules notifications.
+
 class CreateReminderUseCase {
   CreateReminderUseCase(
     this._repo,

@@ -8,7 +8,7 @@ import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/data/models/settings_store.dart';
 
-/// Implements [SettingsRepositoryInterface] using [SettingsStore] and [CustomColorsStore].
+/// Maps [SettingsStore] and color stores to domain settings.
 class SettingsRepositoryImpl implements SettingsRepositoryInterface {
   SettingsRepositoryImpl({SettingsStore? store, CustomColorsStore? colorsStore})
     : _store = store ?? SettingsStore(),
@@ -93,6 +93,7 @@ class SettingsRepositoryImpl implements SettingsRepositoryInterface {
       'curved' => NavBarStyle.curved,
       'notch' => NavBarStyle.notch,
       'google' => NavBarStyle.google,
+      'rive' => NavBarStyle.rive,
       _ => NavBarStyle.standard,
     };
     await _store.saveNavBarStyle(style);

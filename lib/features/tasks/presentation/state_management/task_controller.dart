@@ -19,6 +19,9 @@ import 'package:nexus/features/tasks/domain/use_cases/update_task_use_case.dart'
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/tasks/presentation/extensions/task_entity_extensions.dart';
 
+/// Central tasks state: tabs, categories, selection, and ordering.
+/// Drives [TasksScreen], editor sheets, and bulk actions via [TaskBulkActions].
+
 class TaskController extends ChangeNotifier {
   TaskController({
     required TaskRepositoryInterface repo,

@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
+/// Hive model: one habit completion entry for a given day.
+
 @HiveType(typeId: HiveTypeIds.habitLog)
 class HabitLog extends HiveObject {
   HabitLog({
@@ -28,6 +30,8 @@ class HabitLog extends HiveObject {
   @HiveField(4)
   final DateTime createdAt;
 }
+
+/// Serializes [HabitLog] for Hive.
 
 class HabitLogAdapter extends TypeAdapter<HabitLog> {
   @override

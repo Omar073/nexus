@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/notes/data/models/note.dart';
 
+/// CRUD for [Note] and embedded attachment metadata in Hive.
+
 class NoteLocalDatasource {
   Box<Note> get _box => Hive.box<Note>(HiveBoxes.notes);
 

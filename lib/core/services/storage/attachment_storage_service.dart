@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+/// Writes and reads note/task attachment files on disk.
+
 class AttachmentStorageService {
   static const _uuid = Uuid();
   final Future<Directory> Function()? _docDirProvider;

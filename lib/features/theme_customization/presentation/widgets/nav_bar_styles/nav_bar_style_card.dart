@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_styles/nav_bar_style_preview.dart';
 
-/// Card widget for selecting a navigation bar style
+/// Selectable card describing one nav bar style.
 class NavBarStyleCard extends StatelessWidget {
   const NavBarStyleCard({
     super.key,

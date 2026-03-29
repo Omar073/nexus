@@ -15,6 +15,9 @@ import 'package:nexus/features/reminders/domain/use_cases/uncomplete_reminder_us
 import 'package:nexus/features/reminders/domain/use_cases/update_reminder_use_case.dart';
 import 'package:nexus/features/reminders/data/services/reminder_timer_service.dart';
 
+/// Reminder CRUD, list filters, bulk selection, and scheduling hooks.
+/// Talks to [ReminderRepositoryImpl] and [NotificationService] for alarms.
+
 class ReminderController extends ChangeNotifier {
   ReminderController({
     required ReminderRepositoryInterface repo,

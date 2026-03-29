@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/components/task_priority_button.dart';
 
+/// Priority, due date, and reminder chips for the editor.
+
 class TaskAttributeSelectors extends StatelessWidget {
   const TaskAttributeSelectors({
     super.key,

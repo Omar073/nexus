@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nexus/features/settings/data/models/color_preset.dart';
 
-/// Stores user's custom color preferences
+/// Loads and saves custom colors per brightness.
 class CustomColorsStore {
   static const _keyLightPrimary = 'custom_colors.light_primary';
   static const _keyLightSecondary = 'custom_colors.light_secondary';
@@ -129,7 +129,7 @@ class CustomColorsStore {
   }
 }
 
-/// Holds custom color values (null means use default)
+/// Serializable light/dark color set for presets.
 class CustomColors {
   final Color? primary;
   final Color? secondary;
@@ -141,7 +141,7 @@ class CustomColors {
   bool get hasAnyCustom => hasCustomPrimary || hasCustomSecondary;
 }
 
-/// A color option with name for display
+/// One selectable swatch entry inside custom color storage.
 class ColorOption {
   final String name;
   final Color color;

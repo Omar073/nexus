@@ -5,9 +5,15 @@ import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/data/services/reminder_workmanager_callback.dart';
 import 'package:nexus/features/reminders/data/models/reminder.dart';
 
+/// Mock Hive [Box] for reminder background tests.
+
 class MockBox extends Mock implements Box<Reminder> {}
 
+/// Mock notification port for background tests.
+
 class MockReminderNotifications extends Mock implements ReminderNotifications {}
+
+/// Mock [Reminder] model for scheduler tests.
 
 class MockReminder extends Mock implements Reminder {}
 

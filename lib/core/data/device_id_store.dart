@@ -1,6 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+/// Persists a stable device id for sync and analytics.
+
 class DeviceIdStore {
   static const _key = 'device.id';
   static const _uuid = Uuid();

@@ -1,6 +1,6 @@
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 
-/// Deletes reminders that were completed before today.
+/// Prunes old completed reminders per policy.
 class CleanupCompletedRemindersUseCase {
   CleanupCompletedRemindersUseCase(this._repo);
 

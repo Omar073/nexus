@@ -48,7 +48,9 @@ lib/firebase_setup/apiKeys.dart
 lib/firebase_setup/README.md
 lib/app_secrets/app_secrets.dart
 
-app_logos/
+# Branding assets (tracked README only; see assets/app_logos/README.md)
+assets/app_logos/*
+!assets/app_logos/README.md
 
 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
 android/app/src/main/res/mipmap-hdpi/ic_launcher.png

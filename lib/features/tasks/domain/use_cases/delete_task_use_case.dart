@@ -6,6 +6,8 @@ import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/domain/repositories/task_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Removes a task and enqueues remote delete.
+
 class DeleteTaskUseCase {
   DeleteTaskUseCase(this._repo, this._syncService, {Uuid? uuid})
     : _uuid = uuid ?? const Uuid();

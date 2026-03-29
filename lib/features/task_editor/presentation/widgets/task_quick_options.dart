@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/components/task_option_chip.dart';
 
+/// One-tap chips for common task editor shortcuts.
+
 class TaskQuickOptions extends StatelessWidget {
   const TaskQuickOptions({
     super.key,

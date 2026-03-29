@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
 
-/// Bottom sheet for choosing a category when moving selected tasks.
+/// Bulk reassignment of tasks to another category.
 class MoveTasksToCategorySheet {
   MoveTasksToCategorySheet._();
 

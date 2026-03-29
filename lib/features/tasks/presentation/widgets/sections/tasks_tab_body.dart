@@ -6,6 +6,8 @@ import 'package:nexus/features/tasks/presentation/widgets/helpers/sliver_tab_bar
 import 'package:nexus/features/tasks/presentation/widgets/lists/grouped_task_list.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sections/tasks_header.dart';
 
+/// Category-grouped task list for one filter tab.
+
 class TasksTabBody extends StatelessWidget {
   const TasksTabBody({
     super.key,

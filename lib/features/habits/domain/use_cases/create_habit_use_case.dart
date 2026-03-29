@@ -6,6 +6,8 @@ import 'package:nexus/features/habits/domain/entities/habit_entity.dart';
 import 'package:nexus/features/habits/domain/repositories/habit_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Creates a new habit and stores it locally.
+
 class CreateHabitUseCase {
   CreateHabitUseCase(this._repo, this._syncService, {Uuid? uuid})
     : _uuid = uuid ?? const Uuid();

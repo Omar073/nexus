@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// A reusable stat card widget displaying an icon, value, and label.
+/// Icon + value + subtitle for dashboard statistics.
 class StatCard extends StatelessWidget {
   const StatCard({
     super.key,

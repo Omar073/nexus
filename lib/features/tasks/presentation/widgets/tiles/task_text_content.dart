@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/presentation/widgets/tiles/task_date_row.dart';
 
-/// Text content section of the task item (title and dates).
+/// Title and notes text styling inside a task item.
 class TaskTextContent extends StatelessWidget {
   const TaskTextContent({
     super.key,

@@ -6,6 +6,8 @@ import 'package:nexus/features/tasks/presentation/extensions/task_entity_extensi
 import 'package:nexus/features/tasks/presentation/widgets/tiles/task_item.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/dialogs/task_editor_dialog.dart';
 
+/// Single task row inside a category section.
+
 class CategorySectionTaskItem extends StatelessWidget {
   const CategorySectionTaskItem({
     super.key,

@@ -5,6 +5,8 @@ import 'package:nexus/core/utils/conflict_detectable.dart';
 import 'package:nexus/features/tasks/data/models/task_attachment.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Hive model: title, category, due, reminders, attachments, sync.
+
 @HiveType(typeId: HiveTypeIds.task)
 class Task extends HiveObject implements ConflictDetectable {
   Task({
@@ -168,6 +170,8 @@ class Task extends HiveObject implements ConflictDetectable {
     );
   }
 }
+
+/// Serializes [Task] for Hive.
 
 class TaskAdapter extends TypeAdapter<Task> {
   @override

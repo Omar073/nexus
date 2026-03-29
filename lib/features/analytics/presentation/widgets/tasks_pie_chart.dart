@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/analytics/presentation/state_management/analytics_controller.dart';
 import 'package:nexus/features/analytics/presentation/widgets/legend_item.dart';
 
-/// Pie chart widget displaying task status distribution.
+/// Distribution of task states as a pie chart.
 class TasksPieChart extends StatelessWidget {
   const TasksPieChart({
     super.key,

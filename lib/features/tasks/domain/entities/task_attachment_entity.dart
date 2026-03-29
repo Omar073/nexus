@@ -1,4 +1,4 @@
-/// Domain entity for a task attachment (pure Dart, no Hive).
+/// Domain task attachment metadata.
 class TaskAttachmentEntity {
   const TaskAttachmentEntity({
     required this.id,

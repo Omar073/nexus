@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/splash/presentation/bootstrap/app_initializer.dart';
 import 'package:nexus/features/splash/presentation/models/critical_initialization_result.dart';
 
-/// Splash screen that displays app name based on theme and initializes critical services
+/// Branding and progress while initialization runs.
 class SplashScreen extends StatefulWidget {
   final void Function(CriticalInitializationResult) onInitializationComplete;
 
@@ -61,8 +61,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // App name image: black.jpg has white text (for dark bg), white.jpg has black text (for light bg)
     final imageAsset = isDark
-        ? 'app_logos/app_name_black.jpg'
-        : 'app_logos/app_name_white.jpg';
+        ? 'assets/app_logos/app_name_black.jpg'
+        : 'assets/app_logos/app_name_white.jpg';
 
     return Scaffold(
       backgroundColor: backgroundColor,

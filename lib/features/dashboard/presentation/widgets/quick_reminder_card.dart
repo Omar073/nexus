@@ -66,7 +66,7 @@ class QuickReminderCard extends StatelessWidget {
   }
 }
 
-/// Grid of quick reminders (2 columns)
+/// Grid of [QuickReminderCard] on the dashboard.
 class QuickRemindersGrid extends StatelessWidget {
   const QuickRemindersGrid({super.key, required this.reminders});
 
@@ -96,7 +96,7 @@ class QuickRemindersGrid extends StatelessWidget {
   }
 }
 
-/// Data class for QuickReminderCard
+/// View-model for a quick reminder card.
 class QuickReminderData {
   const QuickReminderData({
     required this.timeLabel,

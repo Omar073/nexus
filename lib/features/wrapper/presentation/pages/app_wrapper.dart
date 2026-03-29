@@ -5,6 +5,9 @@ import 'package:nexus/features/wrapper/presentation/widgets/app_drawer.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_builder.dart';
 import 'package:provider/provider.dart';
 
+/// Main shell after login: [AppDrawer], body, and bottom navigation.
+/// Hosts [NavBarBuilder], sync indicator, and coordinates back gesture with nested navigators.
+
 class AppWrapper extends StatefulWidget {
   const AppWrapper({
     super.key,
@@ -77,17 +80,27 @@ class _AppWrapperState extends State<AppWrapper> {
     return Scaffold(
       key: AppWrapper.scaffoldKey,
       drawer: const AppDrawer(),
-      extendBody: true,
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const BouncingScrollPhysics(),
-        children: widget.children,
-      ),
-      bottomNavigationBar: NavBarBuilder(
-        style: navBarStyle,
-        selectedIndex: widget.navigationShell.currentIndex,
-        onDestinationSelected: _onTap,
+      body: Stack(
+        children: [
+          // Main content screens
+          PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            physics: const BouncingScrollPhysics(),
+            children: widget.children,
+          ),
+          // Floating custom nav bar overlay
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NavBarBuilder(
+              style: navBarStyle,
+              selectedIndex: widget.navigationShell.currentIndex,
+              onDestinationSelected: _onTap,
+            ),
+          ),
+        ],
       ),
     );
   }

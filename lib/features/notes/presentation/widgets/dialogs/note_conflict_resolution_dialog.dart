@@ -13,6 +13,8 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+/// Lets the user pick local vs remote when a note conflicts.
+
 class NoteConflictResolutionDialog extends StatefulWidget {
   const NoteConflictResolutionDialog({super.key});
 

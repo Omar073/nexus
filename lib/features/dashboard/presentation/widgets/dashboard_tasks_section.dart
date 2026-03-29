@@ -7,7 +7,7 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/tasks/presentation/extensions/task_entity_extensions.dart';
 import 'package:provider/provider.dart';
 
-/// Dashboard section showing upcoming tasks.
+/// High-priority or due-soon tasks on the dashboard.
 class DashboardTasksSection extends StatelessWidget {
   const DashboardTasksSection({super.key, required this.tasks});
 

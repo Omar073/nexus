@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Actions for bulk-selected reminders.
+
 class ReminderSelectionBar extends StatelessWidget {
   const ReminderSelectionBar({
     super.key,

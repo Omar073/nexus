@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/habits/data/models/habit.dart';
 
+/// CRUD for [Habit] records in Hive.
+
 class HabitLocalDatasource {
   Box<Habit> get _box => Hive.box<Habit>(HiveBoxes.habits);
 

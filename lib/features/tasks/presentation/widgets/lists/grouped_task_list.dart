@@ -6,7 +6,7 @@ import 'package:nexus/features/tasks/presentation/widgets/navigation/jump_to_cat
 import 'package:nexus/features/tasks/presentation/widgets/sections/category_section.dart';
 import 'package:nexus/features/tasks/presentation/widgets/states/empty_tasks_state.dart';
 
-/// Widget for displaying a grouped list of tasks by category.
+/// List of tasks grouped under category headers.
 class GroupedTaskList extends StatelessWidget {
   const GroupedTaskList({
     super.key,

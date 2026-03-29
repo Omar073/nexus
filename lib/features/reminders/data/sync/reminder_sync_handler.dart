@@ -11,7 +11,7 @@ import 'package:nexus/core/utils/reminder_conflict_detector.dart';
 import 'package:nexus/features/reminders/data/models/reminder.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
-/// Sync handler for reminders (Hive <-> Firestore).
+/// Pushes and pulls reminders through sync.
 class ReminderSyncHandler implements EntitySyncHandler<Reminder> {
   ReminderSyncHandler({required FirebaseFirestore firestore})
     : _firestore = firestore;

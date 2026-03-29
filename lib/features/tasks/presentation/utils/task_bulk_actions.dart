@@ -6,7 +6,7 @@ import 'package:nexus/features/tasks/presentation/extensions/task_entity_extensi
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 import 'package:nexus/features/tasks/presentation/widgets/bottom_sheets/move_tasks_to_category_sheet.dart';
 
-/// Bulk actions for selected tasks (delete, toggle complete, move).
+/// Applies delete/move/complete to selected tasks.
 
 class TaskBulkActions {
   TaskBulkActions._();

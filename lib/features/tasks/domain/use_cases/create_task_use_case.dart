@@ -7,6 +7,8 @@ import 'package:nexus/features/tasks/domain/repositories/task_repository_interfa
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:uuid/uuid.dart';
 
+/// Creates a task with defaults and stores locally.
+
 class CreateTaskUseCase {
   CreateTaskUseCase(
     this._repo,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Delegate for pinned TabBar in sliver header.
+/// Pinned tab bar delegate for task filter tabs.
 class SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   SliverTabBarDelegate(this.tabBar, {required this.backgroundColor});
 

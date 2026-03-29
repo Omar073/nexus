@@ -367,6 +367,41 @@ Without `unawaited`, the analyzer would warn. With it, we're saying: "Yes, I int
 | `future.then(...)` | No | Future | Chaining without await (callback style) |
 | No await or unawaited | No | Future (ignored) | ❌ Avoid — analyzer warning |
 
+### `await` vs `unawaited` in UI flows (Nexus example)
+
+In UI code, **`await`** is used when you must finish a task *before* continuing (e.g., block navigation until a save completes).
+
+**`unawaited(...)`** is used when:
+
+- you’re responding to an event callback that should return quickly, and
+- you still want the async work to happen, but you don’t want to block the UI thread / gesture pipeline.
+
+Example from the Notes editor:
+
+```dart
+unawaited(_autosave?.flush(syncRemote: true) ?? Future.value());
+```
+
+Meaning:
+
+- The user is leaving the screen.
+- We trigger a final “sync flush” in the background.
+- We **do not** delay the pop animation / navigation by waiting for the network.
+
+Here’s the surrounding context in `note_editor_view.dart` (simplified):
+
+```dart
+return PopScope(
+  canPop: true,
+  onPopInvokedWithResult: (didPop, result) {
+    if (!didPop) return;
+    _autosave?.cancelPending();
+    unawaited(_autosave?.flush(syncRemote: true) ?? Future.value());
+  },
+  child: Scaffold(/* ... */),
+);
+```
+
 ### `async` vs `async*`
 
 These keywords serve completely different purposes:
@@ -915,6 +950,118 @@ void write(BinaryWriter writer, SyncOperation obj) {
 ## 9. Rich Text Editing (Quill and Delta Format)
 
 The app uses `flutter_quill` for rich text editing in Notes. This section explains the underlying data structure and how we handle persistence.
+
+### What is Quill?
+
+**Quill** is a rich-text editor ecosystem.
+
+- In our Flutter app we use the package **`flutter_quill`**.
+- Quill stores content as a **Delta** (a list of operations) rather than HTML.
+
+In Nexus, the note’s rich content is stored as a **Delta JSON string** in `Note.contentDeltaJson` / `NoteEntity.contentDeltaJson`.
+
+### How Nexus uses Quill (Notes editor)
+
+At a high level:
+
+1. We load a `NoteEntity` from the repository (Hive is the local source of truth).
+2. We create a `quill.QuillController` from `contentDeltaJson`.
+3. We render the editor using `QuillEditor`.
+4. On edits, we serialize the document back to Delta JSON and persist it locally.
+
+Key places in the codebase:
+
+```text
+lib/features/notes/presentation/widgets/editor/note_editor_view.dart
+  - owns the QuillController + title/markdown controllers
+  - schedules autosave on edits
+
+lib/features/notes/presentation/widgets/editor/helpers/note_editor_autosave_controller.dart
+  - builds contentDeltaJson from Quill Document (or Markdown text)
+  - calls NoteController.saveEditor(...)
+```
+
+### PopScope in the Notes editor (why it exists)
+
+Flutter’s `PopScope` is the modern replacement for `WillPopScope` and supports Android predictive back.
+
+In Nexus we use it in the note editor to trigger a “final sync save” **when the route has actually popped**.
+
+- The callback is `onPopInvokedWithResult(didPop, result)`.
+- When `didPop == true`, the note editor is closing, so we trigger:
+
+```dart
+unawaited(_autosave?.flush(syncRemote: true) ?? Future.value());
+```
+
+This does **not** block navigation; it just ensures we try to enqueue/sync the latest version on exit.
+
+### What does `flush(syncRemote: true)` mean?
+
+The note editor has two save “modes”:
+
+- **Local autosave** (`syncRemote: false`)
+  - debounced (after the user pauses typing)
+  - writes to local storage immediately
+  - does *not* enqueue a remote sync operation
+
+- **Sync flush on exit/background** (`syncRemote: true`)
+  - runs when the user leaves the editor or the app is backgrounded
+  - persists locally and **also enqueues sync** so the remote version can be updated
+
+This matches the “maximize reliability” strategy:
+
+- local is always updated quickly (crash-safe)
+- remote is updated at safe moments (exit/background) without blocking the UI
+
+The actual autosave helper in Nexus is `NoteEditorAutosaveController`. Two key methods are:
+
+```dart
+void scheduleLocalSave() {
+  _debounce?.cancel();
+  _debounce = Timer(debounceDuration, () {
+    unawaited(flush(syncRemote: false));
+  });
+}
+
+Future<void> flush({required bool syncRemote}) async {
+  await _notes.saveEditor(
+    noteId: _noteId,
+    title: _titleController.text,
+    contentDeltaJson: _currentDeltaJson(),
+    isMarkdown: _isMarkdown(),
+    enqueueSync: syncRemote,
+  );
+}
+```
+
+And `_currentDeltaJson()` is the bridge between the editor state and persistence:
+
+```dart
+return jsonEncode(_quillController.document.toDelta().toJson());
+```
+
+### Inline attachment markers (voice/image)
+
+When the user attaches a voice note or an image, we insert an inline marker in the text at the current cursor position so the content clearly indicates “attachment was added here”.
+
+We centralize insertion logic in `NoteEditorMarkerInserter`:
+
+```dart
+void insert({
+  required bool isMarkdown,
+  required TextEditingController markdownController,
+  required quill.QuillController quillController,
+  required String marker,
+}) {
+  if (isMarkdown) {
+    // Inserts into markdownController at selection start.
+  } else {
+    // Inserts into Quill document at cursor.
+    quillController.document.insert(safeOffset, '$marker ');
+  }
+}
+```
 
 ### Why not HTML or Markdown?
 

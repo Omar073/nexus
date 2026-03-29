@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Stores device authentication state for Drive access
+/// Securely persists Drive OAuth tokens and refresh state.
 class DriveAuthStore {
   static const String _keyIsAuthenticated = 'drive_auth.is_authenticated';
   // Future: _keyPasswordHash for storing hashed password for verification

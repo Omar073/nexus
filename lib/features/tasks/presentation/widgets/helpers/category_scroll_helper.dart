@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Helper class for scrolling to specific category sections in task lists.
+/// Scrolls the task list to a chosen category.
 class CategoryScrollHelper {
   CategoryScrollHelper({
     required this.categoryKeys,

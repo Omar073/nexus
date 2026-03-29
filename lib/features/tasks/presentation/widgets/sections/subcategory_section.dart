@@ -4,7 +4,7 @@ import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sections/category_section_task_item.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/dialogs/task_editor_dialog.dart';
 
-/// A collapsible subcategory section within a category.
+/// Nested grouping when parent/child categories exist.
 class SubcategorySection extends StatelessWidget {
   const SubcategorySection({
     super.key,

@@ -4,7 +4,7 @@ import 'package:nexus/features/dashboard/presentation/widgets/quick_reminder_car
 import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:provider/provider.dart';
 
-/// Dashboard section showing a grid of quick reminders.
+/// Upcoming reminders strip on the dashboard.
 class DashboardRemindersSection extends StatelessWidget {
   const DashboardRemindersSection({super.key});
 

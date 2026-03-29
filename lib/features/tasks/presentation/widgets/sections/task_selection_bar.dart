@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Bulk actions when tasks are multi-selected.
+
 class TaskSelectionBar extends StatelessWidget {
   const TaskSelectionBar({
     super.key,

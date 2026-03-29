@@ -8,6 +8,9 @@ import 'package:nexus/features/settings/presentation/state_management/settings_c
 import 'package:provider/provider.dart';
 import 'package:nexus/app/app_globals.dart';
 
+/// Root [MaterialApp]: theme mode, [GoRouter], and keyboard shortcuts.
+/// Hosts the navigator below splash once [AppInitializer] finishes.
+
 class App extends StatefulWidget {
   const App({super.key});
 

@@ -1,4 +1,4 @@
-/// Domain entity for a habit log entry (pure Dart, no Hive).
+/// Domain model for a habit completion on one day.
 class HabitLogEntity {
   const HabitLogEntity({
     required this.id,

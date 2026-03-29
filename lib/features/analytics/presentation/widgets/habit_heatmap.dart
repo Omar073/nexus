@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Heatmap showing activity intensity over time (Github style).
+/// Calendar-style heatmap of habit completion density.
 class HabitHeatmap extends StatelessWidget {
   const HabitHeatmap({super.key, required this.colorScheme});
 

@@ -6,6 +6,9 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Writes note content and metadata through the repository.
+/// Debounced callers still funnel here; triggers sync when the note is dirty.
+
 class SaveNoteUseCase {
   SaveNoteUseCase(
     this._repo,
@@ -25,6 +28,7 @@ class SaveNoteUseCase {
     String? title,
     required String contentDeltaJson,
     bool isMarkdown = false,
+    bool enqueueSync = true,
   }) async {
     final existing = _repo.getById(noteId);
     if (existing == null) return;
@@ -43,7 +47,9 @@ class SaveNoteUseCase {
       isMarkdown: isMarkdown,
     );
     await _repo.upsert(updated);
-    await _enqueueUpsert(updated);
+    if (enqueueSync) {
+      await _enqueueUpsert(updated);
+    }
   }
 
   Future<void> _enqueueUpsert(NoteEntity note) async {

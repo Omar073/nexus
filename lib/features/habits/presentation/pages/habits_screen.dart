@@ -36,6 +36,7 @@ class HabitsScreen extends StatelessWidget {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -113,7 +114,7 @@ class HabitsScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: navBarStyle.fabOffset),
+        padding: EdgeInsets.only(bottom: navBarStyle.fabOffset(context)),
         child: FloatingActionButton(
           heroTag: 'habits_fab',
           onPressed: () => showHabitCreateDialog(context),

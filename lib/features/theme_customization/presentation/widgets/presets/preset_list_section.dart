@@ -3,7 +3,7 @@ import 'package:nexus/features/settings/data/models/color_preset.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:provider/provider.dart';
 
-/// Displays saved color presets as a horizontal scrollable list
+/// Saved color presets list with apply/delete.
 class PresetListSection extends StatelessWidget {
   final bool isLight;
 

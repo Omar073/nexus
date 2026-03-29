@@ -8,6 +8,8 @@ import 'package:nexus/features/tasks/domain/use_cases/create_task_use_case.dart'
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:uuid/uuid.dart';
 
+/// Flips completion and updates ordering.
+
 class ToggleTaskCompletedUseCase {
   ToggleTaskCompletedUseCase(
     this._repo,

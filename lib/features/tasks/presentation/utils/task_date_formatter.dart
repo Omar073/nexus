@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
 
-/// Utility class for formatting task-related dates and durations.
+/// Human-readable due and reminder date strings.
 class TaskDateFormatter {
   TaskDateFormatter._();
 

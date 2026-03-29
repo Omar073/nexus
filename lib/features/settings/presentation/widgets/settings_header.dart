@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
 
-/// Header section for the settings screen with title and profile card.
+/// Large title header for the settings screen.
 class SettingsHeader extends StatelessWidget {
   const SettingsHeader({super.key});
 

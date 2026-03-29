@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// Wraps OS permission prompts (mic, notifications, etc.).
+
 class PermissionService {
   Future<bool> ensureNotifications() async {
     if (kIsWeb) return false;

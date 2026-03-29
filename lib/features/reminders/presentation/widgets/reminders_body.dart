@@ -4,6 +4,8 @@ import 'package:nexus/features/reminders/presentation/widgets/reminder_tile.dart
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/wrapper/presentation/pages/app_wrapper.dart';
 
+/// Main list + empty state for the reminders tab.
+
 class RemindersBody extends StatelessWidget {
   const RemindersBody({
     super.key,

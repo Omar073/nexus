@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/reminders/data/models/reminder.dart';
 
+/// CRUD for [Reminder] rows in Hive.
+
 class ReminderLocalDatasource {
   Box<Reminder> get _box => Hive.box<Reminder>(HiveBoxes.reminders);
 

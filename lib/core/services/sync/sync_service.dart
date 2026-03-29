@@ -9,12 +9,8 @@ import 'package:nexus/core/services/platform/connectivity_service.dart';
 import 'package:nexus/core/services/sync/handlers/entity_sync_handler.dart';
 import 'package:nexus/core/utils/sync_backoff.dart';
 
-/// Core synchronization service (Orchestrator).
-///
-/// This service:
-/// 1. Manages the Sync Queue (Push)
-/// 2. Manages Connectivity events
-/// 3. Delegates entity-specific logic to [EntitySyncHandler] implementations.
+/// Processes [SyncOperation] queue: push local changes, pull remotes.
+/// Dispatches to registered [EntitySyncHandler] implementations per entity type.
 class SyncService {
   // Constructor & Dependencies
   SyncService({

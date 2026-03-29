@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/features/tasks/data/models/task.dart';
 
+/// CRUD for [Task] rows and attachments in Hive.
+
 class TaskLocalDatasource {
   Box<Task> get _box => Hive.box<Task>(HiveBoxes.tasks);
 

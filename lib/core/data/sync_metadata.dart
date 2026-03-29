@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 
+/// Hive model: last successful sync timestamp per sync scope.
+
 @HiveType(typeId: HiveTypeIds.syncMetadata)
 class SyncMetadata extends HiveObject {
   SyncMetadata({required this.id, this.lastSuccessfulSyncAt});
@@ -11,6 +13,8 @@ class SyncMetadata extends HiveObject {
   @HiveField(1)
   DateTime? lastSuccessfulSyncAt;
 }
+
+/// Serializes [SyncMetadata] for Hive.
 
 class SyncMetadataAdapter extends TypeAdapter<SyncMetadata> {
   @override

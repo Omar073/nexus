@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:provider/provider.dart';
 
-/// Task management settings section (auto-delete toggle and retention slider)
+/// Retention, auto-delete, and sort preferences.
 class TaskManagementSection extends StatelessWidget {
   const TaskManagementSection({super.key});
 

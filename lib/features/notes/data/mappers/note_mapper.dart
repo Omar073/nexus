@@ -3,6 +3,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/data/models/note.dart';
 import 'package:nexus/features/notes/data/models/note_attachment.dart';
 
+/// Maps [Note] Hive model to domain entity and back.
+
 class NoteMapper {
   static NoteEntity toEntity(Note n) {
     return NoteEntity(

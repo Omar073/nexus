@@ -8,6 +8,8 @@ import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 import 'package:nexus/features/reminders/data/data_sources/reminder_local_datasource.dart';
 
+/// Implements reminder persistence via local datasource.
+
 class ReminderRepositoryImpl implements ReminderRepositoryInterface {
   ReminderRepositoryImpl({ReminderLocalDatasource? local})
     : _local = local ?? ReminderLocalDatasource() {

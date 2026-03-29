@@ -4,6 +4,8 @@ import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/utils/conflict_detectable.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 
+/// Hive model: title, schedule, completion, snooze, sync fields.
+
 @HiveType(typeId: HiveTypeIds.reminder)
 class Reminder extends HiveObject implements ConflictDetectable {
   Reminder({
@@ -108,6 +110,8 @@ class Reminder extends HiveObject implements ConflictDetectable {
     );
   }
 }
+
+/// Serializes [Reminder] for Hive.
 
 class ReminderAdapter extends TypeAdapter<Reminder> {
   @override

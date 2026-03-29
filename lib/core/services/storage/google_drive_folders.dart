@@ -3,7 +3,7 @@ import 'package:nexus/app_secrets/app_secrets.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/services/storage/google_drive_api_client.dart';
 
-/// Manages Google Drive folder operations
+/// Resolves and creates app folders on Drive.
 class GoogleDriveFolders {
   // Google Drive folder ID for media storage (loaded from app_secrets.dart)
   static const String mediaFolderId = googleDriveMediaFolderId;

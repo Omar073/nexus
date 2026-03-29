@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// A list tile for displaying quick statistics with icon, label, and value.
+/// Compact numeric stat with caption for analytics grids.
 class QuickStatTile extends StatelessWidget {
   const QuickStatTile({
     super.key,

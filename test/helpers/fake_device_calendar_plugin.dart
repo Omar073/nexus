@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Fake [DeviceCalendarPlugin] for calendar tests.
+
 class FakeDeviceCalendarPlugin extends Fake implements DeviceCalendarPlugin {
   bool permissionsGranted = true;
   List<Calendar> calendars = [];

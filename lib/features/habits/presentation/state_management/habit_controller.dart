@@ -9,6 +9,9 @@ import 'package:nexus/features/habits/domain/repositories/habit_repository_inter
 import 'package:nexus/features/habits/domain/use_cases/create_habit_use_case.dart';
 import 'package:nexus/features/habits/domain/use_cases/toggle_habit_today_use_case.dart';
 
+/// Primary habit list + today-toggle API for the habits feature.
+/// Coordinates [HabitRepositoryImpl] and exposes [ChangeNotifier] updates to widgets.
+
 class HabitController extends ChangeNotifier {
   HabitController({
     required HabitRepositoryInterface habits,

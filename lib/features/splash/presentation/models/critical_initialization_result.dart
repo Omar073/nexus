@@ -3,7 +3,7 @@ import 'package:nexus/core/services/platform/permission_service.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/splash/presentation/models/app_initialization_result.dart';
 
-/// Result of critical initialization (needed for app to open)
+/// Whether the app may continue past splash.
 class CriticalInitializationResult {
   final SettingsController settingsController;
   final String deviceId;

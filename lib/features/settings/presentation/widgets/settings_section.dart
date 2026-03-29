@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
 
-/// A styled settings section with a title and content wrapped in a NexusCard.
+/// Titled group container for settings tiles.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.title, required this.child});
 

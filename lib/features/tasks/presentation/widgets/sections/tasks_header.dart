@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nexus/core/widgets/app_drawer_button.dart';
 
-/// Header section for the Tasks screen showing title and date.
+/// Title, search, and actions for the tasks screen.
 class TasksHeader extends StatelessWidget {
   const TasksHeader({super.key});
 

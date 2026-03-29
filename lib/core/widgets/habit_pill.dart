@@ -93,7 +93,7 @@ class HabitPill extends StatelessWidget {
   }
 }
 
-/// Horizontal scrollable list of habit pills
+/// Row of [HabitPill] widgets with overflow handling.
 class HabitPillBar extends StatelessWidget {
   const HabitPillBar({super.key, required this.habits});
 
@@ -123,7 +123,7 @@ class HabitPillBar extends StatelessWidget {
   }
 }
 
-/// Data class for HabitPill
+/// Immutable habit id + label for pill rendering.
 class HabitPillData {
   const HabitPillData({
     required this.icon,

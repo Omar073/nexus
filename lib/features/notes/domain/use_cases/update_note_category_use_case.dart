@@ -6,6 +6,8 @@ import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
 import 'package:uuid/uuid.dart';
 
+/// Assigns or clears a note's category.
+
 class UpdateNoteCategoryUseCase {
   UpdateNoteCategoryUseCase(
     this._repo,

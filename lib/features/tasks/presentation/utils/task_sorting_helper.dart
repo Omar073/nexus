@@ -4,7 +4,7 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/tasks/domain/task_sort_option.dart';
 import 'package:nexus/features/tasks/presentation/extensions/task_entity_extensions.dart';
 
-/// Helper class for sorting tasks.
+/// Sorts tasks per user preference inside sections.
 class TaskSortingHelper {
   const TaskSortingHelper(this._settings);
 

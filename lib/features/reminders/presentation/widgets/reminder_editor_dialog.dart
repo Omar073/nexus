@@ -4,7 +4,7 @@ import 'package:nexus/features/reminders/presentation/state_management/reminder_
 import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:provider/provider.dart';
 
-/// Result class for the reminder editor dialog.
+/// Payload returned when the reminder editor closes.
 class ReminderEditorResult {
   ReminderEditorResult({required this.title, required this.time});
   final String title;

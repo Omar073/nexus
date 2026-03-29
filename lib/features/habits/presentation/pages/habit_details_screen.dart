@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/habits/presentation/state_management/habit_controller.dart';
 import 'package:provider/provider.dart';
 
+/// Read-only habit summary and history context.
+
 class HabitDetailsScreen extends StatelessWidget {
   const HabitDetailsScreen({super.key, required this.habitId});
 

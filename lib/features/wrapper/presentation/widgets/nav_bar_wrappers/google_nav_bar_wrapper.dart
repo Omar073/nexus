@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-/// Google-style navigation bar wrapper using google_nav_bar package.
+/// Hosts the Google-style bottom navigation bar.
 class GoogleNavBarWrapper extends StatelessWidget {
   const GoogleNavBarWrapper({
     super.key,

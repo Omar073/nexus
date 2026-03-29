@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Sample card showing theme colors in context.
+
 class ThemePreviewCard extends StatelessWidget {
   final Color primary;
   final Color secondary;

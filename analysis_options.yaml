@@ -7,7 +7,7 @@
 
 analyzer:
   errors:
-    # app_logos/ is gitignored; CI and fresh clones don't have these assets
+    # assets/app_logos/ is gitignored; CI and fresh clones don't have these assets
     asset_does_not_exist: ignore
   exclude:
     # Unmigrated MVC snapshot; not part of the active app (lib/ is Clean Architecture).

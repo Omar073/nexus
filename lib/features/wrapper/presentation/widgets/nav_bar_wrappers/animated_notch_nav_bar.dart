@@ -1,7 +1,7 @@
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
 
-/// Animated notch navigation bar wrapper using animated_notch_bottom_bar package.
+/// Hosts the animated notch bottom bar package.
 class AnimatedNotchNavBarWrapper extends StatefulWidget {
   const AnimatedNotchNavBarWrapper({
     super.key,

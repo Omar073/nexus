@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 
+/// Category picker row in the task editor sheet.
+
 class TaskCategorySelector extends StatelessWidget {
   const TaskCategorySelector({
     super.key,

@@ -1,5 +1,7 @@
 import 'package:nexus/features/settings/domain/repositories/settings_repository_interface.dart';
 
+/// Sets the secondary accent color.
+
 class UpdateSecondaryColorUseCase {
   UpdateSecondaryColorUseCase(this._repo);
   final SettingsRepositoryInterface _repo;

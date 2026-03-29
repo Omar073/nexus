@@ -1,5 +1,7 @@
 import 'package:nexus/features/settings/domain/repositories/settings_repository_interface.dart';
 
+/// Sets the primary seed color for light/dark themes.
+
 class UpdatePrimaryColorUseCase {
   UpdatePrimaryColorUseCase(this._repo);
   final SettingsRepositoryInterface _repo;

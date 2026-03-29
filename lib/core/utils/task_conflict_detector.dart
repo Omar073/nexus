@@ -1,5 +1,7 @@
 import 'package:nexus/core/utils/conflict_detectable.dart';
 
+/// Compares local vs remote task payloads for edit conflicts.
+
 class TaskConflictDetector {
   static bool hasConflict({
     required ConflictDetectable local,

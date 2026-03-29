@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sort_bottom_sheet.dart';
 
-/// Row containing Jump to Category and Sort buttons.
+/// Opens [CategoryDrawer] from the tasks app bar.
 class JumpToCategoryButton extends StatelessWidget {
   const JumpToCategoryButton({super.key, required this.onTap});
 

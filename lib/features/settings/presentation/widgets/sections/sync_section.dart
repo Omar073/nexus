@@ -4,7 +4,7 @@ import 'package:nexus/features/tasks/presentation/widgets/task_conflict_resoluti
 import 'package:nexus/features/notes/presentation/widgets/dialogs/note_conflict_resolution_dialog.dart';
 import 'package:provider/provider.dart';
 
-/// Sync status and controls section
+/// Manual sync triggers and last-sync messaging.
 class SyncSection extends StatelessWidget {
   const SyncSection({super.key});
 

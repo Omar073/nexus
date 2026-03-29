@@ -5,6 +5,9 @@ enum SyncOperationType { create, update, delete }
 
 enum SyncOperationStatus { pending, syncing, failed, completed }
 
+/// Queued create/update/delete for background cloud sync.
+/// Carries entity type, id, JSON snapshot, and retry metadata for [SyncService].
+
 @HiveType(typeId: HiveTypeIds.syncOperation)
 class SyncOperation extends HiveObject {
   SyncOperation({

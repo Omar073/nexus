@@ -6,6 +6,8 @@ import 'debug_log_archiver.dart';
 
 enum DebugLogLevel { info, warning, error }
 
+/// One in-memory log row (time, level, message, source).
+
 class DebugLogEntry {
   DebugLogEntry({
     required this.timestamp,
