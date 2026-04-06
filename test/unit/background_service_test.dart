@@ -46,9 +46,12 @@ void main() {
 
       final reminder = MockReminder();
       when(() => reminder.completedAt).thenReturn(null);
+      when(() => reminder.notifiedAt).thenReturn(null);
       when(() => reminder.time).thenReturn(pastTime);
       when(() => reminder.notificationId).thenReturn(1);
       when(() => reminder.title).thenReturn('Test Reminder');
+      when(() => reminder.id).thenReturn('r1');
+      when(() => reminder.save()).thenAnswer((_) async {});
 
       when(() => mockBox.values).thenReturn([reminder]);
       when(
@@ -56,6 +59,7 @@ void main() {
           id: any(named: 'id'),
           title: any(named: 'title'),
           body: any(named: 'body'),
+          payload: any(named: 'payload'),
         ),
       ).thenAnswer((_) async {});
 
@@ -72,6 +76,7 @@ void main() {
           id: 1,
           title: 'Reminder',
           body: 'Test Reminder',
+          payload: 'r1',
         ),
       ).called(1);
     },
@@ -84,6 +89,7 @@ void main() {
 
     final reminder = MockReminder();
     when(() => reminder.completedAt).thenReturn(now); // Completed
+    when(() => reminder.notifiedAt).thenReturn(null);
     when(() => reminder.time).thenReturn(pastTime);
 
     when(() => mockBox.values).thenReturn([reminder]);
@@ -97,6 +103,7 @@ void main() {
         id: any(named: 'id'),
         title: any(named: 'title'),
         body: any(named: 'body'),
+        payload: any(named: 'payload'),
       ),
     );
   });
@@ -108,6 +115,7 @@ void main() {
 
     final reminder = MockReminder();
     when(() => reminder.completedAt).thenReturn(null);
+    when(() => reminder.notifiedAt).thenReturn(null);
     when(() => reminder.time).thenReturn(futureTime);
 
     when(() => mockBox.values).thenReturn([reminder]);
@@ -121,6 +129,7 @@ void main() {
         id: any(named: 'id'),
         title: any(named: 'title'),
         body: any(named: 'body'),
+        payload: any(named: 'payload'),
       ),
     );
   });

@@ -58,11 +58,7 @@ class NoteTile extends StatelessWidget {
         borderRadius: 12,
         onTap: selectionMode
             ? onSelectionToggle
-            : () => Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder: (_) => NoteEditorScreen(noteId: note.id),
-                ),
-              ),
+            : () => NoteEditorScreen.push(context, note.id),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

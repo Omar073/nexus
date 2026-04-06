@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_model.dart';
 import 'package:rive/rive.dart';
 
@@ -77,7 +78,7 @@ class _RiveAnimatedNavBarState extends State<RiveAnimatedNavBar> {
         setState(() => _isLoaded = true);
       }
     } catch (e) {
-      debugPrint('[RiveAnimatedNavBar] Failed to load: $e');
+      mDebugPrint('[RiveAnimatedNavBar] Failed to load: $e');
     }
   }
 

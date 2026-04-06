@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:nexus/core/services/note_embed_service.dart';
 import 'package:nexus/features/notes/domain/entities/note_entity.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/category_selector.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart';
-import 'package:nexus/features/notes/presentation/widgets/editor/markdown/note_markdown_toggle_row.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/markdown/note_rich_toolbar.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/voice/voice_notes_section.dart';
 
@@ -16,35 +13,32 @@ class NoteEditorBody extends StatelessWidget {
     required this.note,
     required this.isMarkdown,
     required this.markdownLayout,
-    required this.onMarkdownChanged,
-    required this.onLayoutChanged,
+    required this.showVoiceNotes,
+    required this.toolbarAtTop,
+    required this.onToolbarPositionChanged,
     required this.quillController,
     required this.markdownController,
-    required this.embedService,
   });
 
   final NoteEntity note;
   final bool isMarkdown;
   final MarkdownLayout markdownLayout;
-  final ValueChanged<bool> onMarkdownChanged;
-  final ValueChanged<MarkdownLayout> onLayoutChanged;
+  final bool showVoiceNotes;
+  final bool toolbarAtTop;
+  final ValueChanged<bool> onToolbarPositionChanged;
   final quill.QuillController quillController;
   final TextEditingController markdownController;
-  final NoteEmbedService embedService;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CategorySelector(note: note),
-        NoteMarkdownToggleRow(
-          isMarkdown: isMarkdown,
-          layout: markdownLayout,
-          onMarkdownChanged: onMarkdownChanged,
-          onLayoutChanged: onLayoutChanged,
-        ),
-        if (!isMarkdown) NoteRichToolbar(controller: quillController),
-        const SizedBox(height: 8),
+        if (!isMarkdown && toolbarAtTop)
+          _DraggableToolbar(
+            controller: quillController,
+            onMoveToBottom: () => onToolbarPositionChanged(false),
+          ),
+        if (!isMarkdown && toolbarAtTop) const SizedBox(height: 8),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -65,7 +59,13 @@ class NoteEditorBody extends StatelessWidget {
                   ),
           ),
         ),
-        VoiceNotesSection(note: note, embedService: embedService),
+        if (!isMarkdown && !toolbarAtTop) const SizedBox(height: 8),
+        if (!isMarkdown && !toolbarAtTop)
+          _DraggableToolbar(
+            controller: quillController,
+            onMoveToTop: () => onToolbarPositionChanged(true),
+          ),
+        if (showVoiceNotes) VoiceNotesSection(note: note),
       ],
     );
   }
@@ -81,5 +81,47 @@ class NoteEditorBody extends StatelessWidget {
       if (isArabic) return true;
     }
     return false;
+  }
+}
+
+class _DraggableToolbar extends StatelessWidget {
+  const _DraggableToolbar({
+    required this.controller,
+    this.onMoveToTop,
+    this.onMoveToBottom,
+  });
+
+  final quill.QuillController controller;
+  final VoidCallback? onMoveToTop;
+  final VoidCallback? onMoveToBottom;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onVerticalDragEnd: (details) {
+        final v = details.primaryVelocity ?? 0;
+        if (v > 0 && onMoveToBottom != null) {
+          onMoveToBottom!();
+        } else if (v < 0 && onMoveToTop != null) {
+          onMoveToTop!();
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          NoteRichToolbar(controller: controller),
+        ],
+      ),
+    );
   }
 }

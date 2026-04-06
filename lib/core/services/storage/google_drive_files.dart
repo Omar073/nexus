@@ -149,7 +149,7 @@ class GoogleDriveFiles {
       final file = await getFile(driveFileId);
       return file.webViewLink;
     } catch (e) {
-      mPrint('Error getting view URL: $e');
+      mDebugPrint('Error getting view URL: $e');
       return null;
     }
   }
@@ -164,7 +164,7 @@ class GoogleDriveFiles {
     final httpClient = HttpClient();
 
     try {
-      mPrint('Downloading file from Drive: $downloadUrl');
+      mDebugPrint('Downloading file from Drive: $downloadUrl');
       final request = await httpClient.getUrl(Uri.parse(downloadUrl));
       final response = await request.close();
 
@@ -181,7 +181,7 @@ class GoogleDriveFiles {
         bytes.addAll(chunk);
       }
 
-      mPrint(
+      mDebugPrint(
         'Downloaded ${bytes.length} bytes, writing to ${destination.path}',
       );
 
@@ -190,15 +190,15 @@ class GoogleDriveFiles {
 
       // Write bytes to file
       await destination.writeAsBytes(bytes, flush: true);
-      mPrint('File successfully downloaded to ${destination.path}');
+      mDebugPrint('File successfully downloaded to ${destination.path}');
     } on HttpException catch (e) {
-      mPrint('HTTP error downloading file: $e');
+      mDebugPrint('HTTP error downloading file: $e');
       rethrow;
     } on SocketException catch (e) {
-      mPrint('Network error downloading file: $e');
+      mDebugPrint('Network error downloading file: $e');
       rethrow;
     } catch (e) {
-      mPrint('Error downloading file: $e');
+      mDebugPrint('Error downloading file: $e');
       rethrow;
     } finally {
       httpClient.close();

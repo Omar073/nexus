@@ -31,6 +31,7 @@ class UpdateReminderUseCase {
       completedAt: reminder.completedAt,
       notificationId: reminder.notificationId,
       snoozeMinutes: reminder.snoozeMinutes,
+      notifiedAt: time != null ? null : reminder.notifiedAt,
     );
     await _repo.upsert(updated);
     await _enqueueUpsert(updated);
@@ -42,6 +43,7 @@ class UpdateReminderUseCase {
       title: 'Reminder',
       body: updated.title,
       when: updated.time,
+      payload: updated.id,
     );
   }
 

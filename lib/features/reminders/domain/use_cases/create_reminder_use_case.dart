@@ -46,6 +46,7 @@ class CreateReminderUseCase {
       title: 'Reminder',
       body: entity.title,
       when: entity.time,
+      payload: entity.id,
     );
     return entity;
   }

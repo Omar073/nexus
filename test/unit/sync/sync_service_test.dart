@@ -157,6 +157,28 @@ void main() {
     });
   });
 
+  group('SyncService._markFailed', () {
+    test('writes through Hive box for detached ops', () async {
+      final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
+
+      // Not put in box (detached HiveObject).
+      final op = SyncOperation(
+        id: 'detached-op',
+        type: SyncOperationType.update.index,
+        entityType: 'task',
+        entityId: 't-detached',
+        createdAt: DateTime.now(),
+      );
+
+      await syncService.markFailedForTesting(op);
+
+      final stored = box.get('detached-op');
+      expect(stored, isNotNull);
+      expect(stored!.status, SyncOperationStatus.failed.index);
+      expect(stored.retryCount, 1);
+    });
+  });
+
   group('SyncService.enqueueOperation', () {
     test('stores operation in Hive box', () async {
       final op = SyncOperation(

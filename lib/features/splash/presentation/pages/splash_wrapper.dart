@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/app/app.dart';
+import 'package:nexus/core/services/notifications/battery_optimization_first_launch_prompt.dart';
 import 'package:nexus/features/splash/presentation/bootstrap/app_initializer.dart';
+import 'package:nexus/features/splash/presentation/models/app_initialization_result.dart';
 import 'package:nexus/features/splash/presentation/models/critical_initialization_result.dart';
 import 'package:nexus/features/splash/presentation/bootstrap/provider_factory.dart';
 import 'package:nexus/features/splash/presentation/pages/splash_screen.dart';
@@ -48,10 +50,25 @@ class _SplashWrapperState extends State<SplashWrapper> {
       if (mounted) {
         setState(() {});
       }
+
+      _scheduleBatteryOptimizationFirstLaunch(fullResult);
     } catch (e) {
       // Log error but don't block the app
-      mPrint('Background initialization error: $e');
+      mDebugPrint('Background initialization error: $e');
     }
+  }
+
+  /// Defers to the next frame so [rootNavigatorKey] is under the routed app.
+  void _scheduleBatteryOptimizationFirstLaunch(
+    AppInitializationResult fullResult,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await BatteryOptimizationFirstLaunchPrompt.runIfNeeded(
+        notificationService: fullResult.notificationService,
+        isMounted: () => mounted,
+      );
+    });
   }
 
   @override

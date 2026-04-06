@@ -21,6 +21,7 @@ class _FakeNotificationService implements ReminderNotifications {
     required String title,
     required String body,
     required DateTime when,
+    String? payload,
   }) async {
     scheduled[id] = when;
   }
@@ -35,6 +36,8 @@ class _FakeNotificationService implements ReminderNotifications {
     required int id,
     required String title,
     required String body,
+    String? payload,
+    bool silent = false,
   }) async {
     scheduled[id] = DateTime.now();
   }

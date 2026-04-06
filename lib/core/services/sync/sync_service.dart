@@ -8,6 +8,7 @@ import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
 import 'package:nexus/core/services/sync/handlers/entity_sync_handler.dart';
 import 'package:nexus/core/utils/sync_backoff.dart';
+import 'package:flutter/foundation.dart';
 
 /// Processes [SyncOperation] queue: push local changes, pull remotes.
 /// Dispatches to registered [EntitySyncHandler] implementations per entity type.
@@ -100,9 +101,11 @@ class SyncService {
   }
 
   Future<void> _processOperation(SyncOperation op) async {
+    final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
+
     op.status = SyncOperationStatus.syncing.index;
     op.lastAttemptAt = DateTime.now();
-    await op.save();
+    await box.put(op.id, op);
 
     final handler = _handlers[op.entityType];
     if (handler == null) {
@@ -110,7 +113,7 @@ class SyncService {
         'SyncService: No handler for entity type "${op.entityType}". Operation skipped.',
       );
       // Remove from queue so it doesn't block future syncs
-      await op.delete();
+      await box.delete(op.id);
       return;
     }
 
@@ -119,23 +122,27 @@ class SyncService {
       await handler.push(op);
 
       op.status = SyncOperationStatus.completed.index;
-      await op.save();
-      await op.delete();
+      await box.delete(op.id);
     } catch (_) {
       await _markFailed(op);
     }
   }
 
   Future<void> _markFailed(SyncOperation op) async {
+    final box = Hive.box<SyncOperation>(HiveBoxes.syncOps);
     op.retryCount += 1;
     op.status = SyncOperationStatus.failed.index;
-    await op.save();
+    // Write through the box so this works even if `op` is detached.
+    await box.put(op.id, op);
 
     if (op.retryCount <= 5) {
       final seconds = computeBackoffSeconds(op.retryCount);
       await Future<void>.delayed(Duration(seconds: seconds));
     }
   }
+
+  @visibleForTesting
+  Future<void> markFailedForTesting(SyncOperation op) => _markFailed(op);
 
   // PULL OPERATIONS
   Future<void> _pullAll() async {

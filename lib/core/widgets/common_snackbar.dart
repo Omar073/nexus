@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/app/app_globals.dart';
 
 /// Common snackbar utility for displaying snackbars throughout the app
@@ -20,7 +21,7 @@ class CommonSnackbar {
   }) {
     final messenger = appMessengerKey.currentState;
     if (messenger == null) {
-      debugPrint('Warning: ScaffoldMessenger not available');
+      mDebugPrint('Warning: ScaffoldMessenger not available');
       return;
     }
 

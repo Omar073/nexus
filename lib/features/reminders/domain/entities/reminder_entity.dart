@@ -10,6 +10,7 @@ class ReminderEntity {
     this.completedAt,
     this.notificationId,
     this.snoozeMinutes,
+    this.notifiedAt,
   });
 
   final String id;
@@ -21,4 +22,5 @@ class ReminderEntity {
   final DateTime? completedAt;
   final int? notificationId;
   final int? snoozeMinutes;
+  final DateTime? notifiedAt;
 }

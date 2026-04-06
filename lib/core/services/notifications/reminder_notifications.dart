@@ -4,6 +4,7 @@ abstract class ReminderNotifications {
     required String title,
     required String body,
     required DateTime when,
+    String? payload,
   });
 
   Future<void> cancel(int id);
@@ -12,5 +13,7 @@ abstract class ReminderNotifications {
     required int id,
     required String title,
     required String body,
+    String? payload,
+    bool silent = false,
   });
 }

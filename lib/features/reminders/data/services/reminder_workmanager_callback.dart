@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/services/notifications/notification_service.dart';
 import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/data/models/reminder.dart';
@@ -42,13 +43,17 @@ void reminderWorkmanagerCallbackDispatcher() {
         notifications: notifications,
       );
     } catch (e, stack) {
-      debugPrint('[Workmanager] Error: $e\n$stack');
+      mDebugPrint('[Workmanager] Error: $e\n$stack');
       return Future.value(false);
     }
   });
 }
 
 /// Testable logic for checking due reminders (used by entry point and tests).
+///
+/// Only fires reminders that are 2–46 minutes past due. Reminders < 2 min old
+/// are skipped because `zonedSchedule` (Layer 1) already delivered them via
+/// `ScheduledNotificationReceiver`. This prevents duplicate heads-up popups.
 Future<bool> handleBackgroundCheck({
   required Box<Reminder> box,
   required ReminderNotifications notifications,
@@ -56,19 +61,23 @@ Future<bool> handleBackgroundCheck({
   final now = DateTime.now();
   final dueReminders = box.values.where((r) {
     if (r.completedAt != null) return false;
+    if (r.notifiedAt != null) return false;
     if (!r.time.isBefore(now)) return false;
     final diff = now.difference(r.time);
-    return diff.inMinutes <= 46;
+    return diff.inMinutes >= 2 && diff.inMinutes <= 46;
   }).toList();
 
-  debugPrint('[Workmanager] Found ${dueReminders.length} due reminders');
+  mDebugPrint('[Workmanager] Found ${dueReminders.length} due reminders');
 
   for (final reminder in dueReminders) {
     await notifications.showNow(
       id: reminder.notificationId,
       title: 'Reminder',
       body: reminder.title,
+      payload: reminder.id,
     );
+    reminder.notifiedAt = DateTime.now();
+    await reminder.save();
   }
   return true;
 }

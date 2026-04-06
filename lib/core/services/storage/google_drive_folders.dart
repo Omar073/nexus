@@ -24,7 +24,7 @@ class GoogleDriveFolders {
               as drive.File;
       return folder.mimeType == 'application/vnd.google-apps.folder';
     } catch (e) {
-      mPrint('Error verifying media folder: $e');
+      mDebugPrint('Error verifying media folder: $e');
       return false;
     }
   }

@@ -3,7 +3,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:nexus/core/services/note_embed_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nexus/app/router/app_router.dart';
+import 'package:nexus/app/router/app_routes.dart';
 import 'package:nexus/features/notes/domain/entities/note_attachment_entity.dart';
 import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/notes/domain/note_attachment_kinds.dart';
@@ -12,6 +14,7 @@ import 'package:nexus/features/notes/presentation/widgets/editor/helpers/note_ed
 import 'package:nexus/features/notes/presentation/widgets/editor/helpers/note_editor_marker_inserter.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/note_editor_app_bar.dart';
+import 'package:nexus/features/notes/presentation/widgets/editor/note_editor_dialogs.dart';
 import 'package:nexus/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart';
 import 'package:provider/provider.dart';
 
@@ -30,11 +33,13 @@ class _NoteEditorViewState extends State<NoteEditorView>
     with WidgetsBindingObserver {
   late quill.QuillController _controller;
   final _title = TextEditingController();
-  final _embedService = NoteEmbedService();
   final _markdownController = TextEditingController();
 
   bool _isMarkdown = false;
   MarkdownLayout _markdownLayout = MarkdownLayout.tabs;
+  bool _showVoiceNotes = false;
+  bool _toolbarAtTop = true;
+  bool _showCategoryPicker = false;
   NoteController? _notes;
   late final NoteEditorMarkerInserter _markerInserter;
   NoteEditorAutosaveController? _autosave;
@@ -114,20 +119,82 @@ class _NoteEditorViewState extends State<NoteEditorView>
         appBar: NoteEditorAppBar(
           note: note,
           titleController: _title,
+          isMarkdown: _isMarkdown,
+          markdownLayout: _markdownLayout,
+          showVoiceNotes: _showVoiceNotes,
+          showCategoryPicker: _showCategoryPicker,
+          onToggleMarkdown: _onMarkdownModeChanged,
+          onLayoutChanged: _setMarkdownLayout,
+          onToggleVoiceNotes: _setShowVoiceNotes,
+          onToggleCategoryPicker: _toggleCategoryPicker,
+          onFindInNote: _showFindInNote,
+          onDeleteNote: () => _confirmDelete(note),
           onAttachmentAdded: _insertAttachmentMarker,
         ),
         body: NoteEditorBody(
           note: note,
           isMarkdown: _isMarkdown,
           markdownLayout: _markdownLayout,
-          onMarkdownChanged: _onMarkdownModeChanged,
-          onLayoutChanged: (v) => setState(() => _markdownLayout = v),
+          showVoiceNotes: _showVoiceNotes,
+          toolbarAtTop: _toolbarAtTop,
+          onToolbarPositionChanged: _setToolbarPosition,
           quillController: _controller,
           markdownController: _markdownController,
-          embedService: _embedService,
         ),
       ),
     );
+  }
+
+  void _setMarkdownLayout(MarkdownLayout v) =>
+      setState(() => _markdownLayout = v);
+
+  void _setShowVoiceNotes(bool v) => setState(() => _showVoiceNotes = v);
+
+  void _setToolbarPosition(bool atTop) => setState(() => _toolbarAtTop = atTop);
+
+  void _toggleCategoryPicker() =>
+      setState(() => _showCategoryPicker = !_showCategoryPicker);
+
+  Future<void> _showFindInNote() async {
+    final theme = Theme.of(context);
+    final query = await NoteEditorDialogs.showFindDialog(context);
+
+    final q = (query ?? '').trim();
+    if (!mounted || q.isEmpty) return;
+
+    final text = _isMarkdown
+        ? _markdownController.text
+        : _controller.document.toPlainText();
+
+    final matches = NoteEditorDialogs.countOccurrences(text, q);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          matches == 0
+              ? 'No matches for “$q”.'
+              : 'Found $matches matches for “$q”.',
+        ),
+        backgroundColor: matches == 0
+            ? theme.colorScheme.error
+            : theme.colorScheme.inverseSurface,
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(NoteEntity note) async {
+    final confirmed = await NoteEditorDialogs.showConfirmDeleteDialog(context);
+
+    if (!mounted || confirmed != true) return;
+    await context.read<NoteController>().delete(note);
+    if (!mounted) return;
+
+    // Close the editor route (imperative push), then ensure we're on notes list.
+    Navigator.of(context, rootNavigator: true).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx == null) return;
+      GoRouter.of(ctx).go(AppRoute.notes.path);
+    });
   }
 
   void _initializeFromNote(NoteEntity note) {

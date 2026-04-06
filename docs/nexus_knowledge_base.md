@@ -1,247 +1,358 @@
 # Nexus — Project Knowledge Base
 
-> **Purpose:** Read this file at the start of any session to gain full project awareness without re-exploring the codebase.
-> **Last updated:** 2026-02-15
+> **Purpose:** Read this at the start of a session to orient yourself in the codebase. This document is a **high-level technical traversal**: tech stack, dependencies, project structure, major subsystems, and how they connect. It is not the implementation-level walkthrough.
+>
+> **Last updated:** 2026-04-05
 
 ---
 
-## Quick Reference
+## Documentation boundaries
+
+| Document | Audience | Depth | Purpose |
+|----------|----------|-------|---------|
+| `README.md` | End users / product readers | Low | User-facing overview of app idea and features. |
+| `docs/nexus_knowledge_base.md` (this file) | Engineers and AI assistants | Medium | System orientation: architecture map, tooling, dependencies, routing/storage/sync overview. |
+| `developer_README.md` | Engineers implementing changes | High | Deep technical walkthrough and reference for implementation details and contributor workflow. |
+
+This file focuses on **what exists and how parts relate**. For detailed coding
+guidance, feature implementation nuance, and operational procedures, use
+`developer_README.md`.
+
+---
+
+## Quick reference
 
 | Key | Value |
 |-----|-------|
-| **Stack** | Flutter 3.10+, Dart, Firebase |
-| **Architecture** | Feature-first Clean Architecture (Domain / Data / Presentation) |
-| **DI** | `Provider` (via `context.read`/`watch` and `AppProviderFactory`) |
-| **Routing** | GoRouter (`lib/app/router/app_router.dart`) |
-| **State** | `Provider` + `ChangeNotifier` (Controllers) |
-| **Local Storage** | `Hive` (Data models/DTOs) + `SharedPreferences` (Settings/Flags) |
-| **Sync** | Offline-first via `SyncService` (Hive <-> Firestore) |
-| **Entities** | Pure Dart domain entities (no Hive) + `@HiveType` data models mapped via mappers |
-| **Localization** | `flutter_localizations` + `FlutterQuillLocalizations` |
-| **CI/CD** | GitHub Actions (`.github/workflows/ci.yml`) |
+| **Stack** | Flutter (stable; pinned in `.github/workflows/ci.yml`), Dart 3.10+, Firebase (core + Firestore for sync) |
+| **Architecture** | Feature-first layout with Clean Architecture **layers** inside each feature (`domain` / `data` / `presentation`) |
+| **DI** | `provider`: `Provider` and `ChangeNotifierProvider`, composed at startup via `AppProviderFactory` |
+| **Routing** | `go_router`: `lib/app/router/app_router.dart`, path constants in `lib/app/router/app_routes.dart` |
+| **State in UI** | `ChangeNotifier` controllers under each feature’s `presentation/state_management/` |
+| **Local persistence** | **Hive** typed boxes per domain area; **SharedPreferences** for user settings via `SettingsStore` |
+| **Remote sync** | Firestore + offline-first queue (`HiveBoxes.syncOps`) processed by `SyncService` |
+| **Domain vs data** | Domain **entities** are plain Dart; **Hive** models and mappers live in `data/` |
+| **Localization** | `flutter_localizations` + **`FlutterQuillLocalizations`** (Quill toolbar requires the delegate; registered in **`lib/main.dart`** and **`lib/app/app.dart`**) |
+| **CI** | GitHub Actions: `.github/workflows/ci.yml` (analyze, test; see file for exact steps) |
 
 ---
 
-## 1. Directory Structure
+## Table of contents
+
+- [Documentation boundaries](#documentation-boundaries)
+- [Quick reference](#quick-reference)
+- [1. How the app boots and where the shell lives](#1-how-the-app-boots-and-where-the-shell-lives)
+  - [1.1 Entry: `lib/main.dart`](#11-entry-libmaindart)
+  - [1.2 Splash: `lib/features/splash/`](#12-splash-libfeaturessplash)
+  - [1.3 Main UI: `lib/app/app.dart`](#13-main-ui-libappappdart)
+- [2. Repository layout: `lib/` at a glance](#2-repository-layout-lib-at-a-glance)
+- [3. Clean Architecture within a feature](#3-clean-architecture-within-a-feature)
+- [4. Services and backends (what talks to what)](#4-services-and-backends-what-talks-to-what)
+- [5. Routes and navigation](#5-routes-and-navigation)
+- [6. Domain entities (what “business objects” exist)](#6-domain-entities-what-business-objects-exist)
+  - [6.3 Firestore entity layout (what exists in Firebase)](#63-firestore-entity-layout-what-exists-in-firebase)
+- [7. Local storage: Hive boxes and settings](#7-local-storage-hive-boxes-and-settings)
+- [8. CI/CD](#8-cicd)
+- [9. Dependencies (families, not a full lockfile)](#9-dependencies-families-not-a-full-lockfile)
+- [10. Tests (where to look)](#10-tests-where-to-look)
+- [Related documentation](#related-documentation)
+
+---
+
+## 1. How the app boots and where the shell lives
+
+### 1.1 Entry: `lib/main.dart`
+
+The process starts with a **small** `MaterialApp` that does not use `GoRouter` yet. Its job is to show the splash immediately, apply base **`AppTheme`**, and—critically—register **localization delegates**, including **`FlutterQuillLocalizations.delegate`**. Anything later pushed on the **root** navigator (for example the full-screen note editor) still sits under this outer `MaterialApp` until popped, so Quill’s toolbar must find those delegates here.
+
+### 1.2 Splash: `lib/features/splash/`
+
+**`SplashWrapper`** (`presentation/pages/splash_wrapper.dart`) orchestrates **critical initialization** (Firebase, Hive, etc. via `AppInitializer` and related bootstrap code). When that work finishes, it builds a **`MultiProvider`** tree and mounts the real app shell as **`App`** (`lib/app/app.dart`).
+
+**`AppProviderFactory`** (`presentation/bootstrap/provider_factory.dart`) is the composition root for **repository interfaces** and **controllers**. You add new app-wide services or repositories here when they must exist for the whole tree.
+
+Splash also has **`presentation/models/`** for startup result types (e.g. `CriticalInitializationResult`, `AppInitializationResult`) that describe what got wired so the provider list can be built safely.
+
+### 1.3 Main UI: `lib/app/app.dart`
+
+**`App`** is a **`MaterialApp.router`** tied to a single **`GoRouter`** instance created in `AppRouter.create()`. Theme comes from **`SettingsController`** (light/dark/custom colors, nav bar style). The same **localization delegates** as `main.dart` appear again so the router subtree stays consistent.
+
+**`App`** uses a **`builder`** to wrap the routed child with **`AnimatedTheme`** and **`wrapWithOverlays`** (`lib/app/services/app_services_composer.dart`), which currently layers things like the **global debug overlay** and can grow with more cross-cutting UI.
+
+**Background hooks:** `initializeBackgroundServices` / `disposeBackgroundServices` in `app_services_composer.dart` start or tear down long-lived helpers (for example connectivity monitoring) after the widget tree can `read` services.
+
+---
+
+## 2. Repository layout: `lib/` at a glance
+
+High-level **directory tree** of `lib/` (names only). Subsections **2.1–2.3** explain what each area is for. The repo also has top-level folders such as **`docs/`**, **`test/`**, **`scripts/`**, and **`assets/`** beside `lib/`.
 
 ```
 lib/
-├── main.dart                          # Entry point
+├── main.dart
 ├── app/
-│   ├── app.dart                       # MaterialApp setup, Theme
-│   ├── app_globals.dart               # Global keys
-│   ├── router/                        # GoRouter config & Routes
-│   ├── services/                      # App-level service composition
-│   └── theme/                         # AppTheme & Colors
-│
+│   ├── app.dart
+│   ├── app_globals.dart
+│   ├── router/
+│   ├── services/
+│   └── theme/
+├── app_secrets/
 ├── core/
-│   ├── data/                          # Shared data components
-│   │   ├── hive/                      # HiveBoxes, TypeIds
-│   │   ├── device_id_store.dart       # Device ID persistence
-│   │   ├── sync_metadata.dart         # Sync metadata
-│   │   ├── sync_queue.dart            # Operation queue
-│   │   └── sync_operation_adapter.dart
-│   ├── services/                      # Core Services
-│   │   ├── debug/                     # Logger
-│   │   ├── notifications/             # Local Notifications
-│   │   ├── platform/                  # Connectivity
-│   │   ├── storage/                   # Drive, Hive, File
-│   │   ├── sync/                      # SyncService
+│   ├── data/
+│   ├── services/
+│   │   ├── sync/
+│   │   ├── note_embed_service.dart
 │   │   ├── connectivity_monitor_service.dart
-│   │   └── note_embed_service.dart
-│   ├── utils/                         # Helpers & Logic
-│   │   ├── note_conflict_detector.dart
-│   │   ├── sync_backoff.dart
-│   │   ├── task_conflict_detector.dart
-│   │   └── ...
-│   └── widgets/                       # Shared UI
-│       ├── debug/                     # GlobalDebugOverlay
-│       ├── common_snackbar.dart
-│       ├── nexus_card.dart
-│       ├── habit_pill.dart
-│       └── ...
-│
-├── features/                          # Feature modules
+│   │   ├── platform/
+│   │   ├── storage/
+│   │   ├── notifications/
+│   │   └── debug/
+│   ├── utils/
+│   └── widgets/
+├── features/
 │   ├── analytics/
 │   ├── calendar/
+│   ├── categories/
 │   ├── dashboard/
 │   ├── habits/
 │   ├── notes/
 │   ├── reminders/
 │   ├── settings/
-│   ├── splash/                        # Initialization
-│   ├── sync/                          # Sync UI & Logic
-│   ├── task_editor/                   # Task Creation/Editing
+│   ├── splash/
+│   ├── sync/
+│   ├── task_editor/
 │   ├── tasks/
-│   ├── theme_customization/           # Theme UI
-│   └── wrapper/                       # App Shell
-│
-├── docs/                              # Project Documentation
-└── firebase_setup/                    # Firebase Config
+│   ├── theme_customization/
+│   └── wrapper/
+└── firebase_setup/
 ```
 
----
+### 2.1 `lib/app/`
 
-## 2. Key Patterns & Conventions
+Application shell concerns that are **not** one feature: **routing**, **theme** (`theme/`), **global keys** (`app_globals.dart`), and **app-level composition** (`app.dart`, `services/`). This is the first place to look for “how does navigation work?” and “where is the theme decided?”.
 
-### Clean Architecture Layers
+### 2.2 `lib/core/`
 
-Every feature now follows a strict **Domain / Data / Presentation** structure under `lib/features/<name>/`:
+Shared infrastructure **used by multiple features**:
 
-- **`domain/`** (pure Dart, innermost layer)
-  - `entities/`: Pure business objects, immutable, no Hive/Firestore/Flutter.  
-    - Example: `TaskEntity`, `NoteEntity`, `HabitEntity`, `ReminderEntity`, `AppSettingsEntity`.
-  - `repositories/`: **Interfaces only**, named `*RepositoryInterface`.  
-    - Example: `TaskRepositoryInterface`, `NoteRepositoryInterface`, `HabitRepositoryInterface`, `ReminderRepositoryInterface`, `SettingsRepositoryInterface`.
-  - `use_cases/`: One class per business operation (`CreateTaskUseCase`, `SaveNoteUseCase`, `ToggleHabitTodayUseCase`, `UpdateThemeModeUseCase`, etc.).
-  - Root files: Domain enums and value objects (`task_enums.dart`, `task_sort_option.dart`, `category_sort_option.dart`).
+- **`core/data/`** — Hive box names, type IDs, sync queue types and adapters, anything that is “the database shape” without belonging to a single feature.
+- **`core/services/`** — Cross-cutting services: **`SyncService`** (queue processor), **storage** (Google Drive, paths), **notifications** (`NotificationService`, `battery_optimization_first_launch_prompt` for one-time Android exemption flow, `battery_optimization_dialog` for the explanation UI), **platform** (connectivity, health checks), **debug** logging, **`note_embed_service`** (voice attach/playback helpers for notes), **`connectivity_monitor_service`**, etc.
+- **`core/utils/`** — Shared non-UI logic (conflict helpers, backoff, etc.).
+- **`core/widgets/`** — Reusable UI such as **`NexusCard`**, debug overlays, shared snackbars.
 
-- **`data/`** (infrastructure + persistence, middle layer)
-  - `models/`: Persistence-aware DTOs (`@HiveType`, `@HiveField`, Hive adapters, Firestore JSON helpers).  
-    - Examples: `Task`, `Note`, `Habit`, `Reminder`, `SettingsStore`, `CustomColorsStore`.
-  - `mappers/`: Convert between domain entities and data models (e.g. `TaskMapper.toEntity()` / `TaskMapper.toModel()`).
-  - `data_sources/`: Direct storage access (Hive boxes, local stores).  
-    - Examples: `TaskLocalDatasource`, `NoteLocalDatasource`, `HabitLocalDatasource`, `ReminderLocalDatasource`.
-  - `repositories/`: **Implementations** of domain interfaces, named `*RepositoryImpl`.  
-    - Examples: `TaskRepositoryImpl implements TaskRepositoryInterface`, `NoteRepositoryImpl`, `HabitRepositoryImpl`, `ReminderRepositoryImpl`, `SettingsRepositoryImpl`.
-    - These are the **only** classes that know about both domain and the underlying storage.
-  - `sync/`: Feature-specific sync handlers (e.g. `TaskSyncHandler`, `NoteSyncHandler`).
-  - `services/`: Infrastructure services like `ReminderTimerService`, `ReminderWorkmanagerCallback`.
+Think of **`core/`** as “platform and plumbing”; think of **`features/`** as “product areas”.
 
-- **`presentation/`** (UI + state, outermost layer)
-  - `state_management/`: `ChangeNotifier`-based controllers (e.g. `TaskController`, `NoteController`, `HabitController`, `ReminderController`, `SettingsController`, `SyncController`, `AnalyticsController`, `CalendarController`).
-    - Controllers hold **UI state only** and call domain use cases; they do not contain persistence logic.
-  - `pages/`: Screens (e.g. `TasksScreen`, `NotesListScreen`, `RemindersScreen`, `HabitsScreen`, `SettingsScreen`, `DashboardScreen`, `CalendarScreen`, `AnalyticsScreen`).
-  - `widgets/`: Feature-specific widgets (tiles, dialogs, sections, navigation drawers, detail sheets, etc.).
-  - `utils/`: View-only helpers, such as date formatters and attachment picker helpers.
-  - `extensions/`: Dart extensions to make entities easier to render (e.g. `TaskEntityExtensions`).
-  - `bootstrap/` (splash only): Composition root that wires together repositories, use cases, controllers, and services (`AppInitializer`, `AppProviderFactory`).
-  - `models/` (splash only): Startup result types (`AppInitializationResult`, `CriticalInitializationResult`) that aggregate controllers and services for the UI layer.
+### 2.3 `lib/features/` — product areas (one folder per area)
 
-### Why interfaces and implementations for repositories?
+Each folder is a **vertical slice** of the product. Most slices follow **`domain/`**, **`data/`**, **`presentation/`** (see §3). Names map roughly to UI:
 
-- **Domain layer** declares interfaces like `TaskRepositoryInterface`, `NoteRepositoryInterface`, etc.  
-  - These are pure contracts that talk in terms of domain entities (`TaskEntity`, `NoteEntity`, etc.).
-  - Use cases depend on these interfaces only.
-- **Data layer** provides concrete classes like `TaskRepositoryImpl`, `NoteRepositoryImpl`, etc.  
-  - They implement the corresponding `*RepositoryInterface` and are wired to:
-    - `data_sources/` (Hive/local storage) and
-    - `mappers/` (entity ↔ model conversions).
-  - They are the **only** place that knows about Hive, Firestore payloads, or any other storage detail.
-- **Presentation layer** (controllers) receives the interface types via DI, never the `Impl` types directly.
+| Folder | Role in the product |
+|--------|---------------------|
+| **`wrapper/`** | **`AppWrapper`**: scaffold, **drawer**, **bottom navigation** (`NavBarBuilder`), keeps the tab **PageView** aligned with `StatefulNavigationShell`. |
+| **`dashboard/`** | Home / overview hub. |
+| **`tasks/`** | Task list, filters, task tiles, conflict UI for tasks. |
+| **`task_editor/`** | Task create/edit experience (fields, categories, attachments). |
+| **`reminders/`** | Reminder list and scheduling; ties to local notifications and timers. |
+| **`notes/`** | Notes list, **note editor** (Quill + Markdown paths), attachments, voice sections, category selection in editor. |
+| **`categories/`** | Hive **`Category`** model and **`CategoryController`** for hierarchical categories (tasks and note UI consume it). |
+| **`habits/`** | Habit definitions, logs, charts. |
+| **`calendar/`** | Calendar aggregation and device calendar hooks. |
+| **`analytics/`** | Dashboard-style stats and charts. |
+| **`settings/`** | Settings screens, **`SettingsController`**, repository for **`AppSettingsEntity`**, prefs via **`SettingsStore`**. |
+| **`theme_customization/`** | Theme and nav bar customization screens (often pushed with provider re-wrap patterns similar to the note editor). |
+| **`sync/`** | Sync status widgets and entry points into conflict flows (domain-specific dialogs often live on tasks/notes). |
+| **`splash/`** | Startup, **`AppInitializer`**, **`AppProviderFactory`**. |
 
-This pattern lets us:
-
-- Swap out storage (e.g. replace Hive with another DB) by changing only `data/` code.
-- Unit-test use cases and controllers with simple in-memory fakes that implement `*RepositoryInterface`.
-- Keep domain logic independent of frameworks and persistence details.
-
-### State Management
-
-- **Provider**: Used for Dependency Injection and State Propagation.
-- **Controllers (Presentation layer)**:  
-  - `TaskController`, `NoteController`, `HabitController`, `ReminderController`, `SettingsController`, etc. live under `presentation/state_management/`.  
-  - They hold UI state (filters, loading flags, view models) and delegate business logic to **domain use cases**, which in turn depend on `*RepositoryInterface`.
-- **Access**: `context.read<TaskController>()` or `context.watch<TaskController>()`.
-
-### Dependency Injection
-
-- **Setup**: `SplashWrapper` → `AppInitializer` (bootstrap) → `AppProviderFactory` registers:
-  - `Provider<*RepositoryInterface>` for each feature repository.
-  - `ChangeNotifierProvider` for each controller.
-- **Services**: `SyncService`, `ConnectivityService`, `GoogleDriveService`, etc. are constructed in the splash bootstrap layer and injected where needed (usually into use cases or controllers).
-
-### Sync Architecture
-
-- **Offline-First**: Changes are written to Hive first.
-- **SyncQueue**: Operations (Create/Update/Delete) are queued in `SyncOperation` Hive box.
-- **SyncService**: Processes queue when online, pushing to Firebase/Google Drive.
-- **Conflict resolution UI**: Conflict dialogs are feature-specific: `TaskConflictResolutionDialog` (`lib/features/tasks/presentation/widgets/task_conflict_resolution_dialog.dart`) for tasks, `NoteConflictResolutionDialog` (`lib/features/notes/presentation/widgets/note_conflict_resolution_dialog.dart`) for notes. Both are wired to the **Sync section** in Settings. When conflicts exist, a "Resolve conflicts" button appears that opens the appropriate dialog. Users can choose "Keep Local" (re-enqueues local as update) or "Keep Remote" (overwrites local with remote version). `SyncStatusWidget` (`lib/features/sync/presentation/widgets/sync_status_widget.dart`) is also available as a standalone widget for showing sync status and opening conflict dialogs.
-
-### Routing
-
-- **GoRouter**: Defined in `lib/app/router/app_router.dart`.
-- **ShellRoute**: `AppWrapper` provides the persistent bottom navigation shell.
+**`lib/firebase_setup/`** holds Firebase key templates. Repo-root **`docs/`** holds this file and other architecture notes.
 
 ---
 
-## 3. Services & Backend
+## 3. Clean Architecture within a feature
 
-| Service | Technology | Role |
-|---------|------------|------|
-| **Auth** | Google Sign-In (`google_sign_in`) | Drive Access Only (No User Auth) |
-| **Database** | Firestore | Remote persistence for Sync |
-| **Local DB** | Hive | Offline interactions & caching |
-| **Drive** | Google Drive API (`googleapis`) | Backup/Sync for specific user data |
-| **Notifications** | flutter_local_notifications | Local scheduled reminders |
-| **Background** | Workmanager | Background sync & tasks |
+Nexus does not use a single global `domain/` folder. Instead, **each feature** that follows the pattern owns its own three layers. That keeps tasks, notes, and reminders independent and avoids a monolithic domain package.
 
-> **Note:** The app currently does not have a user authentication layer (sign-up/sign-in). Google Sign-In is strictly used to authenticate with Google APIs for Drive storage (backups & attachments).
+### 3.1 The three layers (what each is for)
 
----
+**`domain/`** is the **innermost** layer: pure Dart, no Flutter widgets, no Hive, no Firestore types. It holds:
 
-## 4. Routes
+- **`entities/`** — Immutable (or clearly bounded) **business objects** such as `TaskEntity`, `NoteEntity`, `HabitEntity`, `ReminderEntity`, `AppSettingsEntity`.
+- **`repositories/`** — **Interfaces only**, named `*RepositoryInterface`. They describe *what* the app can do with data, not *how* it is stored.
+- **`use_cases/`** — One class per meaningful operation (`SaveNoteUseCase`, `CreateTaskUseCase`, …). Use cases depend on repository **interfaces** and entity types.
+- **Shared domain files** — Enums and value objects (`task_sort_option.dart`, `category_sort_option.dart`, …).
 
-Defined in `AppRoute` enum (`lib/app/router/app_routes.dart`):
+**`data/`** is the **middle** layer: how persistence and sync actually work.
 
-| Path | Screen | Feature |
-|------|--------|---------|
-| `/dashboard` | `DashboardScreen` | Dashboard |
-| `/tasks` | `TasksScreen` | Tasks |
-| `/reminders` | `RemindersScreen` | Reminders |
-| `/notes` | `NotesListScreen` | Notes |
-| `/settings` | `SettingsScreen` | Settings |
-| `/habits` | `HabitsScreen` | Habits (Drawer) |
-| `/calendar` | `CalendarScreen` | Calendar (Drawer) |
-| `/analytics` | `AnalyticsScreen` | Analytics (Drawer) |
+- **`models/`** — Hive **`@HiveType`** models, JSON shapes, and non-Hive stores like **`SettingsStore`** / **`CustomColorsStore`** (backed by **SharedPreferences** for settings).
+- **`mappers/`** — Translate **entity ↔ model** (`TaskMapper`, …).
+- **`data_sources/`** — Low-level reads/writes to Hive boxes and similar stores.
+- **`repositories/`** — **`SomethingRepositoryImpl`** classes that **implement** the domain interfaces. They orchestrate datasources and mappers. This is where **Hive box names** and **Firestore document shapes** are allowed to live.
+- **`sync/`** — Feature-specific **sync handlers** (e.g. `TaskSyncHandler`, `NoteSyncHandler`) invoked by the central **`SyncService`**.
+- **`services/`** — Feature infrastructure (e.g. reminder timers, Workmanager entrypoints for reminders).
 
----
+**`presentation/`** is the **outer** layer: Flutter UI and **controller** state.
 
-## 5. Key Domain Entities
+- **`state_management/`** — `ChangeNotifier` **controllers** (`TaskController`, `NoteController`, …). They subscribe to repositories (via interfaces), expose lists and filters to widgets, and call use cases where appropriate. They should not embed raw Hive calls.
+- **`pages/`** — Route-level screens (`TasksScreen`, `NotesListScreen`, …).
+- **`widgets/`** — Everything from list tiles to dialogs to the **note editor** subtree (`presentation/widgets/editor/...`).
+- **`utils/`** — Formatting and UI helpers.
+- **`extensions/`** — `TaskEntity`-style extensions for display.
 
-> In the new architecture, **domain entities are pure Dart**, while persistence-specific details live in data models.
+**Exception:** **`Category`** is often used as a **Hive model** with **`CategoryController`** without a separate `CategoryEntity` file; the categories feature still fits the same *idea* (model + controller + UI), but the domain folder may be thinner. Prefer reading that feature’s `data/` and `presentation/` when touching categories.
 
-- **TaskEntity**: Main domain entity for tasks. Immutable; holds business fields like `title`, `status`, `recurringRule`, `attachments`, `createdAt`, `updatedAt`, `lastModifiedByDevice`. Mapped to the Hive `Task` model in `data/models/task.dart`.
-- **NoteEntity**: Domain representation of notes (Quill Delta JSON, metadata). Mapped to `Note` in `data/models/note.dart`.
-- **Category** (data model): Classification for tasks; categories feature uses the Hive model directly (no separate domain entity).
-- **HabitEntity** / **HabitLogEntity**: Domain entities for habit tracking and individual logs.
-- **ReminderEntity**: Domain entity for reminders with scheduling info.
-- **AppSettingsEntity** / **ColorPresetEntity**: Domain entities for user settings and color presets.
-- **SyncOperation** (in `core/data`): Represents queued sync actions (unchanged conceptually, but now consumed via repository/use case layers).
+### 3.2 Why repository interfaces?
 
----
+- **Domain** and **use cases** depend on **interfaces** → easy to **fake** in tests.
+- **Data** supplies **implementations** → swapping storage means editing **`data/`** only.
+- **Presentation** asks `Provider` for **`TaskRepositoryInterface`**, not `TaskRepositoryImpl`, so the UI stays decoupled from Hive/Firestore.
 
-## 6. Local Storage (Hive Boxes)
+### 3.3 State management and accessing controllers
 
-- `tasks`
-- `notes`
-- `categories`
-- `sync_ops` (Sync Queue)
-- `settings` (or SharedPrefs)
+Widgets obtain controllers with **`context.watch<T>()`** (rebuild when state changes) or **`context.read<T>()`** (one-shot actions). Registration happens in **`AppProviderFactory`** for types that are global to the post-splash app.
 
----
+### 3.4 Sync (high-level flow)
 
-## 7. CI/CD
+1. User actions persist **locally first** (Hive / prefs).
+2. Outbound changes enqueue **`SyncOperation`** rows in **`HiveBoxes.syncOps`**.
+3. **`SyncService`** (`lib/core/services/sync/sync_service.dart`) drains the queue when connectivity allows, delegating entity-specific work to **feature sync handlers**.
+4. Conflicts surface in **feature UI** (task vs note dialogs) and from **sync status** widgets under **`lib/features/sync/`**.
 
-### GitHub Actions (`.github/workflows/ci.yml`)
+### 3.5 Routing model
 
-- Triggers on push/pull_request to `main`.
-- **Jobs**:
-  - **Setup**: Flutter environment.
-  - **Secrets**: Generates placeholder `app_secrets.dart` & `apiKeys.dart`.
-  - **Assets**: Generates placeholder icons.
-  - **Formatting**: Runs `dart format` and pushes changes if needed.
-  - **Analysis**: `flutter analyze`.
-  - **Tests**: `flutter test`.
-  - **Coverage**: Uploads to Codecov.
+- **`StatefulShellRoute`** hosts the **bottom tabs** (dashboard, tasks, reminders, notes, settings). **`AppWrapper`** provides drawer + `PageView`-style tab body + **`NavBarBuilder`** (style from settings).
+- **Drawer destinations** (habits, calendar, analytics) are **separate** `GoRoute`s on the same router.
+- **`rootNavigatorKey`** (in `app_router.dart`) allows **full-screen** routes **above** the tab bar—used for the **note editor** and similar flows.
+
+### 3.6 Note editor and provider scope
+
+Opening a note uses **`NoteEditorScreen.push`**, which pushes on the **root** navigator. Root-navigator screens can sit outside the shell provider scope, so this flow uses **`NoteEditorScreen.wrapWithRequiredProviders`** to ensure required dependencies are available and the route keeps the app theme/localization context.
+
+Editor UI lives under **`lib/features/notes/presentation/widgets/editor/`** (`NoteEditorView`, app bar, body, overflow menu, voice widgets, dialogs). Product behavior (Markdown vs rich text, voice section, category under title, toolbar position) is implemented there; this knowledge base does not duplicate every widget name.
+
+For implementation-level details of sync internals and note-editor edge cases, use
+`developer_README.md` feature deep dives.
 
 ---
 
-## 8. Dependencies (Key Packages)
+## 4. Services and backends (what talks to what)
 
-- **State/DI**: `provider`.
-- **Navigation**: `go_router`, `curved_labeled_navigation_bar`, `animated_notch_bottom_bar`.
-- **Data**: `hive`, `hive_flutter`, `cloud_firestore`, `shared_preferences`.
-- **Sync/Network**: `connectivity_plus`, `googleapis`, `http`.
-- **UI/Content**: `flutter_quill`, `table_calendar`, `flutter_slidable`, `google_fonts`.
-- **Platform**: `path_provider`, `device_calendar`, `permission_handler`, `workmanager`.
+| Concern | Technology | Role in Nexus |
+|---------|------------|----------------|
+| **Google identity for APIs** | `google_sign_in` | Access to **Google Drive** and related APIs for attachments/backups—not a full first-party “Nexus account” system. |
+| **Remote documents** | Cloud Firestore | **Sync** target for entities that have handlers; not the primary UI data source (Hive is). |
+| **Local database** | Hive | **Source of truth** on device: tasks, notes, habits, reminders, categories, sync queue, metadata. |
+| **User preferences** | SharedPreferences | Theme mode, nav bar style, retention, etc., via **`SettingsStore`**. |
+| **Files / Drive** | `googleapis` + app storage paths | Upload/download for attachments where implemented. |
+| **Reminders** | `flutter_local_notifications`, alarms, Workmanager | Schedule and fire notifications; feature code coordinates with **`ReminderController`**. Android manifest declares `ScheduledNotificationReceiver` (fires alarms when app is closed) and `ScheduledNotificationBootReceiver` (reschedules after reboot), and requests battery-optimization exemption (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) to survive Doze. |
+
+---
+
+## 5. Routes and navigation
+
+Paths are defined in **`AppRoute`** (`lib/app/router/app_routes.dart`) and registered in **`AppRouter.create()`**.
+
+| Path | Screen | Placement |
+|------|--------|-----------|
+| `/dashboard` | `DashboardScreen` | Bottom shell |
+| `/tasks` | `TasksScreen` | Bottom shell |
+| `/reminders` | `RemindersScreen` | Bottom shell |
+| `/notes` | `NotesListScreen` | Bottom shell |
+| `/settings` | `SettingsScreen` | Bottom shell |
+| `/habits` | `HabitsScreen` | Outside shell (drawer) |
+| `/calendar` | `CalendarScreen` | Outside shell (drawer) |
+| `/analytics` | `AnalyticsScreen` | Outside shell (drawer) |
+
+The **note editor** has **no** dedicated GoRoute path: it is opened with **`Navigator.push`** via **`NoteEditorScreen.push`**, full-screen over the shell.
+
+---
+
+## 6. Domain entities (what “business objects” exist)
+
+Core entities live under each feature’s **`domain/entities/`** (pure Dart; no Hive / Firestore imports). Data-layer persistence is implemented with **Hive models** under each feature’s `data/models/`, plus `toFirestoreJson()` / `fromFirestoreJson()` helpers for synced entities.
+
+### 6.1 Layering: Entity vs Hive model vs Firestore JSON
+
+- **Domain entity (`domain/entities/`)**
+  - **Used by**: use cases + controllers (business logic and UI state).
+  - **Shape**: plain Dart; keeps the app independent of storage.
+- **Hive model (`data/models/`)**
+  - **Used by**: repositories and datasources; stored in Hive boxes.
+  - **Shape**: `@HiveType` + `@HiveField(...)`, plus sync metadata fields.
+- **Firestore JSON (`toFirestoreJson` / `fromFirestoreJson`)**
+  - **Used by**: sync handlers (`data/sync/*_sync_handler.dart`) invoked by `SyncService`.
+  - **Shape**: `Map<String, dynamic>` with Firestore `Timestamp` values for date fields.
+
+### 6.2 Common entity fields (sync-aware entities)
+
+Most synced entities follow the same conventions in their Hive models:
+
+- **`id`**: string UUID (also used as Firestore document id).
+- **`createdAt` / `updatedAt`**: `DateTime` locally; `Timestamp` on Firestore. `updatedAt` is the incremental pull cursor (`where('updatedAt', isGreaterThan: lastSyncAt)`).
+- **`isDirty`**: local-unsynced flag. Local writes set this to true and enqueue a `SyncOperation`.
+- **`lastSyncedAt`**: last time the row was successfully synced.
+- **`syncStatus`**: enum index (`idle` / `syncing` / `synced` / `conflict`).
+- **`lastModifiedByDevice`** (tasks + notes): best-effort tracing/debugging aid; written to Firestore on push.
+
+Feature-specific fields live alongside these (e.g. task due date, note content, reminder schedule).
+
+### 6.3 Firestore entity layout (what exists in Firebase)
+
+Firestore is used as the remote sync target (Hive remains the local source of truth). The app currently uses **top-level collections** (no per-user namespace), and document ids match entity ids:
+
+| Entity type | Firestore collection | Local Hive model | Notes |
+|------------|----------------------|------------------|-------|
+| `task` | `tasks/{taskId}` | `Task` | Conflict detection supported via `TaskConflictDetector`. |
+| `note` | `notes/{noteId}` | `Note` | Conflict detection supported via `NoteConflictDetector`. |
+| `reminder` | `reminders/{reminderId}` | `Reminder` | Conflict detection supported via `ReminderConflictDetector`. Includes `notifiedAt` to prevent duplicate re-fires. |
+| `habit` | `habits/{habitId}` | `Habit` | Currently “remote wins” on pull (no conflict UI surfaced yet). |
+
+**Local-only entities (not on Firestore):**
+
+- **`Category`**: stored in Hive (`HiveBoxes.categories`) and managed via `CategoryController`. There is no `categories/` Firestore collection today, so category structure is not restored on reinstall unless exported/imported.
+
+---
+
+## 7. Local storage: Hive boxes and settings
+
+**Box names** are centralized in **`lib/core/data/hive/hive_boxes.dart`** and opened during bootstrap (**`lib/app/bootstrap/hive_bootstrap.dart`**):
+
+- **`tasks`**, **`categories`**, **`reminders`**, **`notes`**, **`habits`**, **`habit_logs`**
+- **`sync_ops`** — outbound sync queue
+- **`sync_metadata`** — bookkeeping for sync state
+
+**Settings** are **not** a Hive box named `settings`. They use **`SharedPreferences`** through **`SettingsStore`** (`lib/features/settings/data/models/settings_store.dart`) and map into domain settings via the settings repository.
+
+---
+
+## 8. CI/CD
+
+**`.github/workflows/ci.yml`** runs on **`main`** pushes and PRs: Flutter setup (version pinned in the workflow), `flutter pub get`, placeholder secrets and assets, **`dart fix --apply`**, **`dart format`**, **`flutter analyze`**, **`flutter test`**, and optional coverage upload on PRs. For a local mirror, use **`scripts/run_ci_locally.ps1`** when present.
+
+---
+
+## 9. Dependencies (families, not a full lockfile)
+
+See **`pubspec.yaml`** for exact versions. Conceptual groupings:
+
+- **State / DI:** `provider`
+- **Navigation / shell:** `go_router`; bottom nav packages (`curved_labeled_navigation_bar`, `animated_notch_bottom_bar`, `google_nav_bar`, …)
+- **Persistence / sync:** `hive`, `hive_flutter`, `cloud_firestore`, `shared_preferences`
+- **Editor:** `flutter_quill`, `flutter_markdown`
+- **Media:** `image_picker`, `record`, `audioplayers`
+- **UI / charts / calendar:** `google_fonts`, `fl_chart`, `table_calendar`, `flutter_slidable`, `rive`
+- **Platform:** `path_provider`, `permission_handler`, `workmanager`, `connectivity_plus`, …
+
+---
+
+## 10. Tests (where to look)
+
+- **Unit** — e.g. `test/unit/sync/sync_service_test.dart` for queue behavior.
+- **Widget** — e.g. `test/widget/notes/note_editor_screen_push_test.dart` for **root navigator + Provider** scope; `test/widget/screens/` for shell smoke tests.
+- **Helpers** — `test/helpers/test_hive_all_boxes.dart` (and similar) to open multiple Hive boxes in tests.
+
+---
+
+## Related documentation
+
+- **`README.md`** — Product-oriented overview for end users and readers.
+- **`developer_README.md`** — Contributor guide, file-level maps, and deep dives.
+- **`docs/CLEAN_ARCHITECTURE_MIGRATION.md`** — History and rationale for the domain/data/presentation split.

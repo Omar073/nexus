@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/connectivity_monitor_service.dart';
 import 'package:nexus/core/services/platform/connectivity_service.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/widgets/debug/global_debug_overlay.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,7 @@ void initializeBackgroundServices(BuildContext context) {
     ConnectivityMonitorService().startMonitoring(connectivityService);
     // Add init for future services here
   } catch (e) {
-    debugPrint('Error initializing background services: $e');
+    mDebugPrint('Error initializing background services: $e');
   }
 }
 
@@ -31,6 +32,6 @@ void disposeBackgroundServices() {
     ConnectivityMonitorService().dispose();
     // Add dispose for future services here
   } catch (e) {
-    debugPrint('Error disposing background services: $e');
+    mDebugPrint('Error disposing background services: $e');
   }
 }

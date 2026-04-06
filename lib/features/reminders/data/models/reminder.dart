@@ -21,6 +21,7 @@ class Reminder extends HiveObject implements ConflictDetectable {
     this.isDirty = true,
     this.lastSyncedAt,
     this.syncStatus = 0,
+    this.notifiedAt,
   });
 
   @HiveField(0)
@@ -65,6 +66,12 @@ class Reminder extends HiveObject implements ConflictDetectable {
   @HiveField(11)
   int syncStatus;
 
+  /// When the notification was last delivered. Cleared on snooze so the
+  /// rescheduled alarm can fire fresh. Workmanager skips reminders where
+  /// this is already set to prevent duplicate popups.
+  @HiveField(12)
+  DateTime? notifiedAt;
+
   SyncStatus get syncStatusEnum => SyncStatus.values[syncStatus];
   set syncStatusEnum(SyncStatus v) => syncStatus = v.index;
 
@@ -81,6 +88,7 @@ class Reminder extends HiveObject implements ConflictDetectable {
         : Timestamp.fromDate(completedAt!),
     'createdAt': Timestamp.fromDate(createdAt),
     'updatedAt': Timestamp.fromDate(updatedAt),
+    'notifiedAt': notifiedAt == null ? null : Timestamp.fromDate(notifiedAt!),
   };
 
   /// Constructs a Reminder from Firestore data.
@@ -107,6 +115,7 @@ class Reminder extends HiveObject implements ConflictDetectable {
       isDirty: false,
       lastSyncedAt: DateTime.now(),
       syncStatus: SyncStatus.synced.index,
+      notifiedAt: ts(json['notifiedAt']),
     );
   }
 }
@@ -138,13 +147,14 @@ class ReminderAdapter extends TypeAdapter<Reminder> {
       isDirty: (fields[9] as bool?) ?? true,
       lastSyncedAt: fields[10] as DateTime?,
       syncStatus: (fields[11] as int?) ?? SyncStatus.idle.index,
+      notifiedAt: fields[12] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Reminder obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -168,6 +178,8 @@ class ReminderAdapter extends TypeAdapter<Reminder> {
       ..writeByte(10)
       ..write(obj.lastSyncedAt)
       ..writeByte(11)
-      ..write(obj.syncStatus);
+      ..write(obj.syncStatus)
+      ..writeByte(12)
+      ..write(obj.notifiedAt);
   }
 }

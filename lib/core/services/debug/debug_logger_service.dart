@@ -95,7 +95,7 @@ class DebugLoggerService {
   void error(String message) => _log(message, DebugLogLevel.error);
 
   /// Main debug method to replace `debugPrint`.
-  void mPrint(String message) => info(message);
+  void mDebugPrint(String message) => info(message);
 
   void _log(String message, DebugLogLevel level) {
     if (kDebugMode) {
@@ -196,4 +196,5 @@ class DebugLoggerService {
 }
 
 /// Global shorthand function for easier logging.
-void mPrint(String message) => DebugLoggerService.instance.mPrint(message);
+void mDebugPrint(String message) =>
+    DebugLoggerService.instance.mDebugPrint(message);

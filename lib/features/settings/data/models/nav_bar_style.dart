@@ -61,15 +61,27 @@ extension NavBarStyleExtension on NavBarStyle {
       case NavBarStyle.notch:
         return 56.0; // AnimatedNotchNavBar bottomBarHeight
       case NavBarStyle.google:
-        return 56.0; // GNav with padding
+        return 50.0; // GNav + compact wrapper padding (no top/side SafeArea)
       case NavBarStyle.rive:
         return 78.0; // 68 container height + 10 bottom margin
     }
   }
 
-  /// Returns the offset for FAB positioning (navbar height + spacing buffer).
+  /// Returns the offset for FAB positioning (navbar height + safe inset + buffer).
+  ///
+  /// Google, notch, and curved bars sit tighter to the content; they use a
+  /// smaller buffer than standard / Rive.
   double fabOffset(BuildContext context) {
-    return height + MediaQuery.paddingOf(context).bottom + 8.0;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    switch (this) {
+      case NavBarStyle.google:
+      case NavBarStyle.notch:
+      case NavBarStyle.curved:
+        return height + bottomInset + 4.0;
+      case NavBarStyle.standard:
+      case NavBarStyle.rive:
+        return height + bottomInset + 8.0;
+    }
   }
 
   /// Returns the padding for scrollable content to avoid navbar overlap.

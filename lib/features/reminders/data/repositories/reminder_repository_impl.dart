@@ -57,6 +57,15 @@ class ReminderRepositoryImpl implements ReminderRepositoryInterface {
     return reminder?.toFirestoreJson();
   }
 
+  @override
+  Future<void> markNotified(String id) async {
+    final box = Hive.box<Reminder>(HiveBoxes.reminders);
+    final reminder = box.get(id);
+    if (reminder == null) return;
+    reminder.notifiedAt = DateTime.now();
+    await reminder.save();
+  }
+
   void dispose() {
     _local.listenable().removeListener(_notifyChanges);
     _changesController.close();

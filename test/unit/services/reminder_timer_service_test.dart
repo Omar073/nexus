@@ -36,7 +36,7 @@ void main() {
   });
 
   group('ReminderTimerService', () {
-    test('fires immediately for very recently past reminder', () async {
+    test('skips past-due reminders (Layer 1 handles them)', () async {
       final justNow = DateTime.now().subtract(const Duration(seconds: 10));
       await repo.upsert(
         ReminderMapper.toEntity(
@@ -52,10 +52,9 @@ void main() {
       );
 
       timerService.scheduleNextCheck();
-      // Allow microtask queue to flush
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(notifications.shownNow.containsKey(1), isTrue);
+      expect(notifications.shownNow, isEmpty);
     });
 
     test('skips completed reminders', () async {
@@ -79,15 +78,15 @@ void main() {
       expect(notifications.shownNow, isEmpty);
     });
 
-    test('resetFiredStatus allows re-fire', () async {
-      final justNow = DateTime.now().subtract(const Duration(seconds: 10));
+    test('fires future reminder when timer elapses', () async {
+      final soon = DateTime.now().add(const Duration(seconds: 1));
       await repo.upsert(
         ReminderMapper.toEntity(
           Reminder(
             id: 'r3',
             notificationId: 3,
-            title: 'Resettable',
-            time: justNow,
+            title: 'Soon',
+            time: soon,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -95,14 +94,7 @@ void main() {
       );
 
       timerService.scheduleNextCheck();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(notifications.shownNow.containsKey(3), isTrue);
-
-      // Clear and reset
-      notifications.reset();
-      timerService.resetFiredStatus('r3');
-      timerService.scheduleNextCheck();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       expect(notifications.shownNow.containsKey(3), isTrue);
     });

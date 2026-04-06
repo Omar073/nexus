@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nexus/features/splash/presentation/bootstrap/app_initializer.dart';
 import 'package:nexus/features/splash/presentation/models/critical_initialization_result.dart';
+import 'package:nexus/features/splash/presentation/widgets/nexus_splash_logo.dart';
 
 /// Branding and progress while initialization runs.
 class SplashScreen extends StatefulWidget {
@@ -60,9 +61,10 @@ class _SplashScreenState extends State<SplashScreen> {
     final backgroundColor = isDark ? Colors.black : Colors.white;
 
     // App name image: black.jpg has white text (for dark bg), white.jpg has black text (for light bg)
-    final imageAsset = isDark
-        ? 'assets/app_logos/app_name_black.jpg'
-        : 'assets/app_logos/app_name_white.jpg';
+    const darkAsset = 'assets/app_logos/app_name_black.jpg';
+    const lightAsset = 'assets/app_logos/app_name_white.jpg';
+    final preferredAsset = isDark ? darkAsset : lightAsset;
+    final fallbackAsset = isDark ? lightAsset : darkAsset;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -72,16 +74,28 @@ class _SplashScreenState extends State<SplashScreen> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // When branding assets exist, render them at their natural size.
+                  // If missing, fall back to a constrained logo area
+                  // to avoid overflow.
                   Image.asset(
-                    imageAsset,
+                    preferredAsset,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return Text(
-                        'NEXUS',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+                      return SizedBox(
+                        width: 320,
+                        height: 120,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: Image.asset(
+                            fallbackAsset,
+                            errorBuilder: (context, error, stackTrace) {
+                              return NexusSplashLogo(
+                                isDark: isDark,
+                                width: 320,
+                                height: 120,
+                              );
+                            },
+                          ),
                         ),
                       );
                     },
@@ -112,10 +126,18 @@ class _SplashScreenState extends State<SplashScreen> {
         children: [
           const Icon(Icons.error_outline, size: 64, color: Colors.red),
           const SizedBox(height: 16),
-          Text(
-            _errorMessage ?? 'Unknown error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
+          // Clamp/scroll error text so the splash layout can't overflow
+          // (particularly when initialization throws with a long message).
+          Expanded(
+            child: SingleChildScrollView(
+              child: Text(
+                _errorMessage ?? 'Unknown error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+                maxLines: 8,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(

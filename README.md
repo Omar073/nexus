@@ -4,13 +4,37 @@ Nexus is a personal life management app that helps you **capture, organize, and 
 
 It's built to feel **fast, reliable, and calm**: you can keep using it even when your device is offline, and it quietly syncs when it can.
 
+This README is intentionally **user-facing and non-technical**. It explains what
+Nexus does and how it helps users in daily life.
+
+For technical documentation:
+- `docs/nexus_knowledge_base.md` provides a high-level technical map.
+- `developer_README.md` is the deep technical walkthrough and reference for contributors.
+
+## Table of contents
+
+- [What Nexus is for](#what-nexus-is-for)
+- [Why Nexus is different](#why-nexus-is-different)
+- [Core features](#core-features)
+  - [Tasks](#tasks)
+  - [Reminders](#reminders)
+  - [Notes](#notes)
+  - [Habits](#habits)
+  - [Calendar](#calendar)
+  - [Analytics](#analytics)
+  - [Settings & customization](#settings--customization)
+- [Who Nexus is great for](#who-nexus-is-great-for)
+- [A quick day with Nexus](#a-quick-day-with-nexus)
+- [What Nexus is not trying to be](#what-nexus-is-not-trying-to-be)
+- [Want technical details?](#want-technical-details)
+
 ---
 
 ## What Nexus is for
 
 - **One place for your life**: tasks, reminders, notes, habits, a simple calendar view, and light analytics.
 - **Less mental load**: capture quickly, organize just enough, and trust that nothing falls through the cracks.
-- **Works where you are**: designed for Android and Windows.
+- **Works where you are**: designed for **Android** and **Windows**.
 
 ---
 
@@ -40,16 +64,18 @@ Never miss an important moment with reliable notification reminders:
 
 - **Smart notifications**: get notified at exactly the right time with reliable background scheduling that works even when the app is closed.
 - **Flexible scheduling**: set one-time or recurring reminders, snooze when needed, and reschedule as plans change.
-- **Background reliability**: uses multiple strategies (AlarmManager, in-app timers, and Workmanager) to ensure notifications fire reliably across different Android devices and battery optimization settings.
+- **Background reliability**: uses multiple strategies (AlarmManager, in-app timers, and Workmanager) to help notifications fire reliably across different Android devices. On first launch, Nexus asks to be excluded from battery optimization so reminders survive Doze mode, and all scheduled alarms are automatically restored after a device reboot.
 
 ### Notes
 
-Capture ideas and reference material with powerful note-taking:
+Capture ideas and reference material with a full-featured note workflow:
 
-- **Markdown support**: toggle between rich text editing and markdown mode with live preview—perfect for structured notes, documentation, or formatted text.
-- **Rich text editor**: full-featured editor with formatting options when you need more than plain text.
-- **Voice notes**: add voice snippets when typing isn't convenient.
-- **Multilingual support**: mixed-language notes (including Arabic) render naturally with automatic text direction detection.
+- **Full-screen editor**: open a note above the bottom navigation for focused editing; when you’re done, you return to the notes list.
+- **Flexible writing modes**: write with rich formatting or in Markdown, depending on your preference.
+- **Useful note actions**: quickly search inside a note, organize with categories, and manage note-specific options from one place.
+- **Voice and media support**: attach voice clips and images when text alone is not enough.
+- **Comfortable editing**: tuned for focused writing sessions with a clean layout and responsive controls.
+- **Multilingual content**: mixed-language notes (including Arabic) render naturally where supported.
 
 ### Habits
 
@@ -116,8 +142,8 @@ The goal is **clarity and follow-through**, with as little friction as possible.
 
 ## Want technical details?
 
-If you're interested in how Nexus is built (architecture, data flow, and contribution guidelines), see:
+If you're interested in how Nexus is built (architecture, data flow, routes, and contribution guidelines), see:
 
-- `developer_README.md` — developer onboarding and deep architecture guide.
-- `docs/nexus_knowledge_base.md` — high-level project knowledge and structure.
-- `docs/CLEAN_ARCHITECTURE_MIGRATION.md` — full walkthrough of the move to a Domain/Data/Presentation clean architecture.
+- [`developer_README.md`](developer_README.md) — developer onboarding and deep architecture guide.
+- [`docs/nexus_knowledge_base.md`](docs/nexus_knowledge_base.md) — project structure, routing, sync, Hive, and entry-point flow.
+- [`docs/CLEAN_ARCHITECTURE_MIGRATION.md`](docs/CLEAN_ARCHITECTURE_MIGRATION.md) — walkthrough of the Domain / Data / Presentation layout.

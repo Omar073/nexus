@@ -8,12 +8,77 @@ Nexus is an **offline-first** personal life management app (Tasks, Reminders, No
 - **UI language**: English-only (hardcoded strings)
 - **Arabic support**: user-entered content (Tasks/Notes) auto-renders RTL when text contains Arabic characters
 
-This README is meant to onboard developer contributors quickly: how the repo is structured, how data flows, and where to implement changes.
+This is the **primary technical walkthrough and reference** for developers
+working on Nexus. It is intentionally in-depth and is written to be used both
+for onboarding and day-to-day engineering lookup.
 
-If you're looking for a **non-technical, end-user overview**, see `README.md`.
+## Documentation boundaries
+
+Use the three docs with the following intent:
+
+| Document | Audience | Depth | Purpose |
+|----------|----------|-------|---------|
+| `README.md` | End users / product readers | Low | Product-facing overview of what Nexus is and what features users get. |
+| `docs/nexus_knowledge_base.md` | Engineers and AI assistants | Medium | High-level technical orientation: architecture, stack, dependencies, app structure, key flows. |
+| `developer_README.md` (this file) | Engineers implementing changes | High | Deep technical walkthrough, implementation references, operational workflows, and contributor guidance. |
+
+When a topic appears in multiple docs:
+- Put **implementation details and change workflow** in this file.
+- Put **high-level architecture and system map** in `docs/nexus_knowledge_base.md`.
+- Put **user outcomes and feature value** in `README.md`.
+
+## Current engineering snapshot (Apr 2026)
+
+Use this as the “what changed recently” index before diving into deeper sections.
+
+- **Root-navigator notes editor provider scope**
+  - `NoteEditorScreen.push(...)` opens editor above shell (`rootNavigator: true`).
+  - `NoteEditorScreen.wrapWithRequiredProviders(...)` re-provides `NoteController`, `CategoryController`, and `GoogleDriveService`, and applies caller theme.
+  - Files: `lib/features/notes/presentation/pages/note_editor_screen.dart`, `lib/features/notes/presentation/pages/notes_list_screen.dart`, `lib/features/notes/presentation/widgets/tiles/note_tile.dart`.
+- **Notes editor UX rework**
+  - Overflow options menu moved to anchored top-right overlay.
+  - Markdown mode and markdown layout controls moved into overflow menu.
+  - Voice notes section is now toggleable.
+  - Draggable rich toolbar can lock top/bottom.
+  - Category selector toggles inline under title.
+  - Files: `lib/features/notes/presentation/widgets/editor/note_editor_overflow_menu.dart`, `lib/features/notes/presentation/widgets/editor/note_editor_view.dart`, `lib/features/notes/presentation/widgets/editor/note_editor_app_bar.dart`, `lib/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart`.
+- **Voice transport controls**
+  - `VoiceNoteItem` supports play/pause, seek, replay/forward 10s.
+  - `VoiceNotesSection` resolves local path with Drive recovery download and caches local URI.
+  - Files: `lib/features/notes/presentation/widgets/editor/voice/voice_note_item.dart`, `lib/features/notes/presentation/widgets/editor/voice/voice_notes_section.dart`.
+- **Delete-note navigation behavior**
+  - Deleting from editor returns to `/notes` after popping editor route.
+  - File: `lib/features/notes/presentation/widgets/editor/note_editor_view.dart`.
+- **Quill localization at outer app entry**
+  - `FlutterQuillLocalizations.delegate` added in `lib/main.dart` to cover root-navigator editor routes.
+- **Sync robustness**
+  - `SyncService._markFailed` writes through Hive box for detached operations.
+  - Files: `lib/core/services/sync/sync_service.dart`, `test/unit/sync/sync_service_test.dart`.
+- **Provider regression tests**
+  - Root-navigator notes editor provider test.
+  - Imperative route provider smoke test.
+  - Shell screen provider smoke tests with full provider stack.
+  - Files: `test/widget/notes/note_editor_screen_push_test.dart`, `test/widget/screens/imperative_route_provider_test.dart`, `test/widget/screens/shell_screen_provider_test.dart`, `test/helpers/test_hive_all_boxes.dart`.
+- **Splash and branding fallback updates**
+  - Brand image fallback behavior and splash error-state robustness.
+  - Files: `lib/features/splash/presentation/pages/splash_screen.dart`, `lib/features/splash/presentation/widgets/nexus_splash_logo.dart`, `pubspec.yaml`.
+- **Android notification reliability hardening**
+  - Added `ScheduledNotificationReceiver` (alarm delivery when terminated) and `ScheduledNotificationBootReceiver` (reboot reschedule) to manifest.
+  - Added `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission and runtime exemption request with user-facing explanation dialog on first launch.
+  - Switched notification icon from `@mipmap/ic_launcher` to custom `ic_notification` white silhouette in all drawable density folders.
+  - Merged notification + battery optimization permissions into a single "Reminders" button in Settings > Permissions.
+- **Notification dedup: `notifiedAt` field**
+  - Added `notifiedAt` (`DateTime?`, Hive field 12) to `Reminder` model and `ReminderEntity`.
+  - All delivery paths (SmartTimer, Workmanager) stamp `notifiedAt` after showing a notification.
+  - Workmanager and SmartTimer skip reminders where `notifiedAt != null`, preventing re-triggers after dismiss.
+  - Snooze (notification action + UI use case), update (new time), and uncomplete all clear `notifiedAt` so the rescheduled alarm fires fresh.
+  - Bumped notification channel ID to `nexus_reminders_v2` so existing installs pick up the new action buttons.
+  - Files: `lib/features/reminders/data/models/reminder.dart`, `lib/features/reminders/domain/entities/reminder_entity.dart`, `lib/features/reminders/data/mappers/reminder_mapper.dart`, `lib/features/reminders/domain/repositories/reminder_repository_interface.dart`, `lib/features/reminders/data/repositories/reminder_repository_impl.dart`, `lib/features/reminders/data/services/reminder_workmanager_callback.dart`, `lib/features/reminders/data/services/reminder_timer_service.dart`, `lib/core/services/notifications/notification_service.dart`.
+  - Files: `android/app/src/main/AndroidManifest.xml`, `lib/core/services/notifications/notification_service.dart`, `lib/core/services/notifications/battery_optimization_dialog.dart`, `lib/core/services/notifications/battery_optimization_first_launch_prompt.dart`, `lib/features/splash/presentation/pages/splash_wrapper.dart`, `lib/features/settings/presentation/widgets/sections/permissions_section.dart`.
 
 ## Table of contents
 
+- [Current engineering snapshot (Apr 2026)](#current-engineering-snapshot-apr-2026)
 - [1. Getting started](#1-getting-started-step-by-step)
 - [2. High-level architecture](#2-high-level-architecture)
 - [3. Repository map](#3-repository-map-where-everything-lives)
@@ -85,7 +150,7 @@ Changing the Android application id (e.g. from `com.example.nexus` to `com.life.
 - **Hive** (and any other app-local storage) starts **empty** in the new install.
 - Data that is **only stored locally** and not synced to Firebase is **lost** on reinstall or after a package-name change.
 
-Currently **categories** are local-only (no Firestore sync). So custom category names and structure are lost when you migrate to a new Firebase project and change the package name, or when you reinstall the app. Tasks, notes, and reminders that are synced to Firebase can be restored after signing in; category names cannot unless we add a category sync pipeline. See [Feature sync status](docs/feature_sync_status.md) and the Firebase user data model doc for details.
+Currently **categories** are local-only (no Firestore sync). So custom category names and structure are lost when you migrate to a new Firebase project and change the package name, or when you reinstall the app. Tasks, notes, and reminders that are synced to Firebase can be restored after signing in; category names cannot unless we add a category sync pipeline. See [Feature sync status](lib\docs\feature_sync_status.md) and the Firebase user data model doc for details.
 
 **Recovering categories from the old package (if the old app’s data still exists):**
 
@@ -150,7 +215,8 @@ Future<void> createTask(Task draft) async {
 - **Views**: screens/widgets
 - **Services**: cross-cutting infrastructure
 
-Providers are initialized in [`lib/main.dart`](lib/main.dart) and injected app-wide.
+Global providers are composed in splash bootstrap (`SplashWrapper` +
+`AppProviderFactory`) and then injected app-wide before `App` mounts the router.
 
 **Typical Provider wiring (simplified):**
 
@@ -332,13 +398,15 @@ Device/OS → connectivity_plus → ConnectivityService.onlineStream() → bool 
 
 ### App Initialization Flow ([`lib/features/splash/`](lib/features/splash/))
 
-The app startup is managed by `AppInitializer` ([`lib/features/splash/controllers/app_initializer.dart`](lib/features/splash/controllers/app_initializer.dart)) in two phases:
+The app startup is managed by `AppInitializer`
+([`lib/features/splash/presentation/bootstrap/app_initializer.dart`](lib/features/splash/presentation/bootstrap/app_initializer.dart))
+in two phases:
 
-1. **Critical Initialization** ([`initializeCritical`](lib/features/splash/controllers/app_initializer.dart#L46)):
+1. **Critical Initialization** (`initializeCritical`):
    - Runs before `runApp`.
    - Initializes Firebase, Hive, Device ID, and Settings.
    - **Failure handling**: If this fails, the app throws an error immediately (fail fast).
-2. **Complete Initialization** ([`completeInitialization`](lib/features/splash/controllers/app_initializer.dart#L85)):
+2. **Complete Initialization** (`completeInitialization`):
    - Runs after the Splash Screen is visible.
    - Initializes heavier services: `NotificationService`, `Workmanager`, `GoogleDriveService`, and all Repositories/Controllers.
    - **User Experience**: The Splash Screen waits for this to complete before navigating to the Dashboard.
@@ -355,13 +423,15 @@ The app startup is managed by `AppInitializer` ([`lib/features/splash/controller
 
 ### App bootstrap / routing / UI shell
 
-- [`lib/main.dart`](lib/main.dart): Firebase init, Hive init, Provider wiring
+- [`lib/main.dart`](lib/main.dart): Outer `MaterialApp` for splash + localization delegates (including Quill)
 - [`lib/app/app.dart`](lib/app/app.dart): `StatefulWidget` with `MaterialApp.router`, themes
 - [`lib/app/app_globals.dart`](lib/app/app_globals.dart): Global `ScaffoldMessengerKey` for context-free snackbars
 - [`lib/app/services/app_services_composer.dart`](lib/app/services/app_services_composer.dart): Composes widget wrappers and manages background service initialization/disposal
 - [`lib/app/router/app_router.dart`](lib/app/router/app_router.dart): `go_router` routes (bottom-nav shell)
-- [`lib/features/wrapper/views/app_wrapper.dart`](lib/features/wrapper/views/app_wrapper.dart): App shell with drawer and bottom navigation
-- [`lib/features/wrapper/views/app_drawer.dart`](lib/features/wrapper/views/app_drawer.dart): Navigation drawer
+- [`lib/features/splash/presentation/pages/splash_wrapper.dart`](lib/features/splash/presentation/pages/splash_wrapper.dart): Builds provider tree and mounts `App`
+- [`lib/features/splash/presentation/bootstrap/provider_factory.dart`](lib/features/splash/presentation/bootstrap/provider_factory.dart): Provider composition root
+- [`lib/features/wrapper/presentation/pages/app_wrapper.dart`](lib/features/wrapper/presentation/pages/app_wrapper.dart): App shell with drawer and bottom navigation
+- [`lib/features/wrapper/presentation/widgets/app_drawer.dart`](lib/features/wrapper/presentation/widgets/app_drawer.dart): Navigation drawer
 - [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Material 3 themes
 
 ### Core Data Infrastructure
@@ -389,7 +459,7 @@ When storing objects, Hive writes each field as `[field index][encoded value]`. 
 |------|------|
 | [`hive_type_ids.dart`](lib/core/data/hive/hive_type_ids.dart) | **Central registry of Hive type IDs.** Each model that Hive stores needs a unique integer ID. Once assigned, these IDs must NEVER be reused or changed—doing so corrupts existing data. Add new models at the end of the list. |
 | [`hive_boxes.dart`](lib/core/data/hive/hive_boxes.dart) | **Box name constants.** Defines string names for each Hive box (e.g., `'tasks'`, `'notes'`). Centralizing these prevents typos and makes refactoring easier. |
-| [`hive_bootstrap.dart`](lib/core/data/hive/hive_bootstrap.dart) | **App startup initialization.** Registers all Hive adapters and opens all boxes. Called once during app launch before any data access. |
+| [`hive_bootstrap.dart`](lib\app\bootstrap\hive_bootstrap.dart) | **App startup initialization.** Registers all Hive adapters and opens all boxes. Called once during app launch before any data access. |
 
 #### Sync Infrastructure
 
@@ -480,8 +550,7 @@ When the device comes back online, here's the exact call chain that triggers syn
 │    - Runs the full sync cycle:                                              │
 │                                                                             │
 │    await _pushQueue();         // Push local changes to Firestore           │
-│    await _pullTasks();         // Pull remote task changes                  │
-│    await _pullNotes();         // Pull remote note changes                  │
+│    await _pullAll();           // Pull remote changes via registered handlers│
 │    await _markSuccessfulSync(); // Update lastSuccessfulSyncAt timestamp    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -490,12 +559,12 @@ When the device comes back online, here's the exact call chain that triggers syn
 
 | Method | What it does | Source |
 |--------|--------------|--------|
-| `startAutoSync()` | Called once at app startup. Sets up listener on connectivity stream. | [sync_service.dart:L127](lib/core/services/sync/sync_service.dart#L127) |
-| `syncOnce()` | Full sync cycle: push queue → pull remote → save timestamp. | [sync_service.dart:L151](lib/core/services/sync/sync_service.dart#L151) |
-| `_pushQueue()` | Iterates pending `SyncOperation`s, pushes each to Firestore. | [sync_service.dart:L179](lib/core/services/sync/sync_service.dart#L179) |
-| `_pullTasks()` | Queries Firestore for tasks updated since `lastSuccessfulSyncAt`. Detects conflicts. | [sync_service.dart:L256](lib/core/services/sync/sync_service.dart#L256) |
-| `_pullNotes()` | Same as above but for notes. | [sync_service.dart:L310](lib/core/services/sync/sync_service.dart#L310) |
-| `_markSuccessfulSync()` | Updates `SyncMetadata.lastSuccessfulSyncAt` so next sync only pulls newer changes. | [sync_service.dart:L361](lib/core/services/sync/sync_service.dart#L361) |
+| `startAutoSync()` | Listens to connectivity and triggers sync on reconnect. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
+| `syncOnce()` | Full sync cycle: push queue → pull handlers → mark successful sync timestamp. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
+| `_pushQueue()` | Iterates pending `SyncOperation`s and delegates push to registered entity handlers. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
+| `_pullAll()` | Pulls remote updates from each registered entity handler since last successful sync. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
+| `_markFailed()` | Marks failed op through Hive box writes (safe for detached operations), applies backoff. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
+| `_markSuccessfulSync()` | Updates `SyncMetadata.lastSuccessfulSyncAt` for incremental pulls. | [`sync_service.dart`](lib/core/services/sync/sync_service.dart) |
 
 **Key methods in `ConnectivityService`:**
 
@@ -529,8 +598,9 @@ Services are organized by domain. Each service encapsulates a specific capabilit
 
 | File | Role |
 |------|------|
-| [`notification_service.dart`](lib/core/services/notifications/notification_service.dart) | **Local notification scheduler.** Uses `flutter_local_notifications` to schedule, show, and cancel notifications. Handles timezone-aware scheduling for reminders. |
-| [`workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) | **Background task entry point.** Android's `Workmanager` calls this when the app is killed. Bootstraps minimal Hive access, checks for due reminders, and triggers notifications as a fallback safety net. |
+| [`notification_service.dart`](lib/core/services/notifications/notification_service.dart) | **Local notification scheduler.** Uses `flutter_local_notifications` to schedule, show, and cancel notifications. Handles timezone-aware scheduling, battery optimization exemption, and custom `ic_notification` icon. |
+| [`battery_optimization_dialog.dart`](lib/core/services/notifications/battery_optimization_dialog.dart) | **Explanation dialog** shown before requesting the OS battery-optimization exemption. Used on first launch and from Settings > Permissions. |
+| [`workmanager_dispatcher.dart`](lib/features/reminders/data/services/reminder_workmanager_callback.dart) | **Background task entry point.** Android's `Workmanager` calls this when the app is killed. Bootstraps minimal Hive access, checks for due reminders, and triggers notifications as a fallback safety net. |
 | [`reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart) | **Notification interface.** Defines the contract for scheduling reminder notifications. Implemented by `NotificationService`. |
 
 #### Storage Services (`storage/`)
@@ -582,9 +652,9 @@ The `Wrapper` feature manages the persistent UI shell that surrounds the entire 
 
 **Key files**:
 
-- [`lib/features/wrapper/views/app_wrapper.dart`](lib/features/wrapper/views/app_wrapper.dart): Main Scaffold containing the `ScaffoldKey` for drawer control.
-- [`lib/features/wrapper/views/app_drawer.dart`](lib/features/wrapper/views/app_drawer.dart): The side navigation drawer accessible globally.
-- [`lib/features/dashboard/views/dashboard_screen.dart`](lib/features/dashboard/views/dashboard_screen.dart): The home screen aggregator.
+- [`lib/features/wrapper/presentation/app_wrapper.dart`](lib\features\wrapper\presentation\pages\app_wrapper.dart): Main Scaffold containing the `ScaffoldKey` for drawer control.
+- [`lib/features/wrapper/presentation/app_drawer.dart`](lib\features\wrapper\presentation\widgets\app_drawer.dart): The side navigation drawer accessible globally.
+- [`lib/features/dashboard/presentation/dashboard_screen.dart`](lib\features\dashboard\presentation\pages\dashboard_screen.dart): The home screen aggregator.
 
 **Data & communication flow**:
 
@@ -598,11 +668,11 @@ The Dashboard acts as an aggregator view, pulling data from multiple controllers
 
 **Key files**:
 
-- [`lib/features/dashboard/views/dashboard_screen.dart`](lib/features/dashboard/views/dashboard_screen.dart)
-- Widgets (organized under [`lib/features/dashboard/views/widgets/`](lib/features/dashboard/views/widgets/)):
-  - [`lib/features/dashboard/views/widgets/dashboard_habits_section.dart`](lib/features/dashboard/views/widgets/dashboard_habits_section.dart): Habits summary row.
-  - [`lib/features/dashboard/views/widgets/dashboard_reminders_section.dart`](lib/features/dashboard/views/widgets/dashboard_reminders_section.dart): Reminders grid.
-  - [`lib/features/dashboard/views/widgets/dashboard_tasks_section.dart`](lib/features/dashboard/views/widgets/dashboard_tasks_section.dart): Upcoming tasks list.
+- [`lib/features/dashboard/presentation/dashboard_screen.dart`](lib\features\dashboard\presentation\pages\dashboard_screen.dart)
+- Widgets (organized under [`lib/features/dashboard/presentation/widgets/`](lib/features/dashboard/presentation/widgets/)):
+  - [`lib/features/dashboard/presentation/widgets/dashboard_habits_section.dart`](lib/features/dashboard/presentation/widgets/dashboard_habits_section.dart): Habits summary row.
+  - [`lib/features/dashboard/presentation/widgets/dashboard_reminders_section.dart`](lib/features/dashboard/presentation/widgets/dashboard_reminders_section.dart): Reminders grid.
+  - [`lib/features/dashboard/presentation/widgets/dashboard_tasks_section.dart`](lib/features/dashboard/presentation/widgets/dashboard_tasks_section.dart): Upcoming tasks list.
 
 **Data & communication flow**:
 
@@ -763,22 +833,22 @@ If you need the overlay during debug mode, remove the `kDebugMode` checks in [`l
 
 **Key files:**
 
-- Models: [`lib/features/tasks/models/task.dart`](lib/features/tasks/models/task.dart), [`task_attachment.dart`](lib/features/tasks/models/task_attachment.dart), [`task_enums.dart`](lib/features/tasks/models/task_enums.dart), [`task_editor_result.dart`](lib/features/tasks/models/task_editor_result.dart)
-- Local storage: [`lib/features/tasks/models/task_local_datasource.dart`](lib/features/tasks/models/task_local_datasource.dart)
-- Repository: [`lib/features/tasks/models/task_repository.dart`](lib/features/tasks/models/task_repository.dart)
+- Models: [`lib/features/tasks/models/task.dart`](lib\features\tasks\data\models\task.dart), [`task_attachment.dart`](lib\features\tasks\data\models\task_attachment.dart), [`task_enums.dart`](lib\features\tasks\domain\task_enums.dart), [`task_editor_result.dart`](lib/features/task_editor/presentation/widgets/task_editor_inputs.dart)
+- Local storage: [`lib/features/tasks/models/task_local_datasource.dart`](lib\features\tasks\data\data_sources\task_local_datasource.dart)
+- Repository: [`lib/features/tasks/domain/repositories/task_repository_interface.dart`](lib/features/tasks/domain/repositories/task_repository_interface.dart)
 - Controllers:
-  - [`lib/features/tasks/controllers/task_controller.dart`](lib/features/tasks/controllers/task_controller.dart): Main controller with filter state, queries, and lifecycle management.
-  - [`lib/features/tasks/controllers/task_controller_base.dart`](lib/features/tasks/controllers/task_controller_base.dart): Abstract base class exposing dependencies to mixins.
-  - [`lib/features/tasks/controllers/task_crud_mixin.dart`](lib/features/tasks/controllers/task_crud_mixin.dart): CRUD operations (create, update, delete, toggle).
-  - [`lib/features/tasks/controllers/category_controller.dart`](lib/features/tasks/controllers/category_controller.dart): Category management with `getSortedCategories()` method.
+  - [`lib/features/tasks/presentation/state_management/task_controller.dart`](lib/features/tasks/presentation/state_management/task_controller.dart): Main controller with filter state, queries, and lifecycle management.
+  - [`lib/features/tasks/presentation/state_management/task_controller.dart`](lib/features/tasks/presentation/state_management/task_controller.dart): Abstract base class exposing dependencies to mixins.
+  - [`lib/features/tasks/presentation/state_management/task_controller.dart`](lib/features/tasks/presentation/state_management/task_controller.dart): CRUD operations (create, update, delete, toggle).
+  - [`lib/features/tasks/presentation/state_management/category_controller.dart`](lib\features\categories\presentation\state_management\category_controller.dart): Category management with `getSortedCategories()` method.
 - Controller Helpers:
-  - [`lib/features/tasks/controllers/helpers/task_sorting_helper.dart`](lib/features/tasks/controllers/helpers/task_sorting_helper.dart): Smart sorting logic (urgent → high priority → normal).
+  - [`lib/features/tasks/presentation/state_management/helpers/task_sorting_helper.dart`](lib\features\tasks\presentation\utils\task_sorting_helper.dart): Smart sorting logic (urgent → high priority → normal).
 - View Helpers:
-  - [`lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart`](lib/features/tasks/views/widgets/helpers/category_scroll_helper.dart): Scroll-to-category navigation logic.
-- UI: [`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart)
+  - [`lib/features/tasks/presentation/widgets/helpers/category_scroll_helper.dart`](lib/features/tasks/presentation/widgets/helpers/category_scroll_helper.dart): Scroll-to-category navigation logic.
+- UI: [`lib/features/tasks/presentation/tasks_screen.dart`](lib\features\tasks\presentation\pages\tasks_screen.dart)
 - Widgets:
-  - [`lib/features/tasks/views/widgets/task_tile.dart`](lib/features/tasks/views/widgets/task_tile.dart)
-  - [`lib/features/tasks/views/widgets/task_search_bar.dart`](lib/features/tasks/views/widgets/task_search_bar.dart)
+  - [`lib/features/tasks/presentation/widgets/tiles/task_item.dart`](lib/features/tasks/presentation/widgets/tiles/task_item.dart)
+  - [`lib/features/tasks/presentation/widgets/sections/tasks_header.dart`](lib/features/tasks/presentation/widgets/sections/tasks_header.dart)
   - Task editor functionality is in the **`task_editor`** feature (`lib/features/task_editor/`): `task_editor_dialog.dart` (dialog wrapper), `task_editor_sheet.dart` (main editor UI), and related widgets.
 
 ### How Tasks work
@@ -794,9 +864,9 @@ The TaskController is split across three files to keep each file focused:
 
 | File | Purpose |
 |------|---------|
-| [`task_controller_base.dart`](lib/features/tasks/controllers/task_controller_base.dart) | Abstract class defining dependencies (repo, syncService, etc.) |
-| [`task_crud_mixin.dart`](lib/features/tasks/controllers/task_crud_mixin.dart) | CRUD operations ([`createTask:L12`](lib/features/tasks/controllers/task_crud_mixin.dart#L12), [`updateTask:L49`](lib/features/tasks/controllers/task_crud_mixin.dart#L49), [`deleteTask:L82`](lib/features/tasks/controllers/task_crud_mixin.dart#L82), [`toggleCompleted:L96`](lib/features/tasks/controllers/task_crud_mixin.dart#L96)) |
-| [`task_controller.dart`](lib/features/tasks/controllers/task_controller.dart) | Main controller combining both, plus filters/queries/lifecycle ([`L15`](lib/features/tasks/controllers/task_controller.dart#L15)) |
+| [`task_controller_base.dart`](lib/features/tasks/presentation/state_management/task_controller.dart) | Abstract class defining dependencies (repo, syncService, etc.) |
+| [`task_crud_mixin.dart`](lib/features/tasks/presentation/state_management/task_controller.dart) | CRUD operations ([`createTask:L12`](lib/features/tasks/presentation/state_management/task_controller.dart#L12), [`updateTask:L49`](lib/features/tasks/presentation/state_management/task_controller.dart#L49), [`deleteTask:L82`](lib/features/tasks/presentation/state_management/task_controller.dart#L82), [`toggleCompleted:L96`](lib/features/tasks/presentation/state_management/task_controller.dart#L96)) |
+| [`task_controller.dart`](lib/features/tasks/presentation/state_management/task_controller.dart) | Main controller combining both, plus filters/queries/lifecycle ([`L15`](lib/features/tasks/presentation/state_management/task_controller.dart#L15)) |
 
 **Why this pattern?**
 
@@ -823,15 +893,15 @@ For a detailed technical explanation with code examples, see [`technical_concept
 
 **Key files:**
 
-- Models: [`lib/features/reminders/models/reminder.dart`](lib/features/reminders/models/reminder.dart)
-- Controller: [`lib/features/reminders/controllers/reminder_controller.dart`](lib/features/reminders/controllers/reminder_controller.dart)
-- UI: [`lib/features/reminders/views/reminders_screen.dart`](lib/features/reminders/views/reminders_screen.dart)
+- Models: [`lib/features/reminders/models/reminder.dart`](lib\features\reminders\data\models\reminder.dart)
+- Controller: [`lib/features/reminders/presentation/state_management/reminder_controller.dart`](lib/features/reminders/presentation/state_management/reminder_controller.dart)
+- UI: [`lib/features/reminders/presentation/reminders_screen.dart`](lib\features\reminders\presentation\pages\reminders_screen.dart)
 - Notification scheduling: [`lib/core/services/notifications/notification_service.dart`](lib/core/services/notifications/notification_service.dart)
 
 ### How Reminders work
 
-- Creating/updating schedules a local notification via [`ReminderController.create()`](lib/features/reminders/controllers/reminder_controller.dart#L81) and [`update()`](lib/features/reminders/controllers/reminder_controller.dart#L107).
-- Completing/deleting cancels the scheduled notification via [`complete()`](lib/features/reminders/controllers/reminder_controller.dart#L136) and [`delete()`](lib/features/reminders/controllers/reminder_controller.dart#L130).
+- Creating/updating schedules a local notification via [`ReminderController.create()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L81) and [`update()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L107).
+- Completing/deleting cancels the scheduled notification via [`complete()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L136) and [`delete()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L130).
 
 **Scheduling a reminder notification (typical shape):**
 
@@ -849,20 +919,21 @@ To ensure notifications are delivered reliably (especially on Samsung/Android 12
 
 1. **Primary (Exact)**: `zonedSchedule` (AlarmManager)
     - Used for exact notification timing.
-    - Works best when the app is running or device is standard Android.
+    - `ScheduledNotificationReceiver` fires even when the app is terminated.
+    - This is the authoritative delivery path; Layers 2 and 3 defer to it.
 2. **Secondary (Foreground Accuracy)**: In-App Timer
-    - `ReminderTimerService` runs a periodic timer while the app is open.
-    - Checks for due reminders and triggers [`showNow()`](lib/core/services/notifications/notification_service.dart#L111) immediately.
-    - Ensures 100% reliability while the user is using the app.
+    - `ReminderTimerService` schedules a `Timer` for the next upcoming reminder.
+    - Only fires **future** reminders (past-due reminders are skipped because Layer 1 already handled them).
+    - The in-memory `_firedReminderIds` set prevents duplicate delivery within the same app session.
 3. **Tertiary (Background Safety Net)**: `Workmanager`
     - Runs every ~15 minutes (Android minimum for periodic background jobs).
-    - **Data Flow**: `Workmanager` → [`workmanagerCallbackDispatcher`](lib/core/services/notifications/workmanager_dispatcher.dart) → Initialize Hive (Read-Only) → Check Due Reminders → Trigger `NotificationService.showNow`.
-    - Catches any reminders that were missed by the OS alarm manager (e.g. if the app was killed).
+    - **Data Flow**: `Workmanager` → [`workmanagerCallbackDispatcher`](lib/features/reminders/data/services/reminder_workmanager_callback.dart) → Initialize Hive (Read-Only) → Check Due Reminders → Trigger `NotificationService.showNow`.
+    - Only fires reminders that are **2–46 minutes** past due (the 2-minute floor avoids duplicating reminders that Layer 1 just delivered).
 
 **Workmanager dispatcher entry (high-level skeleton):**
 
 ```dart
-// lib/core/services/notifications/workmanager_dispatcher.dart (shape only)
+// lib/features/reminders/data/services/reminder_workmanager_callback.dart (shape only)
 @pragma('vm:entry-point')
 void workmanagerCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
@@ -886,7 +957,7 @@ At a high level:
 |-------|----------------|----------------|
 | **Data** | Store queued operations + sync metadata | [`SyncOperation`](lib/core/data/sync_queue.dart), [`SyncMetadata`](lib/core/data/sync_metadata.dart), [`SyncOperationAdapter`](lib/core/data/sync_operation_adapter.dart) |
 | **Engine** | Push local → Firestore, pull remote → Hive, detect conflicts | [`SyncService`](lib/core/services/sync/sync_service.dart) |
-| **Producers** | Enqueue operations when entities change | [`TaskController`](lib/features/tasks/controllers/task_controller.dart), [`NoteController`](lib/features/notes/controllers/note_controller.dart), [`ReminderController`](lib/features/reminders/controllers/reminder_controller.dart) |
+| **Producers** | Enqueue operations when entities change | [`TaskController`](lib/features/tasks/presentation/state_management/task_controller.dart), [`NoteController`](lib/features/notes/presentation/state_management/note_controller.dart), [`ReminderController`](lib/features/reminders/presentation/state_management/reminder_controller.dart) |
 | **Consumers** | Surface conflicts to the user | [`SyncController`](lib/features/sync/presentation/state_management/sync_controller.dart) (conflicts exposed for future UI) |
 
 ---
@@ -998,7 +1069,7 @@ final snap = await q.get();
 
 #### A. Local Write → Enqueue Operation
 
-Controllers (e.g. [`TaskController`](lib/features/tasks/controllers/task_controller.dart), [`NoteController`](lib/features/notes/controllers/note_controller.dart)) enqueue sync operations when entities change:
+Controllers (e.g. [`TaskController`](lib/features/tasks/presentation/state_management/task_controller.dart), [`NoteController`](lib/features/notes/presentation/state_management/note_controller.dart)) enqueue sync operations when entities change:
 
 ```dart
 final op = SyncOperation(
@@ -1065,7 +1136,7 @@ final snapshots = await _firestore
 
 `_applyRemoteNote`:
 
-1. Loads the local [`Note`](lib/features/notes/models/note.dart) (if any) by `id`.
+1. Loads the local [`Note`](lib\features\notes\data\models\note.dart) (if any) by `id`.
 2. Compares `remote.updatedAt` vs local `lastSyncedAt` + `isDirty` via `NoteConflictDetector`.
 3. Either:
    - Applies the remote update directly (no conflict), or
@@ -1096,7 +1167,7 @@ This covers the common case where a user only edits from one device at a time.
 If `TaskConflictDetector` or `NoteConflictDetector` determines that the user has **unsynced local changes** (`isDirty == true`) and there is a newer remote version (`remote.updatedAt > local.lastSyncedAt`), we treat this as a conflict. `SyncService` does **not** overwrite local data in this case. Instead it:
 
 1. Builds a `SyncConflict<T>` (one per entity).
-2. Emits it on a `Stream<List<SyncConflict<T>>>` managed by [`SyncController`](lib/features/sync/controllers/sync_controller.dart) (for notes, tasks, etc.).
+2. Emits it on a `Stream<List<SyncConflict<T>>>` managed by [`SyncController`](lib/features/sync/presentation/state_management/sync_controller.dart) (for notes, tasks, etc.).
 3. Leaves both copies intact until the user decides.
 
 #### Conflict Resolution (Notes / Tasks)
@@ -1181,220 +1252,91 @@ In all cases:
 
 This is what enables Nexus to behave like a **first-class offline app** while still keeping data in sync across devices.
 
-## 9.4 Notes (Rich text + markdown + inline voice notes)
+## 9.4 Notes (rich text + markdown + attachments)
 
-### Notes Architecture
+### Notes architecture (current)
 
-**Key files:**
+**Core files:**
 
-- Models:
-  - [`lib/features/notes/models/note.dart`](lib/features/notes/models/note.dart)
-  - [`lib/features/notes/models/note_attachment.dart`](lib/features/notes/models/note_attachment.dart)
-- Controller:
-  - [`lib/features/notes/controllers/note_controller.dart`](lib/features/notes/controllers/note_controller.dart)
-- UI:
-  - [`lib/features/notes/views/notes_list_screen.dart`](lib/features/notes/views/notes_list_screen.dart): List of all notes.
-  - [`lib/features/notes/views/widgets/note_tile.dart`](lib/features/notes/views/widgets/note_tile.dart): Single note card + preview text.
-  - [`lib/features/notes/views/note_editor_screen.dart`](lib/features/notes/views/note_editor_screen.dart): Editor screen coordinating rich text and markdown.
-  - [`lib/features/notes/views/editor/markdown_editor_area.dart`](lib/features/notes/views/editor/markdown_editor_area.dart): Markdown editor + preview (tabs/split).
-  - [`lib/features/notes/views/editor/voice_notes_section.dart`](lib/features/notes/views/editor/voice_notes_section.dart): Voice notes section in the editor.
-- Helpers:
-  - [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart): RTL-aware text rendering.
-  - [`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart): Voice note playback/recording.
+- Models / repo
+  - [`lib/features/notes/data/models/note.dart`](lib/features/notes/data/models/note.dart)
+  - [`lib/features/notes/data/models/note_attachment.dart`](lib/features/notes/data/models/note_attachment.dart)
+  - [`lib/features/notes/data/repositories/note_repository_impl.dart`](lib/features/notes/data/repositories/note_repository_impl.dart)
+- Controller
+  - [`lib/features/notes/presentation/state_management/note_controller.dart`](lib/features/notes/presentation/state_management/note_controller.dart)
+- Screens / widgets
+  - [`lib/features/notes/presentation/pages/notes_list_screen.dart`](lib/features/notes/presentation/pages/notes_list_screen.dart)
+  - [`lib/features/notes/presentation/widgets/tiles/note_tile.dart`](lib/features/notes/presentation/widgets/tiles/note_tile.dart)
+  - [`lib/features/notes/presentation/pages/note_editor_screen.dart`](lib/features/notes/presentation/pages/note_editor_screen.dart)
+  - [`lib/features/notes/presentation/widgets/editor/note_editor_view.dart`](lib/features/notes/presentation/widgets/editor/note_editor_view.dart)
+  - [`lib/features/notes/presentation/widgets/editor/note_editor_app_bar.dart`](lib/features/notes/presentation/widgets/editor/note_editor_app_bar.dart)
+  - [`lib/features/notes/presentation/widgets/editor/note_editor_overflow_menu.dart`](lib/features/notes/presentation/widgets/editor/note_editor_overflow_menu.dart)
+  - [`lib/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart`](lib/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart)
+  - [`lib/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart`](lib/features/notes/presentation/widgets/editor/markdown/markdown_editor_area.dart)
+  - [`lib/features/notes/presentation/widgets/editor/voice/voice_notes_section.dart`](lib/features/notes/presentation/widgets/editor/voice/voice_notes_section.dart)
+  - [`lib/features/notes/presentation/widgets/editor/voice/voice_note_item.dart`](lib/features/notes/presentation/widgets/editor/voice/voice_note_item.dart)
+  - [`lib/features/notes/presentation/widgets/editor/note_editor_dialogs.dart`](lib/features/notes/presentation/widgets/editor/note_editor_dialogs.dart)
+- Services
+  - [`lib/core/services/note_embed_service.dart`](lib/core/services/note_embed_service.dart)
+  - [`lib/core/services/storage/google_drive_service.dart`](lib/core/services/storage/google_drive_service.dart)
 
-At a high level, the Notes feature is split into three layers:
+### Root navigator + provider scope
 
-| Layer | Responsibility | Key Components |
-|-------|----------------|----------------|
-| **Model** | Persistence, sync payloads | [`Note`](lib/features/notes/models/note.dart), [`NoteAttachment`](lib/features/notes/models/note_attachment.dart), `NoteAdapter` |
-| **Controller** | Business logic, sync queue, search/filter | [`NoteController`](lib/features/notes/controllers/note_controller.dart) |
-| **View** | Editing UI, markdown/rich text translation, voice UI | [`NoteEditorScreen`](lib/features/notes/views/note_editor_screen.dart), [`MarkdownEditorArea`](lib/features/notes/views/editor/markdown_editor_area.dart), [`VoiceNotesSection`](lib/features/notes/views/editor/voice_notes_section.dart) |
+Notes open through [`NoteEditorScreen.push`](lib/features/notes/presentation/pages/note_editor_screen.dart), which uses `Navigator.of(context, rootNavigator: true)`.
+To avoid provider-scope loss on the root route, the screen uses
+`wrapWithRequiredProviders(...)` to re-provide:
 
-The **controller** never needs to know whether the user is in rich text or markdown mode; it always receives a `QuillController` and serializes its Delta to JSON. All mode-specific logic lives in the editor view layer.
+- `NoteController`
+- `CategoryController`
+- `GoogleDriveService`
 
----
+It also wraps the route with `Theme(data: Theme.of(context), ...)` so theme/localization are preserved when pushed above the shell.
 
-### 1. Data Model (`Note`)
+### Current note editor UX
 
-The [`Note`](lib/features/notes/models/note.dart) model is a Hive object and the single source of truth for note data. Key fields:
+The editor is coordinated by [`NoteEditorView`](lib/features/notes/presentation/widgets/editor/note_editor_view.dart):
 
-- `id`, `title`, `contentDeltaJson` (Quill Delta JSON string), `createdAt`, `updatedAt`
-- `attachments` (list of `NoteAttachment`), `categoryId`
-- `isMarkdown` (view hint: `false` = rich text, `true` = markdown)
-- Sync fields: `isDirty`, `lastSyncedAt`, `syncStatus`, `lastModifiedByDevice`
+- Supports **rich text** (Quill) and **markdown** modes.
+- Markdown mode and markdown layout are controlled from the **top-right overflow menu**.
+- Overflow menu is an **anchored overlay dropdown** (not bottom sheet), implemented in `note_editor_overflow_menu.dart`.
+- Voice section visibility is **toggleable** from the overflow menu (`showVoiceNotes`).
+- App bar is tuned for dark mode with **AMOLED black** and a thin separator.
+- Tapping title toggles inline category selector under title (`showCategoryPicker`).
+- Rich-text toolbar is **draggable** between top and bottom (`toolbarAtTop`) in `NoteEditorBody`.
+- Deleting from editor now pops editor and routes to notes list (`/notes`).
 
-**Key points:**
+### Attachments and voice notes
 
-- `contentDeltaJson` is the **only** content field. It always stores a Quill Delta JSON string.
-- `isMarkdown` is a **view hint**:
-  - `false`: interpret `contentDeltaJson` as rich text.
-  - `true`: interpret `contentDeltaJson` as a plain-text markdown string wrapped in a single Delta insert.
-- Sync uses `Note.toFirestoreJson()` / `Note.fromFirestoreJson()` and **never branches on `isMarkdown`**.
+Voice attachments are rendered by `VoiceNotesSection` and `VoiceNoteItem`:
 
-Firestore snapshot example for a markdown note:
+- If local file exists: play directly.
+- If local file missing but Drive id exists: download via `GoogleDriveService`,
+  cache local URI, then play.
+- Playback controls per item include:
+  - play/pause
+  - seek bar
+  - skip back/forward 10 seconds
+- Drive auth recovery path is exposed via snackbar action (`Access Drive`).
 
-```jsonc
-{
-  "id": "note-123",
-  "title": "Release plan",
-  "contentDeltaJson": "[{\"insert\":\"# v1.2.0\\n- [x] Feature A\\n\"}]",
-  "isMarkdown": true,
-  "createdAt": "...",
-  "updatedAt": "...",
-  "lastModifiedByDevice": "device-abc",
-  "attachments": [],
-  "categoryId": null
-}
-```
+### Quill localization requirement
 
-This keeps tooling simple: every downstream consumer just deserializes a Delta and calls `.toPlainText()` if it needs search/preview text.
+Quill toolbar buttons require `FlutterQuillLocalizations.delegate`. Nexus now
+registers this in both:
 
----
+- [`lib/main.dart`](lib/main.dart)
+- [`lib/app/app.dart`](lib/app/app.dart)
 
-### 2. Editor Coordination (Rich Text + Markdown)
+This is important because note editor routes can be pushed on the root navigator.
 
-[`NoteEditorScreen`](lib/features/notes/views/note_editor_screen.dart) is a **coordinator** that owns:
+### Tests that guard this behavior
 
-- `QuillController? _controller` — always present, regardless of mode.
-- `TextEditingController _markdownController` — used only in markdown mode.
-- `bool _isMarkdown` — local UI state, mirrored to `note.isMarkdown` on toggle.
-- `MarkdownLayout _markdownLayout` — whether markdown is in tabs or split view.
-
-**Initialization flow:**
-
-1. `NoteEditorScreen` loads the `Note` from `NoteController.byId(noteId)`.
-2. It builds `_controller` from `note.contentDeltaJson`:
-   - If parsing fails, it falls back to a blank document.
-3. It reads `note.isMarkdown`:
-   - If `false` → stays in rich text mode.
-   - If `true` → populates `_markdownController.text` from `_controller.document.toPlainText()`.
-
-**Runtime mode switching:**
-
-When the user toggles "Markdown mode":
-
-- **Rich Text → Markdown**:
-  - `_isMarkdown` is set to `true` and `note.isMarkdown = true`.
-  - If `_markdownController.text` is empty, it is initialized from `_controller.document.toPlainText()`.
-  - The Quill toolbar is hidden and `MarkdownEditorArea` is displayed instead.
-- **Markdown → Rich Text** (conceptually):
-  - Currently, the primary transition back happens on **Save** (see below) by converting markdown text into a simple Quill document.
-
-**Saving flow (central invariant):**
-
-All saves go through `NoteController.saveEditor(controller: QuillController)`. Inside `NoteEditorScreen`, before this call:
-
-- If `_isMarkdown == true`: A temporary `quill.Document` is created, the entire markdown text is inserted as a single block, and `_controller` is replaced with a new `QuillController` wrapping this document.
-- If `_isMarkdown == false`: `_controller` is the live rich text document.
-
-`NoteController.saveEditor` itself is markdown-agnostic:
-
-- Serializes `controller.document.toDelta().toJson()` to `contentDeltaJson`.
-- Updates `updatedAt`, `lastModifiedByDevice`, `isDirty`, `syncStatus`.
-- Saves the note in Hive and enqueues a `SyncOperation` for push to Firestore.
-
-This gives a clean separation:
-
-- **View layer** handles translation between rich text and markdown.
-- **Controller + data layer** only understand Quill Deltas and JSON.
-
----
-
-### 3. Markdown Editor UX (`MarkdownEditorArea`)
-
-[`MarkdownEditorArea`](lib/features/notes/views/editor/markdown_editor_area.dart) is a reusable widget that handles **editing + previewing markdown**, accepting a `TextEditingController` and a `MarkdownLayout` (tabs or split). It supports two layouts:
-
-| Layout | UX | Implementation |
-|--------|----|----------------|
-| **Tabs** | Top `TabBar` with `Edit` / `Preview`, body switches between editor and preview | `DefaultTabController` + `NestedScrollView` so the TabBar scrolls off as you scroll content |
-| **Split** | Side-by-side editor + preview with linked scrolling | Two `Expanded` columns with linked `ScrollController`s |
-
-**Live preview:**
-
-- `MarkdownEditorArea` listens to `controller.addListener(_onMarkdownChanged)`.
-- On any text change, it calls `setState()`, causing the preview to re-render.
-- No save is required to see markdown changes.
-
-**Error handling:**
-
-- Markdown rendering is wrapped in a `try/catch`.
-- If `flutter_markdown` throws (e.g. due to malformed input or an unsupported construct):
-  - A **Snackbar** is shown once per editor session with a tailored hint (e.g. check image URLs or link syntax).
-  - The preview falls back to a plain-text view of the markdown, so the user never sees a crash or blank screen.
-  - The full error + stack trace are printed to the console for debugging.
-
-**RTL awareness:**
-
-- The widget inspects `controller.text` and uses the same rune-based `_looksArabic` heuristic as the rich text editor.
-- Directionality is applied to both the editor and preview areas, ensuring correct layout for RTL languages.
-
----
-
-### 4. Note List & Preview (`NoteTile`)
-
-The notes list screen shows a preview for each note via [`NoteTile`](lib/features/notes/views/widgets/note_tile.dart):
-
-- Uses `Note.title ?? 'Untitled'` as the primary label.
-- Shows a relative timestamp (e.g. `5m ago`, `Yesterday`).
-- Extracts a plain-text preview from `contentDeltaJson` by iterating Delta ops and concatenating `insert` strings.
-- If `note.isMarkdown == true`, it shows a small `"MD"` badge next to the title so markdown notes are visually distinct.
-
-This works for both rich text and markdown because:
-
-- Rich text Deltas carry plain text in `insert` operations alongside formatting attributes.
-- Markdown notes store the raw markdown string as a single `insert` op, so preview text is trivially the markdown source (flattened and trimmed).
-
-Search in `NoteController.visibleNotes` also relies on this plain-text extraction, so searching works the same regardless of mode.
-
----
-
-### 5. Attachment Pipeline (Voice & Images)
-
-Attachments (images/audio) are **related entities**, not inlined payloads inside the Delta JSON.
-
-**Components:**
-
-- [`NoteEmbedService`](lib/core/services/note_embed_service.dart): Platform-specific recording/picking and local playback.
-- [`AttachmentStorageService`](lib/core/services/storage/attachment_storage_service.dart): Local filesystem layout (`ApplicationDocuments/attachments/...`).
-- [`GoogleDriveService`](lib/core/services/storage/google_drive_service.dart): Cloud mirror for attachments.
-- [`NoteAttachment`](lib/features/notes/models/note_attachment.dart): Lightweight metadata object stored on the `Note`.
-
-**Offline-first pipeline:**
-
-1. **User action**: user taps "Record Voice Note" in the editor.
-2. **Local write (`NoteEmbedService`)**:
-   - Audio is recorded to a temporary cache path.
-   - File is moved into permanent storage: `attachments/notes/{noteId}/{uuid}.m4a`.
-3. **Entity update (`NoteController.addVoiceAttachment`)**:
-   - A `NoteAttachment` is created with:
-     - `localUri` → file path in app documents directory.
-     - `driveFileId` → `null` initially.
-     - `uploaded` / `synced` flags set to `false`.
-   - `note.attachments` is updated and saved to Hive.
-   - **UI immediately shows the new attachment** in `VoiceNotesSection` (optimistic UI).
-4. **Background upload (`GoogleDriveService`)**:
-   - Controller kicks off an async upload if:
-     - The user is authenticated with Drive.
-     - The local file still exists.
-   - On success:
-     - `attachment.driveFileId` is populated.
-     - `uploaded: true` is saved back to Hive.
-   - On failure (offline or transient error):
-     - Attachment stays present locally.
-     - A future sync/upload pass can retry using the metadata stored in the note.
-
-**Why keep attachments separate from `contentDeltaJson`?**
-
-- **Performance**: Large binaries never bloat the Delta JSON; notes stay small and fast to load/search.
-- **Flexibility**: We can change the cloud backend (Drive → S3, etc.) without migrating note content.
-- **Reliability**: Sync conflicts only deal with structured metadata, not huge blobs.
-
-In the UI, [`VoiceNotesSection`](lib/features/notes/views/editor/voice_notes_section.dart) simply receives the `Note` and a `NoteEmbedService` instance, and renders:
-
-- A header row with icon + count.
-- A list of [`VoiceNoteItem`](lib/features/notes/views/editor/voice_note_item.dart) widgets, each wired to play via `NoteEmbedService.playLocal(localUri)`.
-
-This keeps the editor layout declarative, while all platform-specific audio logic stays in `NoteEmbedService`.
+- [`test/widget/notes/note_editor_screen_push_test.dart`](test/widget/notes/note_editor_screen_push_test.dart):
+  verifies root-navigator editor route has required providers; includes Hive setup
+  for categories box and adapters.
+- [`test/widget/screens/imperative_route_provider_test.dart`](test/widget/screens/imperative_route_provider_test.dart):
+  covers similar root-navigator provider re-provisioning pattern.
+- [`test/widget/screens/shell_screen_provider_test.dart`](test/widget/screens/shell_screen_provider_test.dart):
+  smoke-tests shell screens under a realistic `MultiProvider` stack.
 
 ## 9.5 Habits
 
@@ -1402,11 +1344,11 @@ This keeps the editor layout declarative, while all platform-specific audio logi
 
 **Key files:**
 
-- Models: [`lib/features/habits/models/habit.dart`](lib/features/habits/models/habit.dart), [`lib/features/habits/models/habit_log.dart`](lib/features/habits/models/habit_log.dart)
-- Controller: [`lib/features/habits/controllers/habit_controller.dart`](lib/features/habits/controllers/habit_controller.dart)
-- UI: [`lib/features/habits/views/habits_screen.dart`](lib/features/habits/views/habits_screen.dart), [`habit_details_screen.dart`](lib/features/habits/views/habit_details_screen.dart)
+- Models: [`lib/features/habits/models/habit.dart`](lib\features\habits\data\models\habit.dart), [`lib/features/habits/models/habit_log.dart`](lib\features\habits\data\models\habit_log.dart)
+- Controller: [`lib/features/habits/presentation/state_management/habit_controller.dart`](lib/features/habits/presentation/state_management/habit_controller.dart)
+- UI: [`lib/features/habits/presentation/habits_screen.dart`](lib\features\habits\presentation\pages\habits_screen.dart), [`habit_details_screen.dart`](lib\features\habits\presentation\pages\habit_details_screen.dart)
 - Widgets:
-  - [`lib/features/habits/views/widgets/habit_card.dart`](lib/features/habits/views/widgets/habit_card.dart): Styled habit card with keyword-based icon/color mapping.
+  - [`lib/features/habits/presentation/widgets/habit_card.dart`](lib/features/habits/presentation/widgets/habit_card.dart): Styled habit card with keyword-based icon/color mapping.
 
 ### How streaks work
 
@@ -1419,14 +1361,14 @@ This keeps the editor layout declarative, while all platform-specific audio logi
 
 **Key files:**
 
-- Controller: [`lib/features/analytics/controllers/analytics_controller.dart`](lib/features/analytics/controllers/analytics_controller.dart)
-- UI: [`lib/features/analytics/views/analytics_screen.dart`](lib/features/analytics/views/analytics_screen.dart)
-- Utils: [`lib/features/analytics/utils/analytics_utils.dart`](lib/features/analytics/utils/analytics_utils.dart)
+- Controller: [`lib/features/analytics/presentation/state_management/analytics_controller.dart`](lib/features/analytics/presentation/state_management/analytics_controller.dart)
+- UI: [`lib/features/analytics/presentation/analytics_screen.dart`](lib\features\analytics\presentation\pages\analytics_screen.dart)
+- Utils: [`lib/features/analytics/utils/analytics_utils.dart`](lib\features\analytics\presentation\utils\analytics_utils.dart)
 - Widgets:
-  - [`lib/features/analytics/views/widgets/tasks_pie_chart.dart`](lib/features/analytics/views/widgets/tasks_pie_chart.dart)
-  - [`lib/features/analytics/views/widgets/habits_progress_circle.dart`](lib/features/analytics/views/widgets/habits_progress_circle.dart)
-  - [`lib/features/analytics/views/widgets/legend_item.dart`](lib/features/analytics/views/widgets/legend_item.dart)
-  - [`lib/features/analytics/views/widgets/quick_stat_tile.dart`](lib/features/analytics/views/widgets/quick_stat_tile.dart)
+  - [`lib/features/analytics/presentation/widgets/tasks_pie_chart.dart`](lib/features/analytics/presentation/widgets/tasks_pie_chart.dart)
+  - [`lib/features/analytics/presentation/widgets/habits_progress_circle.dart`](lib/features/analytics/presentation/widgets/habits_progress_circle.dart)
+  - [`lib/features/analytics/presentation/widgets/legend_item.dart`](lib/features/analytics/presentation/widgets/legend_item.dart)
+  - [`lib/features/analytics/presentation/widgets/quick_stat_tile.dart`](lib/features/analytics/presentation/widgets/quick_stat_tile.dart)
 
 Provides basic KPIs and a simple pie chart.
 
@@ -1436,8 +1378,8 @@ Provides basic KPIs and a simple pie chart.
 
 **Key files:**
 
-- Controller: [`lib/features/calendar/controllers/calendar_controller.dart`](lib/features/calendar/controllers/calendar_controller.dart)
-- UI: [`lib/features/calendar/views/calendar_screen.dart`](lib/features/calendar/views/calendar_screen.dart)
+- Controller: [`lib/features/calendar/presentation/state_management/calendar_controller.dart`](lib/features/calendar/presentation/state_management/calendar_controller.dart)
+- UI: [`lib/features/calendar/presentation/calendar_screen.dart`](lib\features\calendar\presentation\pages\calendar_screen.dart)
 - Device calendar wrapper: [`lib/core/services/platform/device_calendar_service.dart`](lib/core/services/platform/device_calendar_service.dart)
 
 Calendar overlays tasks (due dates) and reminders (scheduled times).
@@ -1448,22 +1390,22 @@ Calendar overlays tasks (due dates) and reminders (scheduled times).
 
 **Key files:**
 
-- Controller: [`lib/features/settings/controllers/settings_controller.dart`](lib/features/settings/controllers/settings_controller.dart)
-- Connectivity Helper: [`lib/features/settings/controllers/settings_connectivity_helper.dart`](lib/features/settings/controllers/settings_connectivity_helper.dart)
-- Connectivity Utils: [`lib/features/settings/controllers/connectivity_status_utils.dart`](lib/features/settings/controllers/connectivity_status_utils.dart)
-- State Mixin: [`lib/features/settings/controllers/settings_connectivity_mixin.dart`](lib/features/settings/controllers/settings_connectivity_mixin.dart)
-- UI: [`lib/features/settings/views/settings_screen.dart`](lib/features/settings/views/settings_screen.dart)
-- Sections (organized under [`lib/features/settings/views/sections/`](lib/features/settings/views/sections/)):
-  - [`lib/features/settings/views/sections/theme_section.dart`](lib/features/settings/views/sections/theme_section.dart)
-  - [`lib/features/settings/views/sections/task_management_section.dart`](lib/features/settings/views/sections/task_management_section.dart)
-  - [`lib/features/settings/views/sections/sync_section.dart`](lib/features/settings/views/sections/sync_section.dart)
-  - [`lib/features/settings/views/sections/connectivity_status_section.dart`](lib/features/settings/views/sections/connectivity_status_section.dart)
-  - [`lib/features/settings/views/sections/drive_access_section.dart`](lib/features/settings/views/sections/drive_access_section.dart)
-  - [`lib/features/settings/views/sections/permissions_section.dart`](lib/features/settings/views/sections/permissions_section.dart)
-- Section Widgets: [`lib/features/settings/views/sections/widgets/connectivity_status_tile.dart`](lib/features/settings/views/sections/widgets/connectivity_status_tile.dart)
+- Controller: [`lib/features/settings/presentation/state_management/settings_controller.dart`](lib/features/settings/presentation/state_management/settings_controller.dart)
+- Connectivity Helper: [`lib/features/settings/presentation/state_management/settings_connectivity_helper.dart`](lib/features/settings/presentation/state_management/settings_connectivity_helper.dart)
+- Connectivity Utils: [`lib/features/settings/presentation/state_management/connectivity_status_utils.dart`](lib/features/settings/presentation/state_management/connectivity_status_utils.dart)
+- State Mixin: [`lib/features/settings/presentation/state_management/settings_connectivity_mixin.dart`](lib/features/settings/presentation/state_management/settings_connectivity_mixin.dart)
+- UI: [`lib/features/settings/presentation/settings_screen.dart`](lib\features\settings\presentation\pages\settings_screen.dart)
+- Sections (organized under [`lib/features/settings/presentation/widgets/sections/`](lib/features/settings/presentation/widgets/sections/)):
+  - [`lib/features/settings/presentation/widgets/sections/theme_section.dart`](lib\features\settings\presentation\widgets\sections\theme_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/task_management_section.dart`](lib\features\settings\presentation\widgets\sections\task_management_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/sync_section.dart`](lib\features\settings\presentation\widgets\sections\sync_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/connectivity_status_section.dart`](lib\features\settings\presentation\widgets\sections\connectivity_status_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/drive_access_section.dart`](lib\features\settings\presentation\widgets\sections\drive_access_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/permissions_section.dart`](lib\features\settings\presentation\widgets\sections\permissions_section.dart)
+- Section Widgets: [`lib/features/settings/presentation/widgets/sections/widgets/connectivity_status_tile.dart`](lib\features\settings\presentation\widgets\sections\connectivity_status_tile.dart)
 - Reusable Widgets:
-  - [`lib/features/settings/views/widgets/settings_section.dart`](lib/features/settings/views/widgets/settings_section.dart): Styled section wrapper with title and NexusCard.
-  - [`lib/features/settings/views/widgets/settings_header.dart`](lib/features/settings/views/widgets/settings_header.dart): Header with title text and profile card.
+  - [`lib/features/settings/presentation/widgets/settings_section.dart`](lib/features/settings/presentation/widgets/settings_section.dart): Styled section wrapper with title and NexusCard.
+  - [`lib/features/settings/presentation/widgets/settings_header.dart`](lib/features/settings/presentation/widgets/settings_header.dart): Header with title text and profile card.
 
 Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.
 
@@ -1473,7 +1415,7 @@ Manages the app's visual style, including dynamic color generation.
 
 **Key files**:
 
-- [`lib/features/theme_customization/views/theme_customization_screen.dart`](lib/features/theme_customization/views/theme_customization_screen.dart): UI for selecting colors/modes.
+- [`lib/features/theme_customization/presentation/theme_customization_screen.dart`](lib\features\theme_customization\presentation\pages\theme_customization_screen.dart): UI for selecting colors/modes.
 - [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Defines light/dark theme data.
 
 ## 10. Testing + CI
@@ -1500,7 +1442,7 @@ GitHub Actions workflow is at [`.github/workflows/flutter.yml`](.github/workflow
 2) Add datasources/repositories in `data/` and `repositories/`
 3) Add controller in `controllers/` (`ChangeNotifier`)
 4) Add views in `views/`
-5) Register adapters/open boxes in [`lib/core/data/hive_bootstrap.dart`](lib/core/data/hive_bootstrap.dart)
+5) Register adapters/open boxes in [`lib/core/data/hive_bootstrap.dart`](lib\app\bootstrap\hive_bootstrap.dart)
 6) Wire routes in [`lib/app/router/app_router.dart`](lib/app/router/app_router.dart)
 7) Add/extend tests in `test/`
 
@@ -1644,29 +1586,48 @@ The notification system is critical for reminders. Because Android aggressively 
 - Layer 1 is the ideal path but unreliable on aggressive OEMs.
 - Layer 2 guarantees 100% accuracy while the user is in the app.
 - Layer 3 is a "safety net" that catches anything missed by Layers 1-2.
+- All layers stamp `notifiedAt` on the Hive model after delivery. Workmanager and SmartTimer skip reminders where `notifiedAt` is set, so a dismissed/ignored notification is never re-triggered. Snooze, update (new time), and uncomplete clear `notifiedAt`.
+
+#### Android Reliability Setup
+
+Beyond the three scheduling layers, the following OS-level configurations prevent missed/delayed notifications:
+
+| Concern | Solution | File |
+|---------|----------|------|
+| **Alarm delivery when terminated** | `ScheduledNotificationReceiver` declared in the manifest is the Android `BroadcastReceiver` that fires when a `zonedSchedule` alarm triggers. Without it, alarms only fire while the Flutter engine is alive. | `android/app/src/main/AndroidManifest.xml` |
+| **Alarms lost on reboot** | `ScheduledNotificationBootReceiver` declared in the manifest automatically reschedules `zonedSchedule` alarms (includes vendor-specific `QUICKBOOT` actions for HTC etc.). | `android/app/src/main/AndroidManifest.xml` |
+| **Doze / battery optimization** | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` manifest permission + runtime prompt via `requestBatteryOptimizationExemption()`. On first launch, `BatteryOptimizationFirstLaunchPrompt` (called from `SplashWrapper` post-frame) shows an explanation dialog before the OS prompt; `SharedPreferences` gates it to once. | `AndroidManifest.xml`, `notification_service.dart`, `battery_optimization_dialog.dart`, `battery_optimization_first_launch_prompt.dart`, `splash_wrapper.dart` |
+| **Exact alarm permission (API 31+)** | `SCHEDULE_EXACT_ALARM` + `USE_EXACT_ALARM` in manifest; runtime request in `requestPermissionsIfNeeded()`. | `AndroidManifest.xml`, `notification_service.dart` |
+| **Notification icon** | White-on-transparent `ic_notification.png` in `drawable-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}`. Referenced in `AndroidInitializationSettings` and all `AndroidNotificationDetails`. | `android/app/src/main/res/drawable-*/ic_notification.png`, `notification_service.dart` |
+
+The Settings > Permissions section also exposes a single "Reminders" button that requests both notification permission and battery optimization exemption (with the same explanation dialog).
 
 #### Key Files
 
 | File | Purpose | Line Reference |
 |------|---------|----------------|
 | [`notification_service.dart`](lib/core/services/notifications/notification_service.dart) | Core wrapper for `flutter_local_notifications`. Handles init, permissions, scheduling, and showing immediate notifications. | [Class:L10](lib/core/services/notifications/notification_service.dart#L10) |
+| [`battery_optimization_dialog.dart`](lib/core/services/notifications/battery_optimization_dialog.dart) | Explanation dialog shown before requesting battery optimization exemption. | — |
+| [`battery_optimization_first_launch_prompt.dart`](lib/core/services/notifications/battery_optimization_first_launch_prompt.dart) | One-time first-launch orchestration: prefs flag, exempt check, then dialog + OS request. | Invoked from `SplashWrapper` post-frame only. |
 | [`reminder_notifications.dart`](lib/core/services/notifications/reminder_notifications.dart) | Abstract interface for reminder-specific notification operations (`schedule`, `cancel`, `showNow`). | [L1-17](lib/core/services/notifications/reminder_notifications.dart#L1) |
-| [`workmanager_dispatcher.dart`](lib/core/services/notifications/workmanager_dispatcher.dart) | Top-level callback that Workmanager invokes in the background. Bootstraps Hive, checks due reminders, fires notifications. | [L13](lib/core/services/notifications/workmanager_dispatcher.dart#L13) |
-| [`reminder_timer_service.dart`](lib/features/reminders/services/reminder_timer_service.dart) | In-app Smart Timer service. Finds next due reminder, sleeps exactly until that time, fires, repeats. | [Class:L10](lib/features/reminders/services/reminder_timer_service.dart#L10) |
+| [`workmanager_dispatcher.dart`](lib/features/reminders/data/services/reminder_workmanager_callback.dart) | Top-level callback that Workmanager invokes in the background. Bootstraps Hive, checks due reminders, fires notifications. | [L13](lib/features/reminders/data/services/reminder_workmanager_callback.dart#L13) |
+| [`reminder_timer_service.dart`](lib\features\reminders\data\services\reminder_timer_service.dart) | In-app Smart Timer service. Finds next due reminder, sleeps exactly until that time, fires, repeats. | [Class:L10](lib\features\reminders\data\services\reminder_timer_service.dart) |
 
 #### NotificationService Methods
 
 | Method | Purpose | When Called |
 |--------|---------|-------------|
-| [`initialize()`](lib/core/services/notifications/notification_service.dart#L20) | Sets up plugin, notification channel, and timezone. | App startup (in `completeInitialization`) |
+| [`initialize()`](lib/core/services/notifications/notification_service.dart#L20) | Sets up plugin, notification channel, and timezone. Uses `ic_notification` (white silhouette) as the Android notification icon. | App startup (in `completeInitialization`) |
 | [`requestPermissionsIfNeeded()`](lib/core/services/notifications/notification_service.dart#L46) | Requests notification + exact alarm permissions on Android. | After initialization |
 | [`schedule()`](lib/core/services/notifications/notification_service.dart#L142) | Schedules a notification for a future time using `zonedSchedule`. | When user creates/updates a reminder |
 | [`showNow()`](lib/core/services/notifications/notification_service.dart#L111) | Shows an immediate notification. | Timer service fires, or Workmanager catches a due reminder |
 | [`cancel()`](lib/core/services/notifications/notification_service.dart#L194) | Cancels a scheduled notification by ID. | When reminder is deleted or completed |
+| `isBatteryOptimizationExempt()` | Checks whether the app is already exempt from battery optimization. | Before showing the exemption dialog |
+| `requestBatteryOptimizationExemption()` | Requests the `IGNORE_BATTERY_OPTIMIZATIONS` permission from the OS. | After user accepts the explanation dialog |
 
 #### Smart Timer Strategy (ReminderTimerService)
 
-The [`ReminderTimerService`](lib/features/reminders/services/reminder_timer_service.dart#L10) uses a **Smart Targeted Timer** approach instead of polling:
+The [`ReminderTimerService`](lib\features\reminders\data\services\reminder_timer_service.dart) uses a **Smart Targeted Timer** approach instead of polling:
 
 ```dart
 // Instead of polling every 30 seconds (wastes CPU)...
@@ -1757,7 +1718,7 @@ main.dart
 ### Tasks — lifecycle, lists, and editor
 
 - **User flow**:
-  1. User opens Tasks screen ([`lib/features/tasks/views/tasks_screen.dart`](lib/features/tasks/views/tasks_screen.dart)), which subscribes to `TaskController`.
+  1. User opens Tasks screen ([`lib/features/tasks/presentation/tasks_screen.dart`](lib\features\tasks\presentation\pages\tasks_screen.dart)), which subscribes to `TaskController`.
   2. User taps "Add" or edits an existing task → `showTaskEditorDialog()` (from `task_editor` feature) opens `TaskEditorSheet`.
   3. On save:
      - Controller validates input,
@@ -1777,14 +1738,14 @@ main.dart
 **Where `TaskRepository` lives and how the pipeline works**
 
 - **Repository location & wiring**:
-  - Code: [`lib/features/tasks/models/task_repository.dart`](lib/features/tasks/models/task_repository.dart).
-  - It is provided to the widget tree in [`provider_factory.dart`](lib/features/splash/controllers/provider_factory.dart) as a `Provider<TaskRepository>`, and then injected into `TaskController` via the `_createTaskControllerProvider` factory.
+  - Code: [`lib/features/tasks/domain/repositories/task_repository_interface.dart`](lib/features/tasks/domain/repositories/task_repository_interface.dart).
+  - It is provided to the widget tree in [`provider_factory.dart`](lib/features/splash/presentation/bootstrap/provider_factory.dart) as a `Provider<TaskRepository>`, and then injected into `TaskController` via the `_createTaskControllerProvider` factory.
   - `TaskController` holds a `TaskRepository` instance (`_repo`) and exposes it via the `TaskControllerBase.repo` getter for use in mixins like `TaskCrudMixin`.
 - **Pipeline (Controller → Repository → Local datasource → Hive)**:
   - `TaskController` (and its mixins) only talk to the **repository**:
     - e.g. `repo.getAll()`, `repo.upsert(task)`, `repo.delete(task.id)`.
   - `TaskRepository` is a thin **gateway** that delegates to `TaskLocalDatasource`:
-    - File: [`lib/features/tasks/models/task_local_datasource.dart`](lib/features/tasks/models/task_local_datasource.dart).
+    - File: [`lib/features/tasks/models/task_local_datasource.dart`](lib\features\tasks\data\data_sources\task_local_datasource.dart).
     - Methods like `getAll/getById/put/delete/listenable` encapsulate all Hive box access.
   - `TaskLocalDatasource` is the only place that knows about the **Hive** API:
     - It opens the `tasks` box via `Hive.box<Task>(HiveBoxes.tasks)`.
@@ -1820,7 +1781,7 @@ main.dart
     - Creating/updating the associated `NoteAttachment`,
     - Optionally triggering Drive upload.
 - **RTL-aware text**:
-  - [`lib/features/notes/views/widgets/rtl_aware_text.dart`](lib/features/notes/views/widgets/rtl_aware_text.dart) determines text direction based on content.
+  - [`lib/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart`](lib/features/notes/presentation/widgets/editor/widgets/note_editor_body.dart) determines text direction based on content.
   - UI should use this widget where mixed Arabic/English notes might appear.
 
 ### Habits — logs & streak calculations
@@ -1927,8 +1888,8 @@ The monolithic SyncService has been modularized using the **Strategy Pattern** a
 
 - **Core Orchestrator**: [`SyncService.dart`](lib/core/services/sync/sync_service.dart) (Handles queue & connectivity)
 - **Entity Handlers** (located in their respective features):
-  - `TaskSyncHandler` -> [`lib/features/tasks/sync/`](lib/features/tasks/sync/task_sync_handler.dart)
-  - `NoteSyncHandler` -> [`lib/features/notes/sync/`](lib/features/notes/sync/note_sync_handler.dart)
+  - `TaskSyncHandler` -> [`lib/features/tasks/sync/`](lib\features\tasks\data\sync\task_sync_handler.dart)
+  - `NoteSyncHandler` -> [`lib/features/notes/sync/`](lib\features\notes\data\sync\note_sync_handler.dart)
 - **Reference docs**:
   - [Sync Architecture Overview](lib/docs/REF_SYNC_ARCHITECTURE.md)
   - [Dependency Injection Guide](lib/docs/REF_DEPENDENCY_INJECTION.md)

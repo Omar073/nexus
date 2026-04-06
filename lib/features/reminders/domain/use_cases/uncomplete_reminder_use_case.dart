@@ -27,6 +27,7 @@ class UncompleteReminderUseCase {
       completedAt: null,
       notificationId: reminder.notificationId,
       snoozeMinutes: reminder.snoozeMinutes,
+      notifiedAt: null,
     );
     await _repo.upsert(updated);
     await _enqueueUpsert(updated);

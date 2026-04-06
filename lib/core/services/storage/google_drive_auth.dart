@@ -53,7 +53,7 @@ class GoogleDriveAuth {
     try {
       return await _googleSignIn.isSignedIn();
     } catch (e) {
-      mPrint('Google Sign-In isSignedIn error: $e');
+      mDebugPrint('Google Sign-In isSignedIn error: $e');
       return false;
     }
   }
@@ -62,14 +62,14 @@ class GoogleDriveAuth {
   /// Returns true if sign-in was successful
   Future<bool> signIn() async {
     if (!_isGoogleSignInSupported) {
-      mPrint('Google Sign-In not supported on this platform');
+      mDebugPrint('Google Sign-In not supported on this platform');
       return false;
     }
     try {
       final account = await _googleSignIn.signIn();
       return account != null;
     } catch (e) {
-      mPrint('Google Sign-In error: $e');
+      mDebugPrint('Google Sign-In error: $e');
       return false;
     }
   }
@@ -82,7 +82,7 @@ class GoogleDriveAuth {
       await _googleSignIn.disconnect();
     } catch (e) {
       // Fall back to signOut if disconnect fails
-      mPrint('Disconnect failed, falling back to signOut: $e');
+      mDebugPrint('Disconnect failed, falling back to signOut: $e');
       await _googleSignIn.signOut();
     }
   }

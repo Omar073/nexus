@@ -15,6 +15,7 @@ class ReminderMapper {
       completedAt: r.completedAt,
       notificationId: r.notificationId,
       snoozeMinutes: r.snoozeMinutes,
+      notifiedAt: r.notifiedAt,
     );
   }
 
@@ -29,6 +30,7 @@ class ReminderMapper {
       completedAt: e.completedAt,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
+      notifiedAt: e.notifiedAt,
     );
   }
 }

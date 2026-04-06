@@ -10,4 +10,7 @@ abstract class ReminderRepositoryInterface {
 
   /// Returns Firestore-ready payload for sync enqueue (data layer concern).
   Map<String, dynamic>? getSyncPayload(String id);
+
+  /// Stamps [notifiedAt] on the reminder so duplicate delivery is prevented.
+  Future<void> markNotified(String id);
 }

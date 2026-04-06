@@ -6,7 +6,7 @@ void main() async {
   // Source icon path
   final sourceIcon = File('assets/app_logos/app_icon_black.png');
   if (!await sourceIcon.exists()) {
-    mPrint('Error: Source icon not found at ${sourceIcon.path}');
+    mDebugPrint('Error: Source icon not found at ${sourceIcon.path}');
     exit(1);
   }
 
@@ -14,7 +14,7 @@ void main() async {
   final sourceBytes = await sourceIcon.readAsBytes();
   final sourceImage = img.decodeImage(sourceBytes);
   if (sourceImage == null) {
-    mPrint('Error: Could not decode source image');
+    mDebugPrint('Error: Could not decode source image');
     exit(1);
   }
 
@@ -51,8 +51,8 @@ void main() async {
     final outputBytes = img.encodePng(resized);
     await outputFile.writeAsBytes(outputBytes);
 
-    mPrint('Generated ${outputFile.path} (${size}x$size)');
+    mDebugPrint('Generated ${outputFile.path} (${size}x$size)');
   }
 
-  mPrint('All Android icons generated successfully!');
+  mDebugPrint('All Android icons generated successfully!');
 }

@@ -164,11 +164,7 @@ class _NotesListScreenState extends State<NotesListScreen> {
                 onPressed: () async {
                   final note = await controller.createEmpty();
                   if (!context.mounted) return;
-                  await Navigator.of(context, rootNavigator: true).push(
-                    MaterialPageRoute(
-                      builder: (_) => NoteEditorScreen(noteId: note.id),
-                    ),
-                  );
+                  await NoteEditorScreen.push(context, note.id);
                 },
                 child: const Icon(Icons.add),
               ),

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/services/notifications/reminder_notifications.dart';
 import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
@@ -40,47 +40,43 @@ class ReminderTimerService {
     final now = DateTime.now();
     final activeReminders = _repo.getAll().where((r) {
       if (r.completedAt != null) return false;
+      if (r.notifiedAt != null) return false;
       return true;
     }).toList();
 
     activeReminders.sort((a, b) => a.time.compareTo(b.time));
 
-    ReminderEntity? nextReminder;
-    for (final reminder in activeReminders) {
-      if (reminder.time.isBefore(now)) {
-        final diff = now.difference(reminder.time);
-        if (diff.inSeconds < 50) {
-          if (!_firedReminderIds.contains(reminder.id)) {
-            _fireImmediate(reminder);
-          }
-        }
-        continue;
-      }
-      nextReminder = reminder;
-      break;
-    }
+    // Skip past-due reminders -- zonedSchedule (Layer 1) already delivered
+    // them via ScheduledNotificationReceiver. Only schedule future ones.
+    final nextReminder = activeReminders
+        .where((r) => r.time.isAfter(now))
+        .firstOrNull;
 
     if (nextReminder == null) return;
 
     final waitDuration = nextReminder.time.difference(now);
-    debugPrint(
+    mDebugPrint(
       '[SmartTimer] Next check in $waitDuration for: ${nextReminder.title}',
     );
 
     _smartTimer = Timer(waitDuration, () {
-      _fireImmediate(nextReminder!);
+      if (!_firedReminderIds.contains(nextReminder.id)) {
+        _fireImmediate(nextReminder);
+      }
       scheduleNextCheck();
     });
   }
 
   Future<void> _fireImmediate(ReminderEntity reminder) async {
-    debugPrint('[SmartTimer] Firing now: ${reminder.title}');
+    mDebugPrint('[SmartTimer] Firing now: ${reminder.title}');
     _firedReminderIds.add(reminder.id);
     final id = reminder.notificationId ?? reminder.id.hashCode & 0x7FFFFFFF;
     await _notifications.showNow(
       id: id,
       title: 'Reminder',
       body: reminder.title,
+      payload: reminder.id,
     );
+    await _repo.markNotified(reminder.id);
   }
 }

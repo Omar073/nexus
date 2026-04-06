@@ -42,7 +42,7 @@ class ConnectivityMonitorService {
         _previousState = isOnline;
       },
       onError: (error) {
-        mPrint('Connectivity monitor error: $error');
+        mDebugPrint('Connectivity monitor error: $error');
       },
     );
   }

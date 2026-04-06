@@ -28,14 +28,17 @@ class GoogleNavBarWrapper extends StatelessWidget {
         ],
       ),
       child: SafeArea(
+        top: false,
+        left: false,
+        right: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
           child: GNav(
             selectedIndex: selectedIndex,
-            gap: 6,
+            gap: 4,
             activeColor: colorScheme.onPrimary,
             iconSize: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             duration: const Duration(milliseconds: 400),
             tabBackgroundColor: colorScheme.primary,
             color: colorScheme.onSurfaceVariant,

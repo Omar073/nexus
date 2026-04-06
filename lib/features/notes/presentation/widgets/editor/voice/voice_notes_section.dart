@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:nexus/core/services/note_embed_service.dart';
 import 'package:nexus/core/services/storage/attachment_storage_service.dart';
 import 'package:nexus/core/services/storage/drive_auth_exception.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
@@ -16,14 +15,9 @@ import 'package:provider/provider.dart';
 /// Lists audio attachments with play/delete and Drive recovery.
 
 class VoiceNotesSection extends StatelessWidget {
-  const VoiceNotesSection({
-    super.key,
-    required this.note,
-    required this.embedService,
-  });
+  const VoiceNotesSection({super.key, required this.note});
 
   final NoteEntity note;
-  final NoteEmbedService embedService;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +44,11 @@ class VoiceNotesSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.mic, size: 18, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.mic_none,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Voice Notes',
@@ -72,11 +70,10 @@ class VoiceNotesSection extends StatelessWidget {
             ...audioAttachments.map(
               (a) => VoiceNoteItem(
                 attachment: a,
-                onPlay: () async {
+                resolveLocalPath: () async {
                   final localPath = a.localUri;
                   if (localPath != null && localPath.isNotEmpty) {
-                    await embedService.playLocal(localPath);
-                    return;
+                    return localPath;
                   }
 
                   final driveId = a.driveFileId;
@@ -88,7 +85,7 @@ class VoiceNotesSection extends StatelessWidget {
                         ),
                       );
                     }
-                    return;
+                    return null;
                   }
 
                   try {
@@ -106,9 +103,9 @@ class VoiceNotesSection extends StatelessWidget {
                       attachmentId: a.id,
                       localUri: destPath,
                     );
-                    await embedService.playLocal(destPath);
+                    return destPath;
                   } catch (e) {
-                    if (!context.mounted) return;
+                    if (!context.mounted) return null;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
@@ -120,6 +117,7 @@ class VoiceNotesSection extends StatelessWidget {
                         ),
                       ),
                     );
+                    return null;
                   }
                 },
                 onDelete: () async {

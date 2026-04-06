@@ -1,0 +1,13 @@
+---
+description: Nexus project rules — Flutter standards, architecture, docs sync
+alwaysApply: true
+---
+
+This file is intentionally a **thin Cursor adapter**.
+
+Use these canonical, tool-agnostic rules as the source of truth:
+
+- `.agent/rules/flutter.md` (Flutter/Dart standards)
+- `.agent/rules/nexus.md` (Nexus architecture + doc sync expectations)
+
+Add content here **only** when it is Cursor-specific and cannot live in `.agent/`.
