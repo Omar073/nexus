@@ -81,6 +81,14 @@ class ReminderSyncHandler implements EntitySyncHandler<Reminder> {
         continue;
       }
 
+      // Offline-first rule: if we have unsynced local changes, never let an
+      // older remote snapshot clobber them. This prevents “revert after open”
+      // issues when a local action (e.g. notification Complete) is applied
+      // locally, then a pull fetches a stale remote version moments later.
+      if (local.isDirty && local.updatedAt.isAfter(remote.updatedAt)) {
+        continue;
+      }
+
       if (ReminderConflictDetector.hasConflict(local: local, remote: remote)) {
         local.syncStatusEnum = SyncStatus.conflict;
         await local.save();
