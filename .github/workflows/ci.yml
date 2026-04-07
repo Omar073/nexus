@@ -13,8 +13,6 @@ jobs:
   checks:
     name: Format, Analyze & Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # needed to push formatting changes
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,14 +57,13 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit and push formatting changes
+      - name: Fail if formatting changed
         if: steps.format-check.outputs.changed == 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "style: apply dart format"
-          git push
+          echo "::error::CI found formatting changes after running 'dart format .' (and/or 'dart fix --apply .')."
+          echo "::error::Please run locally: dart fix --apply . ; dart format ."
+          echo "::error::Then commit the results and push."
+          exit 1
 
       - name: Analyze project source
         run: flutter analyze
