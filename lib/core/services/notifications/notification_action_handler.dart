@@ -6,13 +6,25 @@ import 'package:intl/intl.dart';
 import 'package:nexus/core/data/hive/hive_boxes.dart';
 import 'package:nexus/core/data/hive/hive_type_ids.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
+import 'package:nexus/core/services/notifications/notification_complete_pending.dart';
 import 'package:nexus/core/services/notifications/notification_service.dart';
 import 'package:nexus/features/reminders/data/models/reminder.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 
 final _timeFmt = DateFormat('h:mm a');
+
+/// Loud console lines for notification tap debugging (works from headless isolate).
+void _notifDiag(String isolate, String message) {
+  debugPrint('[NexusNotif.$isolate] $message');
+}
+
+void _logResponse(String isolate, NotificationResponse r) {
+  _notifDiag(
+    isolate,
+    'response id=${r.id} actionId=${r.actionId} '
+    'type=${r.notificationResponseType} payload=${r.payload} input=${r.input}',
+  );
+}
 
 const kCompleteActionId = 'complete_reminder';
 const kSnoozeActionId = 'snooze_reminder';
@@ -21,6 +33,8 @@ const kActionButtons = <AndroidNotificationAction>[
   AndroidNotificationAction(
     kSnoozeActionId,
     'Snooze 5 min',
+    // `false` = broadcast receiver + headless Dart isolate → action runs without
+    // launching the app UI. (`true` would open the app to deliver actionId.)
     showsUserInterface: false,
   ),
   AndroidNotificationAction(
@@ -34,11 +48,16 @@ const kActionButtons = <AndroidNotificationAction>[
 /// Must be top-level for `flutter_local_notifications`.
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) async {
+  _logResponse('Bg.enter', response);
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
     final payload = response.payload;
-    if (payload == null || payload.isEmpty) return;
+    final notificationId = response.id;
+    if ((payload == null || payload.isEmpty) && notificationId == null) {
+      _notifDiag('Bg', 'exit: no payload and no notification id');
+      return;
+    }
 
     if (!kIsWeb) {
       final appDir = await getApplicationDocumentsDirectory();
@@ -52,8 +71,23 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
       await Hive.openBox<Reminder>(HiveBoxes.reminders);
     }
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
-    final reminder = box.values.where((r) => r.id == payload).firstOrNull;
-    if (reminder == null) return;
+    final reminder =
+        (payload == null || payload.isEmpty)
+            ? box.values.where((r) => r.notificationId == notificationId).firstOrNull
+            : box.values.where((r) => r.id == payload).firstOrNull;
+    if (reminder == null) {
+      _notifDiag(
+        'Bg',
+        'exit: no reminder for payload=$payload notifId=$notificationId '
+        '(box length=${box.length})',
+      );
+      return;
+    }
+    final effectiveNotificationId = notificationId ?? reminder.notificationId;
+    _notifDiag(
+      'Bg',
+      'matched reminder id=${reminder.id} effectiveNotifId=$effectiveNotificationId',
+    );
 
     final notifications = NotificationService();
     await notifications.initialize();
@@ -64,8 +98,10 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
         reminder.updatedAt = DateTime.now();
         reminder.isDirty = true;
         await reminder.save();
-        await notifications.cancel(reminder.notificationId);
+        await NotificationCompletePending.append(reminder.id);
+        await notifications.cancel(effectiveNotificationId);
         mDebugPrint('[BgAction] Completed reminder: ${reminder.title}');
+        return;
       case kSnoozeActionId:
         final originalTime = reminder.time;
         final newTime = DateTime.now().add(const Duration(minutes: 5));
@@ -81,7 +117,7 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
             'Snoozed until ${_timeFmt.format(newTime)}';
 
         await notifications.showNow(
-          id: reminder.notificationId,
+          id: effectiveNotificationId,
           title: 'Snoozed',
           body: snoozedBody,
           payload: reminder.id,
@@ -89,7 +125,7 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
         );
 
         await notifications.schedule(
-          id: reminder.notificationId,
+          id: effectiveNotificationId,
           title: 'Reminder',
           body: reminder.title,
           when: newTime,
@@ -98,18 +134,50 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
         mDebugPrint(
           '[BgAction] Snoozed reminder: ${reminder.title} → $newTime',
         );
+        return;
+      default:
+        _notifDiag(
+          'Bg',
+          'exit: unknown actionId=${response.actionId} '
+          '(expected $kCompleteActionId | $kSnoozeActionId)',
+        );
+        mDebugPrint(
+          '[BgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',
+        );
+        return;
     }
-  } catch (e) {
+  } catch (e, st) {
+    _notifDiag('Bg', 'ERROR: $e');
     mDebugPrint('[BgAction] Error handling notification action: $e');
+    mDebugPrint('[BgAction] $st');
   }
 }
 
 /// Foreground callback -- runs on the main isolate.
-/// Also handles cold-start launches (app terminated → user tapped action →
-/// Android launches the app with showsUserInterface: true).
+///
+/// Used for **notification body** taps and any intent that routes through the
+/// Activity (`SELECT_NOTIFICATION` / `SELECT_FOREGROUND_NOTIFICATION_ACTION`).
+/// Action buttons use [showsUserInterface: false] and are handled by
+/// [onBackgroundNotificationResponse] on a headless isolate instead.
 void onForegroundNotificationResponse(NotificationResponse response) async {
+  _logResponse('Fg.enter', response);
   final payload = response.payload;
-  if (payload == null || payload.isEmpty) return;
+  final notificationId = response.id;
+  if ((payload == null || payload.isEmpty) && notificationId == null) {
+    _notifDiag('Fg', 'exit: no payload and no notification id');
+    return;
+  }
+
+  // Body tap opens the app; do not treat as an action button.
+  if (response.notificationResponseType ==
+      NotificationResponseType.selectedNotification) {
+    _notifDiag(
+      'Fg',
+      'exit: selectedNotification (body tap or OEM misrouted action — '
+      'actionId is ${response.actionId}, no Complete/Snooze here)',
+    );
+    return;
+  }
 
   try {
     // Cold-start: Hive may not be open yet. Initialize like the bg handler.
@@ -124,10 +192,26 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
       await Hive.openBox<Reminder>(HiveBoxes.reminders);
     }
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
-    final reminder = box.values.where((r) => r.id == payload).firstOrNull;
-    if (reminder == null) return;
+    final reminder =
+        (payload == null || payload.isEmpty)
+            ? box.values.where((r) => r.notificationId == notificationId).firstOrNull
+            : box.values.where((r) => r.id == payload).firstOrNull;
+    if (reminder == null) {
+      _notifDiag(
+        'Fg',
+        'exit: no reminder for payload=$payload notifId=$notificationId '
+        '(box length=${box.length})',
+      );
+      return;
+    }
+    final effectiveNotificationId = notificationId ?? reminder.notificationId;
+    _notifDiag(
+      'Fg',
+      'matched reminder id=${reminder.id} effectiveNotifId=$effectiveNotificationId',
+    );
 
-    final plugin = FlutterLocalNotificationsPlugin();
+    final notifications = NotificationService();
+    await notifications.initialize();
 
     switch (response.actionId) {
       case kCompleteActionId:
@@ -135,8 +219,9 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
         reminder.updatedAt = DateTime.now();
         reminder.isDirty = true;
         await reminder.save();
-        await plugin.cancel(reminder.notificationId);
+        await notifications.cancel(effectiveNotificationId);
         mDebugPrint('[FgAction] Completed reminder: ${reminder.title}');
+        return;
       case kSnoozeActionId:
         final originalTime = reminder.time;
         final newTime = DateTime.now().add(const Duration(minutes: 5));
@@ -151,56 +236,39 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
             'Was ${_timeFmt.format(originalTime)} · '
             'Snoozed until ${_timeFmt.format(newTime)}';
 
-        // Replace the current notification with a silent "snoozed" state
-        await plugin.show(
-          reminder.notificationId,
-          'Snoozed',
-          snoozedBody,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              NotificationService.channelId,
-              NotificationService.channelName,
-              channelDescription: NotificationService.channelDescription,
-              importance: Importance.low,
-              priority: Priority.low,
-              icon: 'ic_notification',
-              playSound: false,
-              enableVibration: false,
-              actions: kActionButtons,
-            ),
-          ),
+        await notifications.showNow(
+          id: effectiveNotificationId,
+          title: 'Snoozed',
+          body: snoozedBody,
           payload: reminder.id,
+          silent: true,
         );
 
-        // Schedule the re-trigger with full sound/vibration
-        tz.initializeTimeZones();
-        final scheduledTime = tz.TZDateTime.from(newTime, tz.local);
-        await plugin.zonedSchedule(
-          reminder.notificationId,
-          'Reminder',
-          reminder.title,
-          scheduledTime,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              NotificationService.channelId,
-              NotificationService.channelName,
-              channelDescription: NotificationService.channelDescription,
-              importance: Importance.max,
-              priority: Priority.high,
-              icon: 'ic_notification',
-              actions: kActionButtons,
-            ),
-          ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
+        await notifications.schedule(
+          id: effectiveNotificationId,
+          title: 'Reminder',
+          body: reminder.title,
+          when: newTime,
           payload: reminder.id,
         );
         mDebugPrint(
           '[FgAction] Snoozed reminder: ${reminder.title} → $newTime',
         );
+        return;
+      default:
+        _notifDiag(
+          'Fg',
+          'exit: unknown actionId=${response.actionId} '
+          'type=${response.notificationResponseType}',
+        );
+        mDebugPrint(
+          '[FgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',
+        );
+        return;
     }
-  } catch (e) {
+  } catch (e, st) {
+    _notifDiag('Fg', 'ERROR: $e');
     mDebugPrint('[FgAction] Error: $e');
+    mDebugPrint('[FgAction] $st');
   }
 }

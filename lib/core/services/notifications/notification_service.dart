@@ -31,7 +31,10 @@ class NotificationService implements ReminderNotifications {
       onDidReceiveBackgroundNotificationResponse:
           onBackgroundNotificationResponse,
     );
-    mDebugPrint('[NotificationService] Plugin initialized');
+    mDebugPrint(
+      '[NotificationService] Plugin initialized '
+      '(fg=onForegroundNotificationResponse bg=onBackgroundNotificationResponse)',
+    );
 
     tz.initializeTimeZones();
     mDebugPrint('[NotificationService] Timezones initialized');

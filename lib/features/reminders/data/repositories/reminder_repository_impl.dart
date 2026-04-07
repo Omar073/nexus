@@ -62,6 +62,7 @@ class ReminderRepositoryImpl implements ReminderRepositoryInterface {
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
     final reminder = box.get(id);
     if (reminder == null) return;
+    if (reminder.completedAt != null) return;
     reminder.notifiedAt = DateTime.now();
     await reminder.save();
   }
