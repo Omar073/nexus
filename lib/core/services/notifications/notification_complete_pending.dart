@@ -42,7 +42,11 @@ class NotificationCompletePending {
       // Best-effort. If the main isolate drains/deletes concurrently, this may
       // fail on some filesystems. Correctness still comes from `completedAt`
       // being persisted to Hive by the background handler.
-      await f.writeAsString('$reminderId\n', mode: FileMode.append, flush: true);
+      await f.writeAsString(
+        '$reminderId\n',
+        mode: FileMode.append,
+        flush: true,
+      );
     } catch (_) {
       // Best-effort; completion still saved to Hive in the bg handler.
     }

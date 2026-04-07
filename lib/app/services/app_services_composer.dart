@@ -33,7 +33,9 @@ void initializeBackgroundServices(BuildContext context) {
     // was running (terminated/background).
     unawaited(drainPendingReminderCompletesFromNotification(context));
 
-    _pendingCompleteWatchSub ??= NotificationCompletePending.watch().listen((_) {
+    _pendingCompleteWatchSub ??= NotificationCompletePending.watch().listen((
+      _,
+    ) {
       // Event-driven (no polling): when the headless isolate appends an id,
       // a filesystem event triggers an immediate drain.
       unawaited(drainPendingReminderCompletesFromNotification(context));
