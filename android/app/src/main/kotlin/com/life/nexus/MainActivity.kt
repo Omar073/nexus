@@ -16,6 +16,9 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // Note: Action buttons use a broadcast receiver (showsUserInterface=false),
+        // so they normally do NOT reach the Activity. This is primarily for
+        // debugging body taps / misrouted OEM intents.
         logIntent("onNewIntent", intent)
     }
 

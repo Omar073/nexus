@@ -946,6 +946,155 @@ void workmanagerCallbackDispatcher() {
 }
 ```
 
+### Reminder notifications: end-to-end pipeline + actions (deep explanation)
+
+This section documents the **exact runtime pipeline** for reminder notifications and the **Complete / Snooze** action buttons, including what went wrong historically and how it was fixed.
+
+#### High-level mental model
+
+There are two separate concerns that interact:
+
+1. **Delivery**: *When does a reminder notification appear?*  
+   This is handled by a 3-layer timing strategy:
+   - **Layer 1**: `zonedSchedule` (authoritative exact delivery)  
+   - **Layer 2**: `ReminderTimerService` (foreground accuracy / UX)  
+   - **Layer 3**: Workmanager (background safety net)
+
+2. **Actions**: *What happens when the user taps Complete/Snooze on the notification?*  
+   This is handled via `flutter_local_notifications` callbacks:
+   - Foreground callback: `onForegroundNotificationResponse`
+   - Background (headless) callback: `onBackgroundNotificationResponse`
+
+The tricky part is that on Android, **notification actions can execute even when the app UI is not opened** by running a **headless Flutter engine / Dart isolate**. This improves UX (no app launch), but creates important constraints around persistence and UI consistency.
+
+#### Delivery pipeline: create → schedule → fire → dedupe
+
+##### A) Creating a reminder (UI → Controller → Repo → Hive → schedule)
+
+1. UI calls [`ReminderController.create()`](lib/features/reminders/presentation/state_management/reminder_controller.dart).
+2. The controller uses `CreateReminderUseCase` to:
+   - Write a `ReminderEntity` to Hive via the repository.
+   - Schedule an exact OS notification via [`NotificationService.schedule(...)`](lib/core/services/notifications/notification_service.dart).
+
+The scheduled notification includes:
+- A stable `notificationId` (stored on the reminder).
+- A `payload` that is the reminder UUID (used as the primary lookup key later).
+
+##### B) Foreground SmartTimer (Layer 2)
+
+When the app is open, [`ReminderTimerService`](lib/features/reminders/data/services/reminder_timer_service.dart) keeps a single timer for the **next upcoming** reminder. It reads reminders from the repository and filters:
+- `completedAt != null` → skip (already done)
+- `notifiedAt != null` → skip (already delivered)
+
+When it fires, it calls `NotificationService.showNow(...)` and stamps `notifiedAt` via `repo.markNotified(...)`.
+
+This design prevents repeated popups during the same session and ensures the app doesn’t “nag” after a notification has already been shown.
+
+##### C) Workmanager (Layer 3)
+
+If the OS kills the process, Workmanager runs periodically and calls [`handleBackgroundCheck(...)`](lib/features/reminders/data/services/reminder_workmanager_callback.dart). It only fires due reminders in a bounded window (2–46 minutes past due) and also stamps `notifiedAt`.
+
+#### Action pipeline: what happens when the user taps Complete
+
+##### The important Android detail: `showsUserInterface: false`
+
+Reminder notifications include two action buttons (`Snooze 5 min`, `Complete`) configured in [`notification_action_handler.dart`](lib/core/services/notifications/notification_action_handler.dart) as `AndroidNotificationAction(..., showsUserInterface: false)`.
+
+That choice means:
+- Action taps are delivered via an Android **broadcast receiver** (not the Activity).
+- `flutter_local_notifications` starts a **headless Flutter engine** and invokes `onBackgroundNotificationResponse(...)`.
+- The app UI does **not** need to open for the action to run.
+
+This is the correct UX goal for Nexus, but it implies the action code must be able to run with:
+- No widget tree
+- No Provider graph
+- No already-open Hive boxes
+
+##### Step-by-step: Complete action (headless isolate)
+
+When the user taps **Complete** on the notification:
+
+1. Android sends the action broadcast (button tap).
+2. `flutter_local_notifications` starts (or reuses) a headless engine and calls:
+   - [`onBackgroundNotificationResponse`](lib/core/services/notifications/notification_action_handler.dart)
+3. The handler bootstraps *minimal runtime*:
+   - `WidgetsFlutterBinding.ensureInitialized()`
+   - `Hive.init(appDir.path)` and open the reminders box
+4. It identifies the reminder using **payload first**, or falls back to matching by `notificationId` when payload is absent/misrouted.
+5. For `complete_reminder` it:
+   - Writes `completedAt = now` (and marks `isDirty = true`) directly on the Hive model and saves.
+   - Cancels the notification via `NotificationService.cancel(...)`.
+
+##### Why UI didn’t update immediately (the core problem)
+
+Even though the background handler saved to Hive, the app UI is driven by:
+- Repository/listenable notifications from the **main isolate**
+- Controller subscriptions in the Provider tree
+
+On Android, a headless engine is a separate Dart isolate. **Hive is not isolate-safe**, so “write in isolate A” does not reliably trigger “listenable update in isolate B”.
+
+So users saw:
+- The notification dismisses (cancel happened)
+- But the reminder remained incomplete in the UI until later
+
+##### The second bug: races with `notifiedAt` writes
+
+We also had a subtle race when SmartTimer fired and the user immediately pressed Complete:
+
+- SmartTimer would show a notification and then stamp `notifiedAt` in Hive.
+- Complete (headless) would stamp `completedAt`.
+- If those two writes happened close together, a stale-object save could overwrite fields and lose `completedAt`.
+
+Fixes for this included:
+- Making `markNotified(...)` a no-op for reminders where `completedAt != null`.
+- Moving `markNotified(...)` earlier in the SmartTimer path to narrow the “stale write after complete” window.
+
+#### How we fixed it (final architecture)
+
+We keep the headless UX (no app launch) but make UI reconciliation **event-driven** without polling:
+
+##### 1) File-based reconciliation queue (fallback + durability)
+
+The headless Complete action also appends the reminder id to a small file:
+- [`NotificationCompletePending.append(reminder.id)`](lib/core/services/notifications/notification_complete_pending.dart)
+- File name: `nexus_pending_complete_reminder_ids.txt` in the app documents directory
+
+This file is deliberately:
+- **Append-only** in the background handler
+- **Read-and-delete** (`readAndClear`) in the main isolate
+- **Best-effort** (writes are wrapped in try/catch so the headless isolate never crashes)
+
+##### 2) Main isolate drains on startup/resume (terminated case)
+
+The app already drains that file in two places (durable fallback):
+- First-frame init: `initializeBackgroundServices(...)`
+- App resume: `didChangeAppLifecycleState(resumed)`
+
+Drain is idempotent:
+- IDs are deduped on read
+- Each id only triggers `controller.complete(entity)` when `entity.completedAt == null`
+
+##### 3) Main isolate drains immediately when the file changes (app-open case)
+
+To eliminate polling, the main isolate installs a filesystem watcher:
+- `NotificationCompletePending.watch()` yields events when the pending file changes
+- `initializeBackgroundServices(...)` subscribes once and triggers a drain on each event
+
+This produces the desired behavior:
+- **App open**: UI updates essentially immediately after the Complete tap.
+- **App terminated**: Completion is still persisted to Hive by the headless handler; UI reconciles on next cold start/resume.
+
+#### Android-specific gotchas (and how we handle them)
+
+- **Noisy file watchers**: A single append can emit multiple events (create/modify/modify).  
+  Our drain is safe because `readAndClear()` returns `[]` if the file is missing or already deleted.
+
+- **Read/write collisions**: Two completes in rapid succession can overlap with a drain.  
+  `append()` is best-effort; if it fails, we still have `completedAt` persisted in Hive, so the system remains correct (eventual consistency via resume/start drain).
+
+- **OEM misrouting**: Some Android builds deliver a body-tap intent (`selectedNotification`) rather than an action tap with `actionId`.  
+  This is logged and treated as a non-action (UX limitation without `showsUserInterface: true`).
+
 ## 9.3 Sync + conflict handling
 
 ### Sync Architecture

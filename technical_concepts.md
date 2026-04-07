@@ -13,6 +13,9 @@ This document explains general technical patterns and concepts used in the app. 
 - [7. Concepts: Mixin & CRUD Patterns](#7-concepts-mixin--crud-patterns-controller-architecture)
 - [8. Hive Binary Serialization](#8-hive-binary-serialization)
 - [9. Rich Text Editing (Quill and Delta Format)](#9-rich-text-editing-quill-and-delta-format)
+- [10. Headless Flutter engines (notification actions)](#10-headless-flutter-engines-notification-actions)
+- [11. Event-driven reconciliation via filesystem watch](#11-event-driven-reconciliation-via-filesystem-watch)
+- [12. Idempotency and eventual consistency](#12-idempotency-and-eventual-consistency)
 
 ## 1. Singleton Pattern
 
@@ -197,6 +200,78 @@ features/splash/
   ├── app_initializer.dart      ← Creates real services for production
   └── provider_factory.dart     ← Wires everything into the Provider tree
 ```
+
+---
+
+## 10. Headless Flutter engines (notification actions)
+
+Some mobile plugins (notably local notifications) can execute Dart callbacks **without opening your app UI**.
+
+### 10.1 What “headless” means in practice
+
+On Android, a notification action button can be delivered via a **broadcast receiver** instead of launching the Activity. The plugin may then start a **headless FlutterEngine** that runs a **separate Dart isolate** to execute a top-level callback (e.g., `onBackgroundNotificationResponse`).
+
+Key properties:
+- **No widget tree / no `BuildContext`**: you cannot rely on Provider, Navigator, or any mounted UI.
+- **You must bootstrap your own minimal runtime**: initialize bindings, open Hive boxes, etc.
+- **You are in a different isolate**: memory is not shared with the main isolate.
+
+### 10.2 The pitfall: isolate boundaries + local databases
+
+Many local persistence libraries are not designed for concurrent multi-isolate access. Even if data is written successfully from the headless isolate, the main isolate might not:
+- see a live notification/listenable update
+- refresh cached in-memory objects
+- rebuild UI immediately
+
+The result is a classic “action succeeded, UI looks stale” bug.
+
+---
+
+## 11. Event-driven reconciliation via filesystem watch
+
+When an action runs in a headless isolate but the UI must update in the main isolate, one approach is to record an **out-of-band reconciliation hint** (e.g., an id) and have the main isolate consume it.
+
+In Nexus, the hint is a small append-only file of reminder ids that were completed via a notification action. The main isolate:
+- watches for changes (filesystem events)
+- drains the file by reading and deleting it
+- applies completion on the main isolate (so repositories/controllers/Provider rebuild correctly)
+
+This is **event-driven** (no polling) when the app is open, and still works as a fallback on resume/cold start.
+
+### 11.1 Why watch a directory, not a file
+
+Many platforms (including Android) expose watch APIs at the **directory** level. Watching the parent directory and filtering events by filename is more portable than attempting to watch an individual file.
+
+### 11.2 Noisy watcher events
+
+File watchers can emit multiple events for one logical write (create/modify/modify). The safe pattern is:
+- make the consumer idempotent
+- treat missing files as “nothing to do”
+
+---
+
+## 12. Idempotency and eventual consistency
+
+### 12.1 Idempotency
+
+An operation is **idempotent** if running it multiple times produces the same end state as running it once.
+
+In background-action reconciliation, idempotency is essential because:
+- delivery may be duplicated (OS quirks)
+- watcher events are noisy
+- consumers may race with producers
+
+Common idempotency guards:
+- “only apply if still needed” checks (e.g., `if (completedAt == null) { complete(); }`)
+- deduping ids before applying a batch
+
+### 12.2 Eventual consistency
+
+When you have multiple execution contexts (main isolate + headless isolate), you often can’t guarantee immediate UI consistency. Instead, you design for:
+- correctness of the persisted state (the write *did* happen)
+- a reconciliation mechanism that makes the UI converge to the persisted state quickly when possible
+
+This is **eventual consistency**: the system becomes consistent after a short period or after a known trigger (resume/start).
 
 **Example from `app_initializer.dart`:**
 

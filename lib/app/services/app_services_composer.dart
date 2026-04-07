@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/connectivity_monitor_service.dart';
@@ -9,6 +10,8 @@ import 'package:nexus/core/widgets/debug/global_debug_overlay.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:provider/provider.dart';
+
+StreamSubscription<FileSystemEvent>? _pendingCompleteWatchSub;
 
 /// Composes all widget wrappers that need to wrap the app
 ///
@@ -26,7 +29,15 @@ void initializeBackgroundServices(BuildContext context) {
   try {
     final connectivityService = context.read<ConnectivityService>();
     ConnectivityMonitorService().startMonitoring(connectivityService);
+    // File-drain fallback for any completes that happened while no UI isolate
+    // was running (terminated/background).
     unawaited(drainPendingReminderCompletesFromNotification(context));
+
+    _pendingCompleteWatchSub ??= NotificationCompletePending.watch().listen((_) {
+      // Event-driven (no polling): when the headless isolate appends an id,
+      // a filesystem event triggers an immediate drain.
+      unawaited(drainPendingReminderCompletesFromNotification(context));
+    });
   } catch (e) {
     mDebugPrint('Error initializing background services: $e');
   }
@@ -38,6 +49,9 @@ Future<void> drainPendingReminderCompletesFromNotification(
   BuildContext context,
 ) async {
   if (!context.mounted) return;
+  // Idempotency guard: even if the watcher emits multiple events, or if the
+  // same id appears twice, we only apply completion when the current entity
+  // is still incomplete.
   late final ReminderRepositoryInterface repo;
   late final ReminderController controller;
   try {
@@ -59,6 +73,8 @@ Future<void> drainPendingReminderCompletesFromNotification(
 void disposeBackgroundServices() {
   try {
     ConnectivityMonitorService().dispose();
+    _pendingCompleteWatchSub?.cancel();
+    _pendingCompleteWatchSub = null;
     // Add dispose for future services here
   } catch (e) {
     mDebugPrint('Error disposing background services: $e');

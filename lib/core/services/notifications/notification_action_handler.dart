@@ -44,7 +44,11 @@ const kActionButtons = <AndroidNotificationAction>[
   ),
 ];
 
-/// Background isolate entry point for notification actions (app terminated).
+/// Background isolate entry point for notification actions.
+///
+/// When `showsUserInterface: false`, Android delivers action taps through a
+/// broadcast receiver. The plugin can execute this callback on a **headless**
+/// Flutter engine (separate Dart isolate) without opening the app UI.
 /// Must be top-level for `flutter_local_notifications`.
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) async {
@@ -59,6 +63,7 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
       return;
     }
 
+    // Headless isolate: we can't assume Hive was initialized/opened.
     if (!kIsWeb) {
       final appDir = await getApplicationDocumentsDirectory();
       Hive.init(appDir.path);
@@ -71,15 +76,19 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
       await Hive.openBox<Reminder>(HiveBoxes.reminders);
     }
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
-    final reminder =
-        (payload == null || payload.isEmpty)
-            ? box.values.where((r) => r.notificationId == notificationId).firstOrNull
-            : box.values.where((r) => r.id == payload).firstOrNull;
+    // Prefer payload (reminder UUID). Some devices/OEM builds can deliver action
+    // intents without payload; in that case fall back to matching by
+    // notification id.
+    final reminder = (payload == null || payload.isEmpty)
+        ? box.values
+              .where((r) => r.notificationId == notificationId)
+              .firstOrNull
+        : box.values.where((r) => r.id == payload).firstOrNull;
     if (reminder == null) {
       _notifDiag(
         'Bg',
         'exit: no reminder for payload=$payload notifId=$notificationId '
-        '(box length=${box.length})',
+            '(box length=${box.length})',
       );
       return;
     }
@@ -94,15 +103,23 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
 
     switch (response.actionId) {
       case kCompleteActionId:
+        // Persist completion immediately for correctness even if the main UI
+        // isolate is not alive.
         reminder.completedAt = DateTime.now();
         reminder.updatedAt = DateTime.now();
         reminder.isDirty = true;
         await reminder.save();
+        // Side-channel to help the main isolate reconcile UI/sync quickly when
+        // the app is running (see `NotificationCompletePending.watch()` +
+        // `drainPendingReminderCompletesFromNotification`). Best-effort: if the
+        // write fails we still have `completedAt` persisted in Hive.
         await NotificationCompletePending.append(reminder.id);
         await notifications.cancel(effectiveNotificationId);
         mDebugPrint('[BgAction] Completed reminder: ${reminder.title}');
         return;
       case kSnoozeActionId:
+        // Snooze updates the reminder time and clears `notifiedAt` so delivery
+        // can fire again at the new time.
         final originalTime = reminder.time;
         final newTime = DateTime.now().add(const Duration(minutes: 5));
         reminder.time = newTime;
@@ -139,7 +156,7 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
         _notifDiag(
           'Bg',
           'exit: unknown actionId=${response.actionId} '
-          '(expected $kCompleteActionId | $kSnoozeActionId)',
+              '(expected $kCompleteActionId | $kSnoozeActionId)',
         );
         mDebugPrint(
           '[BgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',
@@ -169,12 +186,14 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
   }
 
   // Body tap opens the app; do not treat as an action button.
+  // (Some OEMs may misroute action taps as body taps; that arrives here with
+  // `selectedNotification` and often a null/empty `actionId`.)
   if (response.notificationResponseType ==
       NotificationResponseType.selectedNotification) {
     _notifDiag(
       'Fg',
       'exit: selectedNotification (body tap or OEM misrouted action — '
-      'actionId is ${response.actionId}, no Complete/Snooze here)',
+          'actionId is ${response.actionId}, no Complete/Snooze here)',
     );
     return;
   }
@@ -192,15 +211,18 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
       await Hive.openBox<Reminder>(HiveBoxes.reminders);
     }
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
-    final reminder =
-        (payload == null || payload.isEmpty)
-            ? box.values.where((r) => r.notificationId == notificationId).firstOrNull
-            : box.values.where((r) => r.id == payload).firstOrNull;
+    // Foreground path should normally have payload, but keep the same
+    // payload/id fallback logic for consistency and debugging.
+    final reminder = (payload == null || payload.isEmpty)
+        ? box.values
+              .where((r) => r.notificationId == notificationId)
+              .firstOrNull
+        : box.values.where((r) => r.id == payload).firstOrNull;
     if (reminder == null) {
       _notifDiag(
         'Fg',
         'exit: no reminder for payload=$payload notifId=$notificationId '
-        '(box length=${box.length})',
+            '(box length=${box.length})',
       );
       return;
     }
@@ -259,7 +281,7 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
         _notifDiag(
           'Fg',
           'exit: unknown actionId=${response.actionId} '
-          'type=${response.notificationResponseType}',
+              'type=${response.notificationResponseType}',
         );
         mDebugPrint(
           '[FgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',

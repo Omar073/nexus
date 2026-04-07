@@ -71,9 +71,8 @@ class ReminderTimerService {
     mDebugPrint('[SmartTimer] Firing now: ${reminder.title}');
     _firedReminderIds.add(reminder.id);
     final id = reminder.notificationId ?? reminder.id.hashCode & 0x7FFFFFFF;
-    // Mark notified before showing so a fast Complete tap cannot lose completion
-    // to a late [markNotified] write (Hive is single-isolate; headless isolate
-    // completion + main [markNotified] could otherwise race on stale objects).
+    // Order matters: we stamp `notifiedAt` before `showNow()` so a fast Complete
+    // action can't be overwritten by a late `markNotified()` save.
     await _repo.markNotified(reminder.id);
     await _notifications.showNow(
       id: id,

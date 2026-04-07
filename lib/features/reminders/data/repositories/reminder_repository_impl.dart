@@ -62,6 +62,8 @@ class ReminderRepositoryImpl implements ReminderRepositoryInterface {
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
     final reminder = box.get(id);
     if (reminder == null) return;
+    // Avoid stamping `notifiedAt` on a reminder that a notification action has
+    // already completed (can happen with headless isolate writes racing the UI).
     if (reminder.completedAt != null) return;
     reminder.notifiedAt = DateTime.now();
     await reminder.save();

@@ -23,32 +23,23 @@ class App extends StatefulWidget {
 class _AppState extends State<App> with WidgetsBindingObserver {
   // Keep router instance persistent to preserve navigation state across rebuilds
   late final _router = AppRouter.create();
-  Timer? _pendingCompletePoller;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Initialize background services after first frame
+    // Initialize background services after first frame so the Provider tree is
+    // fully mounted (and `context.read<T>()` is safe).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         initializeBackgroundServices(context);
       }
-    });
-
-    // While the app is open, Complete can be handled by a headless isolate.
-    // Poll briefly so the UI gets the updated completion state without requiring
-    // the user to background/resume the app.
-    _pendingCompletePoller = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (!mounted) return;
-      unawaited(drainPendingReminderCompletesFromNotification(context));
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pendingCompletePoller?.cancel();
     disposeBackgroundServices();
     super.dispose();
   }
@@ -58,6 +49,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          // Resume fallback: if completion happened while the UI isolate wasn't
+          // active (or a watcher event was missed), drain the pending file.
           unawaited(drainPendingReminderCompletesFromNotification(context));
         }
       });

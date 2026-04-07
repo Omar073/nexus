@@ -18,10 +18,30 @@ class NotificationCompletePending {
     return File('${dir.path}/$_fileName');
   }
 
+  /// Emits whenever the pending file is created/modified/deleted.
+  ///
+  /// This is used as an event-driven signal in the main isolate to drain pending
+  /// completes without polling.
+  static Stream<FileSystemEvent> watch() async* {
+    if (kIsWeb) return;
+    final f = await _file();
+    final parent = f.parent;
+    if (!await parent.exists()) return;
+    yield* parent.watch(events: FileSystemEvent.all).where((e) {
+      // Keep this check simple and robust across platforms.
+      // Watchers are noisy (create/modify/modify). Consumers must be idempotent:
+      // `readAndClear()` returns [] if the file is already gone.
+      return e.path.endsWith(_fileName);
+    });
+  }
+
   static Future<void> append(String reminderId) async {
     if (kIsWeb) return;
     try {
       final f = await _file();
+      // Best-effort. If the main isolate drains/deletes concurrently, this may
+      // fail on some filesystems. Correctness still comes from `completedAt`
+      // being persisted to Hive by the background handler.
       await f.writeAsString('$reminderId\n', mode: FileMode.append, flush: true);
     } catch (_) {
       // Best-effort; completion still saved to Hive in the bg handler.
