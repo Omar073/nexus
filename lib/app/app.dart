@@ -74,17 +74,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsController>();
 
-    // Determine which theme is currently active
-    final currentTheme = settings.themeMode == ThemeMode.dark
-        ? AppTheme.dark(
-            customPrimary: settings.darkColors.primary,
-            customSecondary: settings.darkColors.secondary,
-            palette: settings.darkPalette,
-          )
-        : AppTheme.light(
-            customPrimary: settings.lightColors.primary,
-            customSecondary: settings.lightColors.secondary,
-          );
+    // Match MaterialApp theme resolution (including ThemeMode.system).
+    final currentTheme = AppTheme.fromUserSettings(
+      context,
+      themeMode: settings.themeMode,
+      lightPrimary: settings.lightColors.primary,
+      lightSecondary: settings.lightColors.secondary,
+      darkPrimary: settings.darkColors.primary,
+      darkSecondary: settings.darkColors.secondary,
+      darkPalette: settings.darkPalette,
+    );
 
     return MaterialApp.router(
       scaffoldMessengerKey: appMessengerKey,

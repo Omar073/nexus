@@ -425,7 +425,7 @@ in two phases:
 ### App bootstrap / routing / UI shell
 
 - [`lib/main.dart`](lib/main.dart): Outer `MaterialApp` for splash + localization delegates (including Quill)
-- [`lib/app/app.dart`](lib/app/app.dart): `StatefulWidget` with `MaterialApp.router`, themes
+- [`lib/app/app.dart`](lib/app/app.dart): `StatefulWidget` with `MaterialApp.router`, themes; `AnimatedTheme` uses [`AppTheme.fromUserSettings`](lib/app/theme/app_theme.dart) so **ThemeMode.system** matches platform brightness (same resolution as the wrapped route theme for Developer options).
 - [`lib/app/app_globals.dart`](lib/app/app_globals.dart): Global `ScaffoldMessengerKey` for context-free snackbars
 - [`lib/app/services/app_services_composer.dart`](lib/app/services/app_services_composer.dart): Composes widget wrappers and manages background service initialization/disposal
 - [`lib/app/router/app_router.dart`](lib/app/router/app_router.dart): `go_router` routes (bottom-nav shell)
@@ -433,7 +433,7 @@ in two phases:
 - [`lib/features/splash/presentation/bootstrap/provider_factory.dart`](lib/features/splash/presentation/bootstrap/provider_factory.dart): Provider composition root
 - [`lib/features/wrapper/presentation/pages/app_wrapper.dart`](lib/features/wrapper/presentation/pages/app_wrapper.dart): App shell with drawer and bottom navigation
 - [`lib/features/wrapper/presentation/widgets/app_drawer.dart`](lib/features/wrapper/presentation/widgets/app_drawer.dart): Navigation drawer
-- [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Material 3 themes
+- [`lib/app/theme/app_theme.dart`](lib/app/theme/app_theme.dart): Material 3 themes; [`AppTheme.fromUserSettings`](lib/app/theme/app_theme.dart) centralizes light/dark/system resolution for `App` and root-navigator screens that must re-apply theme explicitly.
 
 ### Core Data Infrastructure
 
@@ -1552,12 +1552,13 @@ Calendar overlays tasks (due dates) and reminders (scheduled times).
   - [`lib/features/settings/presentation/widgets/sections/connectivity_status_section.dart`](lib\features\settings\presentation\widgets\sections\connectivity_status_section.dart)
   - [`lib/features/settings/presentation/widgets/sections/drive_access_section.dart`](lib\features\settings\presentation\widgets\sections\drive_access_section.dart)
   - [`lib/features/settings/presentation/widgets/sections/permissions_section.dart`](lib\features\settings\presentation\widgets\sections\permissions_section.dart)
+  - [`lib/features/settings/presentation/widgets/sections/developer_options_section.dart`](lib/features/settings/presentation/widgets/sections/developer_options_section.dart): **Debug builds only** (`kDebugMode`); pushes [`developer_options_screen.dart`](lib/features/settings/presentation/pages/developer_options_screen.dart) on the **root navigator** and re-wraps **`Provider<NotificationService>`** only (theme inherits from [`App`](lib/app/app.dart) `AnimatedTheme`). Test notification uses [`NotificationService.showNow`](lib/core/services/notifications/notification_service.dart).
 - Section Widgets: [`lib/features/settings/presentation/widgets/sections/widgets/connectivity_status_tile.dart`](lib\features\settings\presentation\widgets\sections\connectivity_status_tile.dart)
 - Reusable Widgets:
   - [`lib/features/settings/presentation/widgets/settings_section.dart`](lib/features/settings/presentation/widgets/settings_section.dart): Styled section wrapper with title and NexusCard.
   - [`lib/features/settings/presentation/widgets/settings_header.dart`](lib/features/settings/presentation/widgets/settings_header.dart): Header with title text and profile card.
 
-Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions.
+Includes theme mode, retention, sync status, Drive sign-in/out, connectivity status checks (Firebase, Hive, Google Drive), and permissions. In **debug** builds only, Settings also lists **Developer options** (test notifications and room for more dev hooks); see `developer_options_section.dart` / `developer_options_screen.dart`.
 
 ## 9.9 Theme Customization ([`lib/features/theme_customization/`](lib/features/theme_customization/))
 
@@ -1748,7 +1749,7 @@ Beyond the three scheduling layers, the following OS-level configurations preven
 | **Alarms lost on reboot** | `ScheduledNotificationBootReceiver` declared in the manifest automatically reschedules `zonedSchedule` alarms (includes vendor-specific `QUICKBOOT` actions for HTC etc.). | `android/app/src/main/AndroidManifest.xml` |
 | **Doze / battery optimization** | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` manifest permission + runtime prompt via `requestBatteryOptimizationExemption()`. On first launch, `BatteryOptimizationFirstLaunchPrompt` (called from `SplashWrapper` post-frame) shows an explanation dialog before the OS prompt; `SharedPreferences` gates it to once. | `AndroidManifest.xml`, `notification_service.dart`, `battery_optimization_dialog.dart`, `battery_optimization_first_launch_prompt.dart`, `splash_wrapper.dart` |
 | **Exact alarm permission (API 31+)** | `SCHEDULE_EXACT_ALARM` + `USE_EXACT_ALARM` in manifest; runtime request in `requestPermissionsIfNeeded()`. | `AndroidManifest.xml`, `notification_service.dart` |
-| **Notification icon** | White-on-transparent `ic_notification.png` in `drawable-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}`. Referenced in `AndroidInitializationSettings` and all `AndroidNotificationDetails`. | `android/app/src/main/res/drawable-*/ic_notification.png`, `notification_service.dart` |
+| **Notification icon** | Android **small icons are alpha masks**: use **white glyph on transparent** only. Opaque black (or colored) backgrounds tint as one blob → solid white square in the status bar. PNGs live in `drawable-{mdpi,…,xxxhdpi}`; after editing artwork run [`scripts/fix_ic_notification_transparency.py`](scripts/fix_ic_notification_transparency.py) (requires Pillow) to strip dark backgrounds. Referenced in `AndroidInitializationSettings` and `AndroidNotificationDetails`. | `android/app/src/main/res/drawable-*/ic_notification.png`, `notification_service.dart` |
 
 The Settings > Permissions section also exposes a single "Reminders" button that requests both notification permission and battery optimization exemption (with the same explanation dialog).
 

@@ -158,7 +158,7 @@ Each folder is a **vertical slice** of the product. Most slices follow **`domain
 | **`habits/`** | Habit definitions, logs, charts. |
 | **`calendar/`** | Calendar aggregation and device calendar hooks. |
 | **`analytics/`** | Dashboard-style stats and charts. |
-| **`settings/`** | Settings screens, **`SettingsController`**, repository for **`AppSettingsEntity`**, prefs via **`SettingsStore`**. |
+| **`settings/`** | Settings screens, **`SettingsController`**, repository for **`AppSettingsEntity`**, prefs via **`SettingsStore`**. Debug-only **Developer options** (`kDebugMode`) for local test hooks; root push re-wraps **`NotificationService`** only. |
 | **`theme_customization/`** | Theme and nav bar customization screens (often pushed with provider re-wrap patterns similar to the note editor). |
 | **`sync/`** | Sync status widgets and entry points into conflict flows (domain-specific dialogs often live on tasks/notes). |
 | **`splash/`** | Startup, **`AppInitializer`**, **`AppProviderFactory`**. |
@@ -325,7 +325,7 @@ Firestore is used as the remote sync target (Hive remains the local source of tr
 
 ## 8. CI/CD
 
-**`.github/workflows/ci.yml`** runs on **`main`** pushes and PRs: Flutter setup (version pinned in the workflow), `flutter pub get`, placeholder secrets and assets, **`dart fix --apply`**, **`dart format`**, **`flutter analyze`**, **`flutter test`**, and optional coverage upload on PRs. For a local mirror, use **`scripts/run_ci_locally.ps1`** when present.
+**`.github/workflows/ci.yml`** runs on **`main`** pushes and PRs: Flutter setup (version pinned in the workflow), `flutter pub get`, placeholder secrets and assets, **`dart fix --apply`**, **`dart format`**, **`flutter analyze`**, **`flutter test`**, and optional coverage upload on PRs. For a local mirror, use **`scripts/run_ci_locally.ps1`** when present; **`scripts/run_ci_locally.ps1 -FormatFixAnalyze`** runs only **`dart fix`**, **`dart format`**, and **`flutter analyze`** (steps 5–7 of the full script).
 
 ---
 

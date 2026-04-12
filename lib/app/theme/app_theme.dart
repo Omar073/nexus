@@ -4,6 +4,31 @@ import 'package:nexus/app/theme/app_colors.dart';
 
 /// Builds [ThemeData] for light/dark from settings and seeds.
 class AppTheme {
+  /// Resolves [ThemeMode.system] via [MediaQuery.platformBrightnessOf] so the
+  /// result matches the OS appearance. Use a [context] under [MaterialApp].
+  static ThemeData fromUserSettings(
+    BuildContext context, {
+    required ThemeMode themeMode,
+    required Color? lightPrimary,
+    required Color? lightSecondary,
+    required Color? darkPrimary,
+    required Color? darkSecondary,
+    required DarkPalette darkPalette,
+  }) {
+    final brightness = switch (themeMode) {
+      ThemeMode.dark => Brightness.dark,
+      ThemeMode.light => Brightness.light,
+      ThemeMode.system => MediaQuery.platformBrightnessOf(context),
+    };
+    return brightness == Brightness.dark
+        ? dark(
+            customPrimary: darkPrimary,
+            customSecondary: darkSecondary,
+            palette: darkPalette,
+          )
+        : light(customPrimary: lightPrimary, customSecondary: lightSecondary);
+  }
+
   /// Builds light theme
   static ThemeData light({Color? customPrimary, Color? customSecondary}) {
     // Nexus design system defaults

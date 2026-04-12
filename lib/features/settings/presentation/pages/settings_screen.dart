@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/platform/backend_health_checker.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
@@ -10,6 +11,7 @@ import 'package:nexus/features/settings/presentation/widgets/sections/task_manag
 import 'package:nexus/features/settings/presentation/widgets/sections/sync_section.dart';
 import 'package:nexus/features/settings/presentation/widgets/sections/connectivity_status_section.dart';
 import 'package:nexus/features/settings/presentation/widgets/sections/drive_access_section.dart';
+import 'package:nexus/features/settings/presentation/widgets/sections/developer_options_section.dart';
 import 'package:nexus/features/settings/presentation/widgets/sections/permissions_section.dart';
 import 'package:nexus/features/settings/presentation/widgets/settings_header.dart';
 import 'package:nexus/features/settings/presentation/widgets/settings_section.dart';
@@ -102,6 +104,10 @@ class _SettingsScreenState extends State<SettingsScreen>
               title: 'Permissions',
               child: PermissionsSection(),
             ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 24),
+              const DeveloperOptionsSection(),
+            ],
             const SizedBox(height: 32),
           ],
         ),

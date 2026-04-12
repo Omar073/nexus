@@ -1,5 +1,12 @@
 # Run the full CI pipeline locally (mirrors .github/workflows/ci.yml)
 # Use before pushing to catch issues without waiting for CI/CD
+#
+# Quick mode (dart fix + format + analyze only — skips pub, secrets, assets, tests):
+#   .\scripts\run_ci_locally.ps1 -FormatFixAnalyze
+
+param(
+    [switch]$FormatFixAnalyze
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -19,14 +26,46 @@ function Assert-ExitCode {
     }
 }
 
-Write-Host "========================================="
-Write-Host "  Running full CI pipeline locally"
-Write-Host "========================================="
-Write-Host ""
+if ($FormatFixAnalyze) {
+    Write-Host "========================================="
+    Write-Host "  Quick: dart fix + format + analyze"
+    Write-Host "========================================="
+    Write-Host ""
+} else {
+    Write-Host "========================================="
+    Write-Host "  Running full CI pipeline locally"
+    Write-Host "========================================="
+    Write-Host ""
+}
 
 # Project root = parent of scripts folder
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
+
+if ($FormatFixAnalyze) {
+    Write-Host "[1/3] Applying dart fixes..."
+    dart fix --apply . ; Assert-ExitCode
+    Write-Host "  Done"
+    Write-Host ""
+
+    Write-Host "[2/3] Formatting code..."
+    dart format .
+    Write-Host "  Done"
+    Write-Host ""
+
+    Write-Host "[3/3] Analyzing..."
+    flutter analyze ; Assert-ExitCode
+    Write-Host "  Done"
+    Write-Host ""
+
+    $stopwatch.Stop()
+    $finalTimeString = "{0}m {1}s" -f $stopwatch.Elapsed.Minutes, $stopwatch.Elapsed.Seconds
+    Write-Host "========================================="
+    Write-Host "  Quick checks passed!"
+    Write-Host "  Total execution time: $finalTimeString"
+    Write-Host "========================================="
+    exit 0
+}
 
 # 1. Update dependencies
 Write-Host "[1/8] Updating dependencies..."
