@@ -14,6 +14,7 @@ import 'package:nexus/features/settings/domain/use_cases/update_nav_bar_style_us
 import 'package:nexus/features/settings/domain/use_cases/update_primary_color_use_case.dart';
 import 'package:nexus/features/settings/domain/use_cases/update_secondary_color_use_case.dart';
 import 'package:nexus/features/settings/domain/use_cases/update_task_sort_option_use_case.dart';
+import 'package:nexus/features/settings/domain/use_cases/update_nav_icons_use_case.dart';
 import 'package:nexus/features/settings/domain/use_cases/update_theme_mode_use_case.dart';
 import 'package:nexus/features/settings/domain/use_cases/update_completed_retention_days_use_case.dart';
 import 'package:nexus/features/settings/data/models/custom_colors_store.dart';
@@ -41,7 +42,8 @@ class SettingsController extends ChangeNotifier {
       _updateSecondaryColor = UpdateSecondaryColorUseCase(repo),
       _resetColors = ResetColorsUseCase(repo),
       _savePreset = SavePresetUseCase(repo),
-      _deletePreset = DeletePresetUseCase(repo);
+      _deletePreset = DeletePresetUseCase(repo),
+      _updateNavIcons = UpdateNavIconsUseCase(repo);
 
   final LoadSettingsUseCase _loadSettings;
   final UpdateThemeModeUseCase _updateThemeMode;
@@ -56,6 +58,7 @@ class SettingsController extends ChangeNotifier {
   final ResetColorsUseCase _resetColors;
   final SavePresetUseCase _savePreset;
   final DeletePresetUseCase _deletePreset;
+  final UpdateNavIconsUseCase _updateNavIcons;
 
   ThemeMode _themeMode = ThemeMode.dark;
   ThemeMode get themeMode => _themeMode;
@@ -89,6 +92,9 @@ class SettingsController extends ChangeNotifier {
 
   CategorySortOption _categorySortOption = CategorySortOption.defaultOrder;
   CategorySortOption get categorySortOption => _categorySortOption;
+
+  Map<String, int> _navigationIcons = {};
+  Map<String, int> get navigationIcons => Map.unmodifiable(_navigationIcons);
 
   Future<void> load() async {
     final entity = await _loadSettings.call();
@@ -124,6 +130,7 @@ class SettingsController extends ChangeNotifier {
       secondary: e.darkSecondary != null ? Color(e.darkSecondary!) : null,
     );
     _presets = List<ColorPreset>.from(e.presets.map(_presetFromEntity));
+    _navigationIcons = Map<String, int>.from(e.navigationIcons);
   }
 
   static ColorPreset _presetFromEntity(ColorPresetEntity e) {
@@ -275,5 +282,12 @@ class SettingsController extends ChangeNotifier {
     await _deletePreset.call(id);
     _presets.removeWhere((p) => p.id == id);
     notifyListeners();
+  }
+
+  Future<void> setNavIcon(String page, IconData icon) async {
+    _navigationIcons = Map<String, int>.from(_navigationIcons);
+    _navigationIcons[page] = icon.codePoint;
+    notifyListeners();
+    await _updateNavIcons.call(_navigationIcons);
   }
 }

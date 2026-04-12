@@ -131,15 +131,17 @@ class _NoteEditorViewState extends State<NoteEditorView>
           onDeleteNote: () => _confirmDelete(note),
           onAttachmentAdded: _insertAttachmentMarker,
         ),
-        body: NoteEditorBody(
-          note: note,
-          isMarkdown: _isMarkdown,
-          markdownLayout: _markdownLayout,
-          showVoiceNotes: _showVoiceNotes,
-          toolbarAtTop: _toolbarAtTop,
-          onToolbarPositionChanged: _setToolbarPosition,
-          quillController: _controller,
-          markdownController: _markdownController,
+        body: SafeArea(
+          child: NoteEditorBody(
+            note: note,
+            isMarkdown: _isMarkdown,
+            markdownLayout: _markdownLayout,
+            showVoiceNotes: _showVoiceNotes,
+            toolbarAtTop: _toolbarAtTop,
+            onToolbarPositionChanged: _setToolbarPosition,
+            quillController: _controller,
+            markdownController: _markdownController,
+          ),
         ),
       ),
     );

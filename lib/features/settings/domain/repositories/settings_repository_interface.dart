@@ -18,4 +18,5 @@ abstract class SettingsRepositoryInterface {
   Future<void> resetColorsToDefaults();
   Future<void> savePreset(ColorPresetEntity preset);
   Future<void> deletePreset(String id);
+  Future<void> saveNavigationIcons(Map<String, int> icons);
 }

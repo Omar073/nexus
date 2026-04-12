@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
+import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_animated_nav_bar.dart';
 import 'package:provider/provider.dart';
@@ -65,6 +66,8 @@ class _NavBarPreviewState extends State<NavBarPreview> {
   }
 
   Widget _buildNavBar(Color primary, Color bgColor, Color inactiveColor) {
+    final selections = context.watch<SettingsController>().navigationIcons;
+
     switch (widget.style) {
       case NavBarStyle.standard:
         return NavigationBar(
@@ -74,18 +77,48 @@ class _NavBarPreviewState extends State<NavBarPreview> {
           indicatorColor: primary.withValues(alpha: 0.2),
           destinations: [
             NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined, color: inactiveColor),
-              selectedIcon: Icon(Icons.dashboard, color: primary),
+              icon: Icon(
+                NavIconMapper.getIconForPage('dashboard', selections),
+                color: inactiveColor,
+              ),
+              selectedIcon: Icon(
+                NavIconMapper.getIconForPage(
+                  'dashboard',
+                  selections,
+                  isSelected: true,
+                ),
+                color: primary,
+              ),
               label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(Icons.checklist_outlined, color: inactiveColor),
-              selectedIcon: Icon(Icons.checklist, color: primary),
+              icon: Icon(
+                NavIconMapper.getIconForPage('tasks', selections),
+                color: inactiveColor,
+              ),
+              selectedIcon: Icon(
+                NavIconMapper.getIconForPage(
+                  'tasks',
+                  selections,
+                  isSelected: true,
+                ),
+                color: primary,
+              ),
               label: 'Tasks',
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined, color: inactiveColor),
-              selectedIcon: Icon(Icons.settings, color: primary),
+              icon: Icon(
+                NavIconMapper.getIconForPage('settings', selections),
+                color: inactiveColor,
+              ),
+              selectedIcon: Icon(
+                NavIconMapper.getIconForPage(
+                  'settings',
+                  selections,
+                  isSelected: true,
+                ),
+                color: primary,
+              ),
               label: 'Settings',
             ),
           ],
@@ -104,10 +137,31 @@ class _NavBarPreviewState extends State<NavBarPreview> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             tabBackgroundColor: primary.withValues(alpha: 0.15),
             color: inactiveColor,
-            tabs: const [
-              GButton(icon: Icons.dashboard, text: 'Dashboard'),
-              GButton(icon: Icons.checklist, text: 'Tasks'),
-              GButton(icon: Icons.settings, text: 'Settings'),
+            tabs: [
+              GButton(
+                icon: NavIconMapper.getIconForPage(
+                  'dashboard',
+                  selections,
+                  isSelected: _selectedIndex == 0,
+                ),
+                text: 'Dashboard',
+              ),
+              GButton(
+                icon: NavIconMapper.getIconForPage(
+                  'tasks',
+                  selections,
+                  isSelected: _selectedIndex == 1,
+                ),
+                text: 'Tasks',
+              ),
+              GButton(
+                icon: NavIconMapper.getIconForPage(
+                  'settings',
+                  selections,
+                  isSelected: _selectedIndex == 2,
+                ),
+                text: 'Settings',
+              ),
             ],
           ),
         );
@@ -146,26 +200,47 @@ class _NavBarPreviewState extends State<NavBarPreview> {
             bottomBarItems: [
               BottomBarItem(
                 inActiveItem: Icon(
-                  Icons.dashboard_outlined,
+                  NavIconMapper.getIconForPage('dashboard', selections),
                   color: inactiveColor,
                 ),
-                activeItem: const Icon(Icons.dashboard, color: Colors.white),
+                activeItem: Icon(
+                  NavIconMapper.getIconForPage(
+                    'dashboard',
+                    selections,
+                    isSelected: true,
+                  ),
+                  color: Colors.white,
+                ),
                 itemLabel: 'Dashboard',
               ),
               BottomBarItem(
                 inActiveItem: Icon(
-                  Icons.checklist_outlined,
+                  NavIconMapper.getIconForPage('tasks', selections),
                   color: inactiveColor,
                 ),
-                activeItem: const Icon(Icons.checklist, color: Colors.white),
+                activeItem: Icon(
+                  NavIconMapper.getIconForPage(
+                    'tasks',
+                    selections,
+                    isSelected: true,
+                  ),
+                  color: Colors.white,
+                ),
                 itemLabel: 'Tasks',
               ),
               BottomBarItem(
                 inActiveItem: Icon(
-                  Icons.settings_outlined,
+                  NavIconMapper.getIconForPage('settings', selections),
                   color: inactiveColor,
                 ),
-                activeItem: const Icon(Icons.settings, color: Colors.white),
+                activeItem: Icon(
+                  NavIconMapper.getIconForPage(
+                    'settings',
+                    selections,
+                    isSelected: true,
+                  ),
+                  color: Colors.white,
+                ),
                 itemLabel: 'Settings',
               ),
             ],

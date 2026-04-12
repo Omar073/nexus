@@ -29,16 +29,32 @@ void initializeBackgroundServices(BuildContext context) {
   try {
     final connectivityService = context.read<ConnectivityService>();
     ConnectivityMonitorService().startMonitoring(connectivityService);
+    // Resolve dependencies *once* while the Provider tree is mounted.
+    // File watcher callbacks can arrive later (async gaps), so they must not
+    // capture a BuildContext.
+    final repo = context.read<ReminderRepositoryInterface>();
+    final controller = context.read<ReminderController>();
+
     // File-drain fallback for any completes that happened while no UI isolate
     // was running (terminated/background).
-    unawaited(drainPendingReminderCompletesFromNotification(context));
+    unawaited(
+      drainPendingReminderCompletesFromNotification(
+        repo: repo,
+        controller: controller,
+      ),
+    );
 
     _pendingCompleteWatchSub ??= NotificationCompletePending.watch().listen((
       _,
     ) {
       // Event-driven (no polling): when the headless isolate appends an id,
       // a filesystem event triggers an immediate drain.
-      unawaited(drainPendingReminderCompletesFromNotification(context));
+      unawaited(
+        drainPendingReminderCompletesFromNotification(
+          repo: repo,
+          controller: controller,
+        ),
+      );
     });
   } catch (e) {
     mDebugPrint('Error initializing background services: $e');
@@ -47,24 +63,15 @@ void initializeBackgroundServices(BuildContext context) {
 
 /// Re-applies Complete on the main isolate when the headless handler wrote
 /// [NotificationCompletePending] (heals Hive races with [markNotified]).
-Future<void> drainPendingReminderCompletesFromNotification(
-  BuildContext context,
-) async {
-  if (!context.mounted) return;
+Future<void> drainPendingReminderCompletesFromNotification({
+  required ReminderRepositoryInterface repo,
+  required ReminderController controller,
+}) async {
   // Idempotency guard: even if the watcher emits multiple events, or if the
   // same id appears twice, we only apply completion when the current entity
   // is still incomplete.
-  late final ReminderRepositoryInterface repo;
-  late final ReminderController controller;
-  try {
-    repo = context.read<ReminderRepositoryInterface>();
-    controller = context.read<ReminderController>();
-  } catch (_) {
-    return;
-  }
   final ids = await NotificationCompletePending.readAndClear();
   for (final id in ids) {
-    if (!context.mounted) return;
     final entity = repo.getById(id);
     if (entity != null && entity.completedAt == null) {
       await controller.complete(entity);

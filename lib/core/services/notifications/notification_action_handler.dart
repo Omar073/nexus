@@ -13,19 +13,6 @@ import 'package:path_provider/path_provider.dart';
 
 final _timeFmt = DateFormat('h:mm a');
 
-/// Loud console lines for notification tap debugging (works from headless isolate).
-void _notifDiag(String isolate, String message) {
-  debugPrint('[NexusNotif.$isolate] $message');
-}
-
-void _logResponse(String isolate, NotificationResponse r) {
-  _notifDiag(
-    isolate,
-    'response id=${r.id} actionId=${r.actionId} '
-    'type=${r.notificationResponseType} payload=${r.payload} input=${r.input}',
-  );
-}
-
 const kCompleteActionId = 'complete_reminder';
 const kSnoozeActionId = 'snooze_reminder';
 
@@ -52,14 +39,12 @@ const kActionButtons = <AndroidNotificationAction>[
 /// Must be top-level for `flutter_local_notifications`.
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) async {
-  _logResponse('Bg.enter', response);
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
     final payload = response.payload;
     final notificationId = response.id;
     if ((payload == null || payload.isEmpty) && notificationId == null) {
-      _notifDiag('Bg', 'exit: no payload and no notification id');
       return;
     }
 
@@ -85,18 +70,9 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
               .firstOrNull
         : box.values.where((r) => r.id == payload).firstOrNull;
     if (reminder == null) {
-      _notifDiag(
-        'Bg',
-        'exit: no reminder for payload=$payload notifId=$notificationId '
-            '(box length=${box.length})',
-      );
       return;
     }
     final effectiveNotificationId = notificationId ?? reminder.notificationId;
-    _notifDiag(
-      'Bg',
-      'matched reminder id=${reminder.id} effectiveNotifId=$effectiveNotificationId',
-    );
 
     final notifications = NotificationService();
     await notifications.initialize();
@@ -115,7 +91,6 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
         // write fails we still have `completedAt` persisted in Hive.
         await NotificationCompletePending.append(reminder.id);
         await notifications.cancel(effectiveNotificationId);
-        mDebugPrint('[BgAction] Completed reminder: ${reminder.title}');
         return;
       case kSnoozeActionId:
         // Snooze updates the reminder time and clears `notifiedAt` so delivery
@@ -148,25 +123,13 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
           when: newTime,
           payload: reminder.id,
         );
-        mDebugPrint(
-          '[BgAction] Snoozed reminder: ${reminder.title} → $newTime',
-        );
         return;
       default:
-        _notifDiag(
-          'Bg',
-          'exit: unknown actionId=${response.actionId} '
-              '(expected $kCompleteActionId | $kSnoozeActionId)',
-        );
-        mDebugPrint(
-          '[BgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',
-        );
         return;
     }
   } catch (e, st) {
-    _notifDiag('Bg', 'ERROR: $e');
-    mDebugPrint('[BgAction] Error handling notification action: $e');
-    mDebugPrint('[BgAction] $st');
+    mDebugPrint('[NotificationAction] Background handler error: $e');
+    mDebugPrint('$st');
   }
 }
 
@@ -177,11 +140,9 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
 /// Action buttons use [showsUserInterface: false] and are handled by
 /// [onBackgroundNotificationResponse] on a headless isolate instead.
 void onForegroundNotificationResponse(NotificationResponse response) async {
-  _logResponse('Fg.enter', response);
   final payload = response.payload;
   final notificationId = response.id;
   if ((payload == null || payload.isEmpty) && notificationId == null) {
-    _notifDiag('Fg', 'exit: no payload and no notification id');
     return;
   }
 
@@ -190,11 +151,6 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
   // `selectedNotification` and often a null/empty `actionId`.)
   if (response.notificationResponseType ==
       NotificationResponseType.selectedNotification) {
-    _notifDiag(
-      'Fg',
-      'exit: selectedNotification (body tap or OEM misrouted action — '
-          'actionId is ${response.actionId}, no Complete/Snooze here)',
-    );
     return;
   }
 
@@ -212,25 +168,16 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
     }
     final box = Hive.box<Reminder>(HiveBoxes.reminders);
     // Foreground path should normally have payload, but keep the same
-    // payload/id fallback logic for consistency and debugging.
+    // payload/id fallback logic for consistency.
     final reminder = (payload == null || payload.isEmpty)
         ? box.values
               .where((r) => r.notificationId == notificationId)
               .firstOrNull
         : box.values.where((r) => r.id == payload).firstOrNull;
     if (reminder == null) {
-      _notifDiag(
-        'Fg',
-        'exit: no reminder for payload=$payload notifId=$notificationId '
-            '(box length=${box.length})',
-      );
       return;
     }
     final effectiveNotificationId = notificationId ?? reminder.notificationId;
-    _notifDiag(
-      'Fg',
-      'matched reminder id=${reminder.id} effectiveNotifId=$effectiveNotificationId',
-    );
 
     final notifications = NotificationService();
     await notifications.initialize();
@@ -242,7 +189,6 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
         reminder.isDirty = true;
         await reminder.save();
         await notifications.cancel(effectiveNotificationId);
-        mDebugPrint('[FgAction] Completed reminder: ${reminder.title}');
         return;
       case kSnoozeActionId:
         final originalTime = reminder.time;
@@ -273,24 +219,12 @@ void onForegroundNotificationResponse(NotificationResponse response) async {
           when: newTime,
           payload: reminder.id,
         );
-        mDebugPrint(
-          '[FgAction] Snoozed reminder: ${reminder.title} → $newTime',
-        );
         return;
       default:
-        _notifDiag(
-          'Fg',
-          'exit: unknown actionId=${response.actionId} '
-              'type=${response.notificationResponseType}',
-        );
-        mDebugPrint(
-          '[FgAction] Unknown actionId: ${response.actionId} (payload: $payload, notifId: $notificationId)',
-        );
         return;
     }
   } catch (e, st) {
-    _notifDiag('Fg', 'ERROR: $e');
-    mDebugPrint('[FgAction] Error: $e');
-    mDebugPrint('[FgAction] $st');
+    mDebugPrint('[NotificationAction] Foreground handler error: $e');
+    mDebugPrint('$st');
   }
 }

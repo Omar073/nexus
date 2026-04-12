@@ -57,8 +57,10 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
     final direction = isRtl ? TextDirection.rtl : TextDirection.ltr;
 
     if (widget.layout == MarkdownLayout.tabs) {
+      final hasContent = widget.controller.text.trim().isNotEmpty;
       return DefaultTabController(
         length: 2,
+        initialIndex: hasContent ? 1 : 0,
         child: Directionality(
           textDirection: direction,
           child: NestedScrollView(
@@ -106,63 +108,40 @@ class _MarkdownEditorAreaState extends State<MarkdownEditorArea> {
   }
 
   Widget _buildMarkdownEditor(ThemeData theme, ScrollController? controller) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: TextField(
-          controller: widget.controller,
-          scrollController: controller,
-          maxLines: null,
-          expands: true,
-          keyboardType: TextInputType.multiline,
-          style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            hintText: 'Write markdown here...',
-            isCollapsed: true,
-          ),
-        ),
+    return TextField(
+      controller: widget.controller,
+      scrollController: controller,
+      maxLines: null,
+      expands: true,
+      keyboardType: TextInputType.multiline,
+      style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+      decoration: const InputDecoration(
+        border: InputBorder.none,
+        hintText: 'Write markdown here...',
+        isCollapsed: true,
       ),
     );
   }
 
   Widget _buildMarkdownPreview(ThemeData theme, ScrollController? controller) {
     try {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Markdown(
-          data: widget.controller.text,
-          controller: controller,
-          styleSheet: MarkdownStyleSheet.fromTheme(
-            theme,
-          ).copyWith(p: theme.textTheme.bodyMedium),
-        ),
+      return Markdown(
+        data: widget.controller.text,
+        controller: controller,
+        padding: EdgeInsets.zero,
+        styleSheet: MarkdownStyleSheet.fromTheme(
+          theme,
+        ).copyWith(p: theme.textTheme.bodyMedium),
       );
     } catch (error, stack) {
       _showMarkdownErrorSnackBar(context, error);
       // Still log the full error for debugging.
       // ignore: avoid_print
       print('Markdown render error: $error\n$stack');
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: SingleChildScrollView(
-          controller: controller,
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            widget.controller.text,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ),
+      return SingleChildScrollView(
+        controller: controller,
+        padding: EdgeInsets.zero,
+        child: Text(widget.controller.text, style: theme.textTheme.bodyMedium),
       );
     }
   }

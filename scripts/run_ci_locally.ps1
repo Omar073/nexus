@@ -3,11 +3,17 @@
 
 $ErrorActionPreference = "Stop"
 
+# Start the timer
+$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
 function Assert-ExitCode {
     if ($LASTEXITCODE -ne 0) {
+        $stopwatch.Stop()
+        $timeString = "{0}m {1}s" -f $stopwatch.Elapsed.Minutes, $stopwatch.Elapsed.Seconds
         Write-Host ""
         Write-Host "========================================="
         Write-Host "  CI FAILED (exit code $LASTEXITCODE)"
+        Write-Host "  Time elapsed: $timeString"
         Write-Host "========================================="
         exit $LASTEXITCODE
     }
@@ -85,6 +91,11 @@ Write-Host "[8/8] Running tests..."
 flutter test ; Assert-ExitCode
 Write-Host ""
 
+# Stop the timer and calculate final execution time
+$stopwatch.Stop()
+$finalTimeString = "{0}m {1}s" -f $stopwatch.Elapsed.Minutes, $stopwatch.Elapsed.Seconds
+
 Write-Host "========================================="
 Write-Host "  All CI checks passed!"
+Write-Host "  Total execution time: $finalTimeString"
 Write-Host "========================================="

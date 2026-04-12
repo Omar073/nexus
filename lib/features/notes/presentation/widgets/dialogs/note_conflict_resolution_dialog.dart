@@ -18,6 +18,20 @@ import 'package:uuid/uuid.dart';
 class NoteConflictResolutionDialog extends StatefulWidget {
   const NoteConflictResolutionDialog({super.key});
 
+  /// Wraps the dialog with required sync providers.
+  static Widget wrapWithRequiredProviders(BuildContext context) {
+    final sync = context.read<SyncController>();
+    final service = context.read<SyncService>();
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SyncController>.value(value: sync),
+        Provider<SyncService>.value(value: service),
+      ],
+      child: const NoteConflictResolutionDialog(),
+    );
+  }
+
   @override
   /// Creates the mutable state for this dialog.
   State<NoteConflictResolutionDialog> createState() =>

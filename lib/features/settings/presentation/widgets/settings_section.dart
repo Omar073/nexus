@@ -34,7 +34,7 @@ class SettingsSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: NexusCard(
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             borderRadius: 16,
             child: child,
           ),

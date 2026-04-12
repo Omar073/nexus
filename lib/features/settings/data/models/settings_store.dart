@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nexus/app/theme/app_colors.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
@@ -87,6 +88,7 @@ class SettingsStore {
   // Task Sort Option
   static const _keyTaskSortOption = 'task_sort_option';
   static const _keyCategorySortOption = 'category_sort_option';
+  static const _keyNavIcons = 'settings.nav_icons';
 
   Future<void> saveTaskSortOption(String optionName) async {
     final prefs = await SharedPreferences.getInstance();
@@ -106,5 +108,29 @@ class SettingsStore {
   Future<String?> loadCategorySortOption() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyCategorySortOption);
+  }
+
+  Future<void> saveNavigationIcons(Map<String, int> icons) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyNavIcons, _encodeIcons(icons));
+  }
+
+  Future<Map<String, int>> loadNavigationIcons() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_keyNavIcons);
+    if (raw == null) return {};
+    return _decodeIcons(raw);
+  }
+
+  String _encodeIcons(Map<String, int> icons) {
+    return jsonEncode(icons);
+  }
+
+  Map<String, int> _decodeIcons(String raw) {
+    final dynamic decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) {
+      return decoded.map((k, v) => MapEntry(k, v as int));
+    }
+    return {};
   }
 }

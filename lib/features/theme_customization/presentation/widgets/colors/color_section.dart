@@ -4,6 +4,7 @@ import 'package:nexus/features/settings/data/models/custom_colors_store.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/colors/color_option_grid.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_styles/nav_bar_style_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/presets/preset_list_section.dart';
+import 'package:nexus/features/theme_customization/presentation/widgets/icons/icon_selection_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/preview/theme_preview_card.dart';
 import 'package:provider/provider.dart';
 
@@ -108,6 +109,8 @@ class ColorSection extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           NavBarStyleSection(isLight: isLight),
+          const SizedBox(height: 32),
+          const IconSelectionSection(),
           const SizedBox(height: 24),
         ],
       ),

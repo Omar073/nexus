@@ -30,6 +30,7 @@ class SettingsRepositoryImpl implements SettingsRepositoryInterface {
     final lightColors = await _colorsStore.loadColors(Brightness.light);
     final darkColors = await _colorsStore.loadColors(Brightness.dark);
     final presets = await _colorsStore.loadPresets();
+    final navigationIcons = await _store.loadNavigationIcons();
 
     return AppSettingsEntity(
       themeMode: _themeModeToString(themeMode),
@@ -44,6 +45,7 @@ class SettingsRepositoryImpl implements SettingsRepositoryInterface {
       darkPrimary: darkColors.primary?.toARGB32(),
       darkSecondary: darkColors.secondary?.toARGB32(),
       presets: presets.map(_presetToEntity).toList(),
+      navigationIcons: navigationIcons,
     );
   }
 
@@ -151,5 +153,10 @@ class SettingsRepositoryImpl implements SettingsRepositoryInterface {
   @override
   Future<void> deletePreset(String id) async {
     await _colorsStore.deletePreset(id);
+  }
+
+  @override
+  Future<void> saveNavigationIcons(Map<String, int> icons) async {
+    await _store.saveNavigationIcons(icons);
   }
 }

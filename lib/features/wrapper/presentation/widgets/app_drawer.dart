@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nexus/app/router/app_routes.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
+import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/drawer_item.dart';
+import 'package:provider/provider.dart';
 
 /// Navigation drawer destinations and header.
-
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -12,6 +14,8 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final controller = context.watch<SettingsController>();
+    final selections = controller.navigationIcons;
 
     return Drawer(
       child: ListView(
@@ -49,7 +53,7 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           DrawerItem(
-            icon: Icons.dashboard_outlined,
+            icon: NavIconMapper.getIconForPage('dashboard', selections),
             label: 'Dashboard',
             onTap: () {
               Navigator.pop(context);
@@ -57,7 +61,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           DrawerItem(
-            icon: Icons.insights_outlined,
+            icon: NavIconMapper.getIconForPage('habits', selections),
             label: 'Habits',
             onTap: () {
               Navigator.pop(context);
@@ -65,7 +69,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           DrawerItem(
-            icon: Icons.calendar_month_outlined,
+            icon: NavIconMapper.getIconForPage('calendar', selections),
             label: 'Calendar',
             onTap: () {
               Navigator.pop(context);
@@ -73,7 +77,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           DrawerItem(
-            icon: Icons.analytics_outlined,
+            icon: NavIconMapper.getIconForPage('analytics', selections),
             label: 'Analytics',
             onTap: () {
               Navigator.pop(context);

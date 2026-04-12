@@ -4,6 +4,7 @@ import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/ani
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/google_nav_bar_wrapper.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_animated_nav_bar.dart';
+import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/standard_nav_bar_wrapper.dart';
 
 /// Selects curved, notch, Google, or Rive nav implementation.
 class NavBarBuilder extends StatelessWidget {
@@ -46,36 +47,9 @@ class NavBarBuilder extends StatelessWidget {
         );
 
       case NavBarStyle.standard:
-        return NavigationBar(
+        return StandardNavBarWrapper(
           selectedIndex: selectedIndex,
           onDestinationSelected: onDestinationSelected,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.checklist_outlined),
-              selectedIcon: Icon(Icons.checklist),
-              label: 'Tasks',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.alarm_outlined),
-              selectedIcon: Icon(Icons.alarm),
-              label: 'Reminders',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.note_outlined),
-              selectedIcon: Icon(Icons.note),
-              label: 'Notes',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
         );
     }
   }

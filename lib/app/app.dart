@@ -6,6 +6,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:nexus/app/router/app_router.dart';
 import 'package:nexus/app/services/app_services_composer.dart';
 import 'package:nexus/app/theme/app_theme.dart';
+import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
+import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/app/app_globals.dart';
@@ -51,7 +53,18 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         if (mounted) {
           // Resume fallback: if completion happened while the UI isolate wasn't
           // active (or a watcher event was missed), drain the pending file.
-          unawaited(drainPendingReminderCompletesFromNotification(context));
+          try {
+            final repo = context.read<ReminderRepositoryInterface>();
+            final controller = context.read<ReminderController>();
+            unawaited(
+              drainPendingReminderCompletesFromNotification(
+                repo: repo,
+                controller: controller,
+              ),
+            );
+          } catch (_) {
+            // App is resuming but providers may not be ready yet.
+          }
         }
       });
     }

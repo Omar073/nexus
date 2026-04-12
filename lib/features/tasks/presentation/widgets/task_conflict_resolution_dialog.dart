@@ -16,6 +16,20 @@ import 'package:uuid/uuid.dart';
 class TaskConflictResolutionDialog extends StatefulWidget {
   const TaskConflictResolutionDialog({super.key});
 
+  /// Wraps the dialog with the required sync providers.
+  static Widget wrapWithRequiredProviders(BuildContext context) {
+    final sync = context.read<SyncController>();
+    final service = context.read<SyncService>();
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SyncController>.value(value: sync),
+        Provider<SyncService>.value(value: service),
+      ],
+      child: const TaskConflictResolutionDialog(),
+    );
+  }
+
   @override
   State<TaskConflictResolutionDialog> createState() =>
       _TaskConflictResolutionDialogState();

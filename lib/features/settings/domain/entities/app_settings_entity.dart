@@ -16,6 +16,7 @@ class AppSettingsEntity {
     this.darkPrimary,
     this.darkSecondary,
     this.presets = const [],
+    this.navigationIcons = const {},
   });
 
   final String themeMode;
@@ -30,4 +31,5 @@ class AppSettingsEntity {
   final int? darkPrimary;
   final int? darkSecondary;
   final List<ColorPresetEntity> presets;
+  final Map<String, int> navigationIcons;
 }

@@ -27,6 +27,35 @@ class TaskEditorSheet extends StatefulWidget {
   final String? initialCategoryId;
   final String? initialSubcategoryId;
 
+  /// Wraps the editor with the app-level providers it depends on.
+  ///
+  /// This ensures that when pushed on the root navigator (outside the shell),
+  /// the sheet has access to the task and category controllers.
+  static Widget wrapWithRequiredProviders(
+    BuildContext context, {
+    required TaskEntity? task,
+    String? categoryId,
+    String? subcategoryId,
+  }) {
+    final taskController = context.read<TaskController>();
+    final categoryController = context.read<CategoryController>();
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<TaskController>.value(value: taskController),
+        ChangeNotifierProvider<CategoryController>.value(
+          value: categoryController,
+        ),
+      ],
+      child: TaskEditorSheet(
+        task: task,
+        controller: taskController,
+        initialCategoryId: categoryId,
+        initialSubcategoryId: subcategoryId,
+      ),
+    );
+  }
+
   @override
   State<TaskEditorSheet> createState() => _TaskEditorSheetState();
 }
@@ -85,105 +114,107 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          TaskEditorHeader(
-            isNewTask: widget.task == null,
-            onClose: () => Navigator.of(context).pop(),
-          ),
-          // Content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                bottom:
-                    mediaQuery.viewInsets.bottom +
-                    mediaQuery.padding.bottom +
-                    24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Inputs
-                  TaskEditorInputs(
-                    titleController: _titleController,
-                    descController: _descController,
-                    isNewTask: widget.task == null,
-                  ),
-                  const SizedBox(height: 24),
-                  // Quick options row
-                  TaskQuickOptions(
-                    startDate: _selectedStartDate,
-                    dueDate: _selectedDueDate,
-                    dueTime: _selectedDueTime,
-                    recurrence: _selectedRecurrence,
-                    onPickStartDate: _pickStartDate,
-                    onPickDueDate: _pickDueDate,
-                    onPickDueTime: _pickDueTime,
-                    onPickRecurrence: _pickRecurrence,
-                  ),
-                  const SizedBox(height: 24),
-                  // Category selector
-                  TaskCategorySelector(
-                    categoryController: categoryController,
-                    selectedCategoryId: _selectedCategoryId,
-                    selectedSubcategoryId: _selectedSubcategoryId,
-                    onCategoryChanged: (v) {
-                      setState(() {
-                        _selectedCategoryId = v;
-                        _selectedSubcategoryId = null;
-                      });
-                    },
-                    onSubcategoryChanged: (v) {
-                      setState(() => _selectedSubcategoryId = v);
-                    },
-                    onCreateNewCategory: () =>
-                        _showCreateCategoryDialog(context, categoryController),
-                    onCreateNewSubcategory: () => _showCreateCategoryDialog(
-                      context,
-                      categoryController,
-                      parentId: _selectedCategoryId,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            TaskEditorHeader(
+              isNewTask: widget.task == null,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  bottom: mediaQuery.viewInsets.bottom + 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Inputs
+                    TaskEditorInputs(
+                      titleController: _titleController,
+                      descController: _descController,
+                      isNewTask: widget.task == null,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Attribute selectors (Priority & Difficulty)
-                  TaskAttributeSelectors(
-                    priority: _selectedPriority,
-                    difficulty: _selectedDifficulty,
-                    onPriorityChanged: (v) =>
-                        setState(() => _selectedPriority = v),
-                    onDifficultyChanged: (v) =>
-                        setState(() => _selectedDifficulty = v),
-                  ),
-                  const SizedBox(height: 32),
-                  // Save button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _save,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    const SizedBox(height: 24),
+                    // Quick options row
+                    TaskQuickOptions(
+                      startDate: _selectedStartDate,
+                      dueDate: _selectedDueDate,
+                      dueTime: _selectedDueTime,
+                      recurrence: _selectedRecurrence,
+                      onPickStartDate: _pickStartDate,
+                      onPickDueDate: _pickDueDate,
+                      onPickDueTime: _pickDueTime,
+                      onPickRecurrence: _pickRecurrence,
+                    ),
+                    const SizedBox(height: 24),
+                    // Category selector
+                    TaskCategorySelector(
+                      categoryController: categoryController,
+                      selectedCategoryId: _selectedCategoryId,
+                      selectedSubcategoryId: _selectedSubcategoryId,
+                      onCategoryChanged: (v) {
+                        setState(() {
+                          _selectedCategoryId = v;
+                          _selectedSubcategoryId = null;
+                        });
+                      },
+                      onSubcategoryChanged: (v) {
+                        setState(() => _selectedSubcategoryId = v);
+                      },
+                      onCreateNewCategory: () => _showCreateCategoryDialog(
+                        context,
+                        categoryController,
                       ),
-                      child: Text(
-                        widget.task == null ? 'Create Task' : 'Save Changes',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      onCreateNewSubcategory: () => _showCreateCategoryDialog(
+                        context,
+                        categoryController,
+                        parentId: _selectedCategoryId,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+                    // Attribute selectors (Priority & Difficulty)
+                    TaskAttributeSelectors(
+                      priority: _selectedPriority,
+                      difficulty: _selectedDifficulty,
+                      onPriorityChanged: (v) =>
+                          setState(() => _selectedPriority = v),
+                      onDifficultyChanged: (v) =>
+                          setState(() => _selectedDifficulty = v),
+                    ),
+                    const SizedBox(height: 32),
+                    // Save button
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _save,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          widget.task == null ? 'Create Task' : 'Save Changes',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

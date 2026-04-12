@@ -1,5 +1,8 @@
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
+import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
+import 'package:provider/provider.dart';
 
 /// Hosts the animated notch bottom bar package.
 class AnimatedNotchNavBarWrapper extends StatefulWidget {
@@ -72,6 +75,7 @@ class _AnimatedNotchNavBarWrapperState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final selections = context.watch<SettingsController>().navigationIcons;
 
     return SafeArea(
       top: false,
@@ -103,11 +107,15 @@ class _AnimatedNotchNavBarWrapperState
         bottomBarItems: [
           BottomBarItem(
             inActiveItem: Icon(
-              Icons.dashboard_outlined,
+              NavIconMapper.getIconForPage('dashboard', selections),
               color: colorScheme.onSurfaceVariant,
             ),
             activeItem: _buildAnimatedIcon(
-              icon: Icons.dashboard,
+              icon: NavIconMapper.getIconForPage(
+                'dashboard',
+                selections,
+                isSelected: true,
+              ),
               color: colorScheme.onPrimary,
               isActive: _internalIndex == 0,
             ),
@@ -115,11 +123,15 @@ class _AnimatedNotchNavBarWrapperState
           ),
           BottomBarItem(
             inActiveItem: Icon(
-              Icons.checklist_outlined,
+              NavIconMapper.getIconForPage('tasks', selections),
               color: colorScheme.onSurfaceVariant,
             ),
             activeItem: _buildAnimatedIcon(
-              icon: Icons.checklist,
+              icon: NavIconMapper.getIconForPage(
+                'tasks',
+                selections,
+                isSelected: true,
+              ),
               color: colorScheme.onPrimary,
               isActive: _internalIndex == 1,
             ),
@@ -127,11 +139,15 @@ class _AnimatedNotchNavBarWrapperState
           ),
           BottomBarItem(
             inActiveItem: Icon(
-              Icons.alarm_outlined,
+              NavIconMapper.getIconForPage('reminders', selections),
               color: colorScheme.onSurfaceVariant,
             ),
             activeItem: _buildAnimatedIcon(
-              icon: Icons.alarm,
+              icon: NavIconMapper.getIconForPage(
+                'reminders',
+                selections,
+                isSelected: true,
+              ),
               color: colorScheme.onPrimary,
               isActive: _internalIndex == 2,
             ),
@@ -139,11 +155,15 @@ class _AnimatedNotchNavBarWrapperState
           ),
           BottomBarItem(
             inActiveItem: Icon(
-              Icons.note_outlined,
+              NavIconMapper.getIconForPage('notes', selections),
               color: colorScheme.onSurfaceVariant,
             ),
             activeItem: _buildAnimatedIcon(
-              icon: Icons.note,
+              icon: NavIconMapper.getIconForPage(
+                'notes',
+                selections,
+                isSelected: true,
+              ),
               color: colorScheme.onPrimary,
               isActive: _internalIndex == 3,
             ),
@@ -151,11 +171,15 @@ class _AnimatedNotchNavBarWrapperState
           ),
           BottomBarItem(
             inActiveItem: Icon(
-              Icons.settings_outlined,
+              NavIconMapper.getIconForPage('settings', selections),
               color: colorScheme.onSurfaceVariant,
             ),
             activeItem: _buildAnimatedIcon(
-              icon: Icons.settings,
+              icon: NavIconMapper.getIconForPage(
+                'settings',
+                selections,
+                isSelected: true,
+              ),
               color: colorScheme.onPrimary,
               isActive: _internalIndex == 4,
             ),

@@ -56,4 +56,7 @@ class FakeSettingsRepository implements SettingsRepositoryInterface {
 
   @override
   Future<void> deletePreset(String id) async {}
+
+  @override
+  Future<void> saveNavigationIcons(Map<String, int> icons) async {}
 }

@@ -43,12 +43,18 @@ class SyncSection extends StatelessWidget {
                       if (hasTaskConflicts) {
                         await showDialog<void>(
                           context: context,
-                          builder: (_) => const TaskConflictResolutionDialog(),
+                          builder: (_) =>
+                              TaskConflictResolutionDialog.wrapWithRequiredProviders(
+                                context,
+                              ),
                         );
                       } else if (hasNoteConflicts) {
                         await showDialog<void>(
                           context: context,
-                          builder: (_) => const NoteConflictResolutionDialog(),
+                          builder: (_) =>
+                              NoteConflictResolutionDialog.wrapWithRequiredProviders(
+                                context,
+                              ),
                         );
                       }
                     },

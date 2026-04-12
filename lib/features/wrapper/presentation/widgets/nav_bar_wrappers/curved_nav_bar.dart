@@ -1,6 +1,9 @@
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter/material.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
+import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
+import 'package:provider/provider.dart';
 
 /// Hosts the curved labeled bottom navigation bar.
 class CurvedNavBarWrapper extends StatelessWidget {
@@ -20,6 +23,7 @@ class CurvedNavBarWrapper extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final selections = context.watch<SettingsController>().navigationIcons;
 
     return SafeArea(
       child: CurvedNavigationBar(
@@ -35,7 +39,11 @@ class CurvedNavBarWrapper extends StatelessWidget {
         items: [
           CurvedNavigationBarItem(
             child: Icon(
-              selectedIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
+              NavIconMapper.getIconForPage(
+                'dashboard',
+                selections,
+                isSelected: selectedIndex == 0,
+              ),
               color: selectedIndex == 0
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
@@ -48,7 +56,11 @@ class CurvedNavBarWrapper extends StatelessWidget {
           ),
           CurvedNavigationBarItem(
             child: Icon(
-              selectedIndex == 1 ? Icons.checklist : Icons.checklist_outlined,
+              NavIconMapper.getIconForPage(
+                'tasks',
+                selections,
+                isSelected: selectedIndex == 1,
+              ),
               color: selectedIndex == 1
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
@@ -61,7 +73,11 @@ class CurvedNavBarWrapper extends StatelessWidget {
           ),
           CurvedNavigationBarItem(
             child: Icon(
-              selectedIndex == 2 ? Icons.alarm : Icons.alarm_outlined,
+              NavIconMapper.getIconForPage(
+                'reminders',
+                selections,
+                isSelected: selectedIndex == 2,
+              ),
               color: selectedIndex == 2
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
@@ -74,7 +90,11 @@ class CurvedNavBarWrapper extends StatelessWidget {
           ),
           CurvedNavigationBarItem(
             child: Icon(
-              selectedIndex == 3 ? Icons.note : Icons.note_outlined,
+              NavIconMapper.getIconForPage(
+                'notes',
+                selections,
+                isSelected: selectedIndex == 3,
+              ),
               color: selectedIndex == 3
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
@@ -87,7 +107,11 @@ class CurvedNavBarWrapper extends StatelessWidget {
           ),
           CurvedNavigationBarItem(
             child: Icon(
-              selectedIndex == 4 ? Icons.settings : Icons.settings_outlined,
+              NavIconMapper.getIconForPage(
+                'settings',
+                selections,
+                isSelected: selectedIndex == 4,
+              ),
               color: selectedIndex == 4
                   ? colorScheme.onPrimary
                   : colorScheme.onSurfaceVariant,
