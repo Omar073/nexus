@@ -174,43 +174,6 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
               ),
             ],
           ),
-          bottomNavigationBar: TweenAnimationBuilder<Color?>(
-            tween: ColorTween(
-              begin: isLight ? Colors.white : const Color(0xFF000000),
-              end: isLight ? Colors.white : const Color(0xFF000000),
-            ),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            builder: (context, bgColor, child) {
-              return NavigationBar(
-                selectedIndex: 0,
-                onDestinationSelected: (_) {},
-                backgroundColor: bgColor,
-                indicatorColor: previewPrimary.withValues(alpha: 0.2),
-                destinations: [
-                  NavigationDestination(
-                    icon: Icon(Icons.checklist_outlined, color: previewPrimary),
-                    selectedIcon: Icon(Icons.checklist, color: previewPrimary),
-                    label: 'Tasks',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(
-                      Icons.note_outlined,
-                      color: isLight ? Colors.black54 : Colors.white54,
-                    ),
-                    label: 'Notes',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: isLight ? Colors.black54 : Colors.white54,
-                    ),
-                    label: 'Settings',
-                  ),
-                ],
-              );
-            },
-          ),
         ),
       ),
     );

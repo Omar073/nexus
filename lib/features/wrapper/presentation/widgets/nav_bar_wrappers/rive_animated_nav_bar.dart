@@ -8,9 +8,8 @@ import 'package:rive/rive.dart';
 /// Bottom navigation bar with animated Rive icons.
 ///
 /// Each tab icon is a Rive artboard driven by a state machine.
-/// Tapping an icon triggers the `active` boolean input, which
-/// plays the artboard's active animation for one second before
-/// returning to idle.
+/// The `active` boolean input is pulsed when the selected tab changes,
+/// whether from a bar tap or from the main [PageView] swipe (shell index).
 class RiveAnimatedNavBar extends StatefulWidget {
   const RiveAnimatedNavBar({
     super.key,
@@ -51,6 +50,13 @@ class _RiveAnimatedNavBarState extends State<RiveAnimatedNavBar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedIndex != widget.selectedIndex) {
       _selectedIndex = widget.selectedIndex;
+      // Swipe (PageView) updates [selectedIndex] via the shell without tapping
+      // the bar; mirror tap behavior and pulse the active Rive input.
+      if (_isLoaded &&
+          widget.selectedIndex >= 0 &&
+          widget.selectedIndex < _inputs.length) {
+        _animateIcon(widget.selectedIndex);
+      }
     }
   }
 
@@ -96,9 +102,10 @@ class _RiveAnimatedNavBarState extends State<RiveAnimatedNavBar> {
   }
 
   void _onTap(int index) {
-    _animateIcon(index);
     setState(() => _selectedIndex = index);
     widget.onDestinationSelected(index);
+    // Animation runs from [didUpdateWidget] when the shell reports the new
+    // [selectedIndex], same path as PageView swipes.
   }
 
   @override

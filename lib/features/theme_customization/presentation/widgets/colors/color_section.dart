@@ -5,6 +5,7 @@ import 'package:nexus/features/theme_customization/presentation/widgets/colors/c
 import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_styles/nav_bar_style_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/presets/preset_list_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/icons/icon_selection_section.dart';
+import 'package:nexus/features/theme_customization/presentation/widgets/icons/rive_icon_gallery_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/preview/theme_preview_card.dart';
 import 'package:provider/provider.dart';
 
@@ -111,6 +112,8 @@ class ColorSection extends StatelessWidget {
           NavBarStyleSection(isLight: isLight),
           const SizedBox(height: 32),
           const IconSelectionSection(),
+          const SizedBox(height: 32),
+          const RiveIconGallerySection(),
           const SizedBox(height: 24),
         ],
       ),

@@ -47,7 +47,7 @@ You are an expert in Flutter and Dart development. Your goal is to build beautif
 
 * **Best Practices:** Always adhere to best practices of software engineering.
 * **Modularity:** Make your files short, modular, and maintainable.
-* **File Size:** Aim to keep Dart files under **300 lines** where practical. If a file grows beyond this, strongly consider splitting it into smaller, feature-focused files.
+* **File Size:** Prefer **no Dart file longer than about 270 lines**. Past that point, **organize and split** it (e.g. extract widgets, helpers, mixins, or move logic into sibling files under the same feature). Treat this as a soft ceiling: when adding or editing code would push a file past ~270 lines, refactor into smaller, feature-focused files instead of growing one large file.
 * **Scalability:** Always put scalability and long-term consequences in perspective.
 * **Code Structure:** Adhere to maintainable code structure and separation of concerns (e.g., UI logic separate from business logic).
 * **Naming Conventions:** Avoid abbreviations and use meaningful, consistent, descriptive names for variables, functions, and classes.

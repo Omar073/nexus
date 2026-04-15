@@ -29,10 +29,8 @@ class NavIconMapper {
     return _filledCounterparts[icon] ?? icon;
   }
 
-  /// A unified superset of all icons available across pages.
-  ///
-  /// Useful for \"Show all icons\" experiences while still keeping per-page
-  /// curated defaults.
+  /// Unified superset of every icon from [selectableIcons] (deduped by
+  /// code point). The appearance customization grid uses this full set per tab.
   static List<IconData> get allSelectableIcons {
     final seen = <int>{};
     final result = <IconData>[];

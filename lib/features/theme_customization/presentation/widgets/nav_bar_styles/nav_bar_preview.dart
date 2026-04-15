@@ -1,15 +1,17 @@
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
-import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
+import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/curved_nav_bar.dart';
 import 'package:nexus/features/wrapper/presentation/widgets/nav_bar_wrappers/rive_animated_nav_bar.dart';
 import 'package:provider/provider.dart';
 
+import 'google_nav_bar_preview.dart';
+import 'material_nav_bar_preview.dart';
+import 'notch_nav_bar_preview.dart';
+
 /// Interactive preview of the selected navigation bar style.
-/// Users can tap different buttons but it doesn't navigate anywhere.
+/// Taps change the highlighted tab only; they do not navigate.
 class NavBarPreview extends StatefulWidget {
   const NavBarPreview({super.key, required this.style, required this.isLight});
 
@@ -22,13 +24,8 @@ class NavBarPreview extends StatefulWidget {
 
 class _NavBarPreviewState extends State<NavBarPreview> {
   int _selectedIndex = 0;
-  late NotchBottomBarController _notchController;
-
-  @override
-  void initState() {
-    super.initState();
-    _notchController = NotchBottomBarController(index: 0);
-  }
+  late final NotchBottomBarController _notchController =
+      NotchBottomBarController(index: 0);
 
   @override
   void dispose() {
@@ -51,6 +48,7 @@ class _NavBarPreviewState extends State<NavBarPreview> {
         : (settings.darkColors.primary ?? const Color(0xFF9FA8DA));
     final bgColor = widget.isLight ? Colors.white : const Color(0xFF1E1E1E);
     final inactiveColor = widget.isLight ? Colors.black54 : Colors.white54;
+    final selections = settings.navigationIcons;
 
     return Container(
       decoration: BoxDecoration(
@@ -61,198 +59,95 @@ class _NavBarPreviewState extends State<NavBarPreview> {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: _buildNavBar(primary, bgColor, inactiveColor),
+      child: _PreviewBody(
+        style: widget.style,
+        selectedIndex: _selectedIndex,
+        onTap: _onTap,
+        primary: primary,
+        backgroundColor: bgColor,
+        inactiveColor: inactiveColor,
+        selections: selections,
+        notchController: _notchController,
+        notchItemLabelStyle: TextStyle(
+          fontSize: 10,
+          color: widget.isLight ? Colors.black54 : Colors.white54,
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildNavBar(Color primary, Color bgColor, Color inactiveColor) {
-    final selections = context.watch<SettingsController>().navigationIcons;
+class _PreviewBody extends StatelessWidget {
+  const _PreviewBody({
+    required this.style,
+    required this.selectedIndex,
+    required this.onTap,
+    required this.primary,
+    required this.backgroundColor,
+    required this.inactiveColor,
+    required this.selections,
+    required this.notchController,
+    required this.notchItemLabelStyle,
+  });
 
-    switch (widget.style) {
+  final NavBarStyle style;
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+  final Color primary;
+  final Color backgroundColor;
+  final Color inactiveColor;
+  final Map<String, int> selections;
+  final NotchBottomBarController notchController;
+  final TextStyle notchItemLabelStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (style) {
       case NavBarStyle.standard:
-        return NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: _onTap,
-          backgroundColor: bgColor,
-          indicatorColor: primary.withValues(alpha: 0.2),
-          destinations: [
-            NavigationDestination(
-              icon: Icon(
-                NavIconMapper.getIconForPage('dashboard', selections),
-                color: inactiveColor,
-              ),
-              selectedIcon: Icon(
-                NavIconMapper.getIconForPage(
-                  'dashboard',
-                  selections,
-                  isSelected: true,
-                ),
-                color: primary,
-              ),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(
-                NavIconMapper.getIconForPage('tasks', selections),
-                color: inactiveColor,
-              ),
-              selectedIcon: Icon(
-                NavIconMapper.getIconForPage(
-                  'tasks',
-                  selections,
-                  isSelected: true,
-                ),
-                color: primary,
-              ),
-              label: 'Tasks',
-            ),
-            NavigationDestination(
-              icon: Icon(
-                NavIconMapper.getIconForPage('settings', selections),
-                color: inactiveColor,
-              ),
-              selectedIcon: Icon(
-                NavIconMapper.getIconForPage(
-                  'settings',
-                  selections,
-                  isSelected: true,
-                ),
-                color: primary,
-              ),
-              label: 'Settings',
-            ),
-          ],
+        return MaterialNavBarPreview(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onTap,
+          primary: primary,
+          backgroundColor: backgroundColor,
+          inactiveColor: inactiveColor,
+          selections: selections,
         );
-
       case NavBarStyle.google:
-        return Container(
-          color: bgColor,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: GNav(
-            selectedIndex: _selectedIndex,
-            onTabChange: _onTap,
-            gap: 8,
-            activeColor: primary,
-            iconSize: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            tabBackgroundColor: primary.withValues(alpha: 0.15),
-            color: inactiveColor,
-            tabs: [
-              GButton(
-                icon: NavIconMapper.getIconForPage(
-                  'dashboard',
-                  selections,
-                  isSelected: _selectedIndex == 0,
-                ),
-                text: 'Dashboard',
-              ),
-              GButton(
-                icon: NavIconMapper.getIconForPage(
-                  'tasks',
-                  selections,
-                  isSelected: _selectedIndex == 1,
-                ),
-                text: 'Tasks',
-              ),
-              GButton(
-                icon: NavIconMapper.getIconForPage(
-                  'settings',
-                  selections,
-                  isSelected: _selectedIndex == 2,
-                ),
-                text: 'Settings',
-              ),
-            ],
-          ),
+        return GoogleNavBarPreview(
+          selectedIndex: selectedIndex,
+          onTabChange: onTap,
+          primary: primary,
+          backgroundColor: backgroundColor,
+          inactiveColor: inactiveColor,
+          selections: selections,
         );
-
       case NavBarStyle.curved:
         return SizedBox(
           height: 90,
           child: CurvedNavBarWrapper(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: _onTap,
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onTap,
           ),
         );
-
       case NavBarStyle.notch:
         return SizedBox(
           height: 100,
-          child: AnimatedNotchBottomBar(
-            notchBottomBarController: _notchController,
-            onTap: _onTap,
-            color: bgColor,
-            showLabel: true,
-            textOverflow: TextOverflow.visible,
-            maxLine: 1,
-            shadowElevation: 5,
-            kBottomRadius: 28.0,
-            notchColor: primary,
-            removeMargins: false,
-            showShadow: false,
-            durationInMilliSeconds: 300,
-            itemLabelStyle: TextStyle(
-              fontSize: 10,
-              color: widget.isLight ? Colors.black54 : Colors.white54,
-            ),
-            elevation: 1,
-            kIconSize: 24.0,
-            bottomBarItems: [
-              BottomBarItem(
-                inActiveItem: Icon(
-                  NavIconMapper.getIconForPage('dashboard', selections),
-                  color: inactiveColor,
-                ),
-                activeItem: Icon(
-                  NavIconMapper.getIconForPage(
-                    'dashboard',
-                    selections,
-                    isSelected: true,
-                  ),
-                  color: Colors.white,
-                ),
-                itemLabel: 'Dashboard',
-              ),
-              BottomBarItem(
-                inActiveItem: Icon(
-                  NavIconMapper.getIconForPage('tasks', selections),
-                  color: inactiveColor,
-                ),
-                activeItem: Icon(
-                  NavIconMapper.getIconForPage(
-                    'tasks',
-                    selections,
-                    isSelected: true,
-                  ),
-                  color: Colors.white,
-                ),
-                itemLabel: 'Tasks',
-              ),
-              BottomBarItem(
-                inActiveItem: Icon(
-                  NavIconMapper.getIconForPage('settings', selections),
-                  color: inactiveColor,
-                ),
-                activeItem: Icon(
-                  NavIconMapper.getIconForPage(
-                    'settings',
-                    selections,
-                    isSelected: true,
-                  ),
-                  color: Colors.white,
-                ),
-                itemLabel: 'Settings',
-              ),
-            ],
+          child: NotchNavBarPreview(
+            notchBottomBarController: notchController,
+            onTap: onTap,
+            primary: primary,
+            backgroundColor: backgroundColor,
+            inactiveColor: inactiveColor,
+            itemLabelStyle: notchItemLabelStyle,
+            selections: selections,
           ),
         );
-
       case NavBarStyle.rive:
         return SizedBox(
           height: 80,
           child: RiveAnimatedNavBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: _onTap,
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onTap,
           ),
         );
     }
