@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/core/widgets/app_drawer_button.dart';
 import 'package:nexus/core/widgets/filter_chip_bar.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
@@ -70,7 +71,7 @@ class NotesBody extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.tune),
                     onPressed: () {
-                      showModalBottomSheet(
+                      showNexusBottomSheet(
                         context: context,
                         builder: (context) => Column(
                           mainAxisSize: MainAxisSize.min,

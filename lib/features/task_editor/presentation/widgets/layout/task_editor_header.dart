@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Title row and close/done actions for the task editor.
-
 class TaskEditorHeader extends StatelessWidget {
   const TaskEditorHeader({
     super.key,
@@ -20,7 +19,6 @@ class TaskEditorHeader extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Handle bar
         Container(
           margin: const EdgeInsets.only(top: 12),
           width: 40,
@@ -32,7 +30,6 @@ class TaskEditorHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        // Header
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
           child: Row(

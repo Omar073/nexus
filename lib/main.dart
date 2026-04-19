@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:nexus/app/theme/app_theme.dart';
+import 'package:nexus/core/widgets/layout/nexus_root_safe_area.dart';
 import 'package:nexus/features/splash/presentation/pages/splash_wrapper.dart';
 
 Future<void> main() async {
@@ -23,6 +24,8 @@ Future<void> main() async {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       home: const SplashWrapper(),
+      builder: (context, child) =>
+          NexusRootSafeArea(child: child ?? const SizedBox.shrink()),
     ),
   );
 }

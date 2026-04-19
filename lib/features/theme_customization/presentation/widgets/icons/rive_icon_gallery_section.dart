@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:rive/rive.dart';
 
+import 'rive_icon_gallery_body.dart';
 import 'rive_icon_gallery_config.dart';
 import 'rive_icon_gallery_pulse_resolver.dart';
 
@@ -178,94 +179,14 @@ class _RiveIconGallerySectionState extends State<RiveIconGallerySection> {
             ),
           )
         else
-          _buildGallery(theme),
+          RiveIconGalleryBody(
+            controllers: _controllers,
+            sectionTitles: _sectionTitles,
+            pulseCallbacks: _pulseCallbacks,
+            onPulse: _pulse,
+          ),
         const SizedBox(height: 8),
       ],
-    );
-  }
-
-  Widget _buildGallery(ThemeData theme) {
-    final bySection = <String, List<int>>{};
-    for (var i = 0; i < _controllers.length; i++) {
-      final title = _sectionTitles[i];
-      bySection.putIfAbsent(title, () => []).add(i);
-    }
-
-    final sections = bySection.entries.toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var s = 0; s < sections.length; s++) ...[
-          if (s > 0) const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'Collection ${s + 1}',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: sections[s].value.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, i) {
-                final globalIndex = sections[s].value[i];
-                return _buildTile(theme, globalIndex);
-              },
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildTile(ThemeData theme, int index) {
-    final hasPulse = _pulseCallbacks[index] != null;
-    final ab = _controllers[index].artboard;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: hasPulse ? () => _pulse(index) : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 56,
-                height: 56,
-                child: IgnorePointer(
-                  // Prevent Rive state machines from also consuming pointer
-                  // events (hover/click loops). Taps are handled by InkWell.
-                  child: RiveWidget(controller: _controllers[index]),
-                ),
-              ),
-              const SizedBox(height: 4),
-              SizedBox(
-                width: 96,
-                child: Text(
-                  ab.name,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

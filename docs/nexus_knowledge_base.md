@@ -138,7 +138,7 @@ Shared infrastructure **used by multiple features**:
 - **`core/data/`** — Hive box names, type IDs, sync queue types and adapters, anything that is “the database shape” without belonging to a single feature.
 - **`core/services/`** — Cross-cutting services: **`SyncService`** (queue processor), **storage** (Google Drive, paths), **notifications** (`NotificationService`, `battery_optimization_first_launch_prompt` for one-time Android exemption flow, `battery_optimization_dialog` for the explanation UI), **platform** (connectivity, health checks), **debug** logging, **`note_embed_service`** (voice attach/playback helpers for notes), **`connectivity_monitor_service`**, etc.
 - **`core/utils/`** — Shared non-UI logic (conflict helpers, backoff, etc.).
-- **`core/widgets/`** — Reusable UI such as **`NexusCard`**, debug overlays, shared snackbars.
+- **`core/widgets/`** — Reusable UI such as **`NexusCard`**, debug overlays, shared snackbars, and shared pickers (for example `time_picker/nexus_time_picker.dart` used by reminders and task due-time flows).
 
 Think of **`core/`** as “platform and plumbing”; think of **`features/`** as “product areas”.
 

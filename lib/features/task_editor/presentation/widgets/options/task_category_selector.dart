@@ -3,7 +3,6 @@ import 'package:nexus/features/categories/data/models/category.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 
 /// Category picker row in the task editor sheet.
-
 class TaskCategorySelector extends StatelessWidget {
   const TaskCategorySelector({
     super.key,
@@ -15,6 +14,7 @@ class TaskCategorySelector extends StatelessWidget {
     required this.onCreateNewCategory,
     required this.onCreateNewSubcategory,
   });
+  // todo: should we extract this as a new class?
 
   final CategoryController categoryController;
   final String? selectedCategoryId;
@@ -31,9 +31,6 @@ class TaskCategorySelector extends StatelessWidget {
     final categories = categoryController.rootCategories;
     final categoryIds = categories.map((c) => c.id).toSet();
 
-    // If the currently selected category no longer exists (e.g. category was
-    // deleted or data migrated), gracefully fall back to "No category" instead
-    // of asserting inside [DropdownButton].
     final effectiveCategoryId =
         selectedCategoryId != null && categoryIds.contains(selectedCategoryId)
         ? selectedCategoryId
@@ -45,8 +42,6 @@ class TaskCategorySelector extends StatelessWidget {
 
     final subcategoryIds = subcategories.map((c) => c.id).toSet();
 
-    // Similarly, if the selected subcategory no longer exists under the
-    // effective category, treat it as "No subcategory".
     final effectiveSubcategoryId =
         selectedSubcategoryId != null &&
             subcategoryIds.contains(selectedSubcategoryId)
@@ -63,7 +58,6 @@ class TaskCategorySelector extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // Category dropdown
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
@@ -98,7 +92,6 @@ class TaskCategorySelector extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Add new category option
                 DropdownMenuItem<String?>(
                   value: '__create_new__',
                   child: Row(
@@ -127,7 +120,6 @@ class TaskCategorySelector extends StatelessWidget {
             ),
           ),
         ),
-        // Subcategory dropdown (only if category is selected)
         if (effectiveCategoryId != null) ...[
           const SizedBox(height: 12),
           Container(
@@ -164,7 +156,6 @@ class TaskCategorySelector extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Add new subcategory option
                   DropdownMenuItem<String?>(
                     value: '__create_new_sub__',
                     child: Row(

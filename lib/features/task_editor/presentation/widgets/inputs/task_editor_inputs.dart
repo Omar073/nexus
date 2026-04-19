@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Title and notes text fields for a task.
-
 class TaskEditorInputs extends StatelessWidget {
   const TaskEditorInputs({
     super.key,
@@ -22,7 +21,6 @@ class TaskEditorInputs extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title input
         TextField(
           controller: titleController,
           autofocus: isNewTask,
@@ -46,7 +44,6 @@ class TaskEditorInputs extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        // Description
         TextField(
           controller: descController,
           minLines: 2,

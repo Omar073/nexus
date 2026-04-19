@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 import 'package:nexus/features/tasks/domain/task_sort_option.dart';
@@ -6,7 +7,7 @@ import 'package:provider/provider.dart';
 
 /// Bottom sheet for selecting task and category sort options.
 void showSortBottomSheet(BuildContext context) {
-  showModalBottomSheet(
+  showNexusBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

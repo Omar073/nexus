@@ -73,6 +73,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   rive: ^0.14.4
+  wheel_picker: ^0.3.0
 
 dev_dependencies:
   flutter_test:

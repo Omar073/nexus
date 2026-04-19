@@ -3,7 +3,6 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/components/task_priority_button.dart';
 
 /// Priority, due date, and reminder chips for the editor.
-
 class TaskAttributeSelectors extends StatelessWidget {
   const TaskAttributeSelectors({
     super.key,
@@ -25,7 +24,6 @@ class TaskAttributeSelectors extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Priority selector
         Text(
           'Priority',
           style: theme.textTheme.titleSmall?.copyWith(
@@ -64,7 +62,6 @@ class TaskAttributeSelectors extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        // Difficulty selector
         Text(
           'Difficulty',
           style: theme.textTheme.titleSmall?.copyWith(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
@@ -69,7 +70,7 @@ class _TasksScreenState extends State<TasksScreen>
     List<Category> sortedCategories,
   ) {
     final taskController = context.read<TaskController>();
-    showModalBottomSheet(
+    showNexusBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

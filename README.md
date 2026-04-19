@@ -62,8 +62,10 @@ Capture and organize everything you need to do with powerful task management:
 
 Never miss an important moment with reliable notification reminders:
 
+- **Fast bottom-sheet entry**: add reminders from a keyboard-first bottom sheet with quick presets and manual wheel time selection.
 - **Smart notifications**: get notified at exactly the right time with reliable background scheduling that works even when the app is closed.
 - **Flexible scheduling**: set one-time or recurring reminders, snooze when needed, and reschedule as plans change.
+- **Natural time rollover**: selecting a clock time that already passed today automatically schedules it for the next day.
 - **Background reliability**: uses multiple strategies (AlarmManager, in-app timers, and Workmanager) to help notifications fire reliably across different Android devices. On first launch, Nexus asks to be excluded from battery optimization so reminders survive Doze mode, and all scheduled alarms are automatically restored after a device reboot.
 
 ### Notes

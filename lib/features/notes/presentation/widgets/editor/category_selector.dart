@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/features/notes/presentation/state_management/note_controller.dart';
 import 'package:nexus/features/notes/domain/entities/note_entity.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
@@ -58,7 +59,7 @@ class CategorySelector extends StatelessWidget {
     NoteEntity note,
     CategoryController categoryController,
   ) {
-    showModalBottomSheet(
+    showNexusBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => DraggableScrollableSheet(

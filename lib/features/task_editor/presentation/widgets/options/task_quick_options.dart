@@ -4,7 +4,6 @@ import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/task_editor/presentation/widgets/components/task_option_chip.dart';
 
 /// One-tap chips for common task editor shortcuts.
-
 class TaskQuickOptions extends StatelessWidget {
   const TaskQuickOptions({
     super.key,
@@ -17,6 +16,7 @@ class TaskQuickOptions extends StatelessWidget {
     required this.onPickDueTime,
     required this.onPickRecurrence,
   });
+  // todo: should we extract this as a new class?
 
   final DateTime? startDate;
   final DateTime? dueDate;
@@ -44,7 +44,6 @@ class TaskQuickOptions extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        // Start date chip
         TaskOptionChip(
           icon: Icons.calendar_today_outlined,
           label: startDate != null
@@ -53,7 +52,6 @@ class TaskQuickOptions extends StatelessWidget {
           isSelected: startDate != null,
           onTap: onPickStartDate,
         ),
-        // Due date chip
         TaskOptionChip(
           icon: Icons.calendar_today,
           label: dueDate != null
@@ -62,14 +60,12 @@ class TaskQuickOptions extends StatelessWidget {
           isSelected: dueDate != null,
           onTap: onPickDueDate,
         ),
-        // Due time chip
         TaskOptionChip(
           icon: Icons.schedule,
           label: dueTime != null ? dueTime!.format(context) : 'Time',
           isSelected: dueTime != null,
           onTap: onPickDueTime,
         ),
-        // Repeat chip
         TaskOptionChip(
           icon: Icons.repeat,
           label: _getRecurrenceLabel(recurrence),

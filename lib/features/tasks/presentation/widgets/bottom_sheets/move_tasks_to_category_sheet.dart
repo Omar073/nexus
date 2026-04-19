@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
 
 /// Bulk reassignment of tasks to another category.
@@ -12,7 +13,7 @@ class MoveTasksToCategorySheet {
     final theme = Theme.of(context);
     final nav = Navigator.of(context);
 
-    return showModalBottomSheet<String?>(
+    return showNexusBottomSheet<String?>(
       context: context,
       builder: (context) {
         return SafeArea(

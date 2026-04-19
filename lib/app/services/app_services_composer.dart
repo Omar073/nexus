@@ -7,6 +7,7 @@ import 'package:nexus/core/services/notifications/notification_complete_pending.
 import 'package:nexus/core/services/platform/connectivity_service.dart';
 import 'package:nexus/core/services/debug/debug_logger_service.dart';
 import 'package:nexus/core/widgets/debug/global_debug_overlay.dart';
+import 'package:nexus/core/widgets/layout/nexus_root_safe_area.dart';
 import 'package:nexus/features/reminders/domain/repositories/reminder_repository_interface.dart';
 import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,7 @@ StreamSubscription<FileSystemEvent>? _pendingCompleteWatchSub;
 Widget wrapWithOverlays(BuildContext context, Widget child) {
   // Wrap sequentially: innermost first
   child = GlobalDebugOverlay(child: child);
+  child = NexusRootSafeArea(child: child);
   // For future wrappers: child = NewWrapper(child: child);
   return child;
 }

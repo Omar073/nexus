@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
+import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/core/services/note_embed_service.dart';
 import 'package:nexus/core/services/storage/attachment_storage_service.dart';
 import 'package:nexus/features/notes/domain/entities/note_attachment_entity.dart';
@@ -61,7 +62,7 @@ class _AttachmentButtonState extends State<AttachmentButton> {
   }
 
   Future<void> _showAttachmentOptions(BuildContext context) async {
-    final result = await showModalBottomSheet<String>(
+    final result = await showNexusBottomSheet<String>(
       context: context,
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,

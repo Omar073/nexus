@@ -23,6 +23,9 @@ import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/tasks/domain/task_sort_option.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 
+part 'settings_controller_colors.dart';
+part 'settings_controller_nav.dart';
+
 /// In-memory [AppSettingsEntity] plus theme/nav/task preference writes.
 /// Each `update*` method delegates to a small use case and notifies listeners.
 
@@ -196,48 +199,18 @@ class SettingsController extends ChangeNotifier {
   }
 
   void updatePrimaryColor(Brightness brightness, Color color) {
-    if (brightness == Brightness.light) {
-      _lightColors = CustomColors(
-        primary: color,
-        secondary: _lightColors.secondary,
-      );
-    } else {
-      _darkColors = CustomColors(
-        primary: color,
-        secondary: _darkColors.secondary,
-      );
-    }
+    settingsUpdatePrimaryColor(this, brightness, color);
     notifyListeners();
-    _updatePrimaryColor.call(
-      brightness == Brightness.light ? 'light' : 'dark',
-      color.toARGB32(),
-    );
   }
 
   void updateSecondaryColor(Brightness brightness, Color color) {
-    if (brightness == Brightness.light) {
-      _lightColors = CustomColors(
-        primary: _lightColors.primary,
-        secondary: color,
-      );
-    } else {
-      _darkColors = CustomColors(
-        primary: _darkColors.primary,
-        secondary: color,
-      );
-    }
+    settingsUpdateSecondaryColor(this, brightness, color);
     notifyListeners();
-    _updateSecondaryColor.call(
-      brightness == Brightness.light ? 'light' : 'dark',
-      color.toARGB32(),
-    );
   }
 
   void resetColors() {
-    _lightColors = const CustomColors();
-    _darkColors = const CustomColors();
+    settingsResetColors(this);
     notifyListeners();
-    _resetColors.call();
   }
 
   static const Color _defaultLightPrimary = Color(0xFF1392EC);
@@ -246,48 +219,22 @@ class SettingsController extends ChangeNotifier {
   static const Color _defaultDarkSecondary = Color(0xFF80CBC4);
 
   Future<void> saveCurrentAsPreset(String name) async {
-    final preset = ColorPresetEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      lightPrimary: (_lightColors.primary ?? _defaultLightPrimary).toARGB32(),
-      lightSecondary: (_lightColors.secondary ?? _defaultLightSecondary)
-          .toARGB32(),
-      darkPrimary: (_darkColors.primary ?? _defaultDarkPrimary).toARGB32(),
-      darkSecondary: (_darkColors.secondary ?? _defaultDarkSecondary)
-          .toARGB32(),
-      createdAtIso: DateTime.now().toIso8601String(),
-    );
-    await _savePreset.call(preset);
-    _presets.add(_presetFromEntity(preset));
+    await settingsSaveCurrentAsPreset(this, name);
     notifyListeners();
   }
 
   void applyPreset(ColorPreset preset) {
-    _lightColors = CustomColors(
-      primary: preset.lightPrimary,
-      secondary: preset.lightSecondary,
-    );
-    _darkColors = CustomColors(
-      primary: preset.darkPrimary,
-      secondary: preset.darkSecondary,
-    );
+    settingsApplyPreset(this, preset);
     notifyListeners();
-    _updatePrimaryColor.call('light', preset.lightPrimary.toARGB32());
-    _updateSecondaryColor.call('light', preset.lightSecondary.toARGB32());
-    _updatePrimaryColor.call('dark', preset.darkPrimary.toARGB32());
-    _updateSecondaryColor.call('dark', preset.darkSecondary.toARGB32());
   }
 
   Future<void> deletePreset(String id) async {
-    await _deletePreset.call(id);
-    _presets.removeWhere((p) => p.id == id);
+    await settingsDeletePreset(this, id);
     notifyListeners();
   }
 
   Future<void> setNavIcon(String page, IconData icon) async {
-    _navigationIcons = Map<String, int>.from(_navigationIcons);
-    _navigationIcons[page] = icon.codePoint;
+    await settingsSetNavIcon(this, page, icon);
     notifyListeners();
-    await _updateNavIcons.call(_navigationIcons);
   }
 }

@@ -888,6 +888,19 @@ For a detailed technical explanation with code examples, see [`technical_concept
   - Produces a `TaskEditorResult` describing the user’s choices.
   - Delegates actual persistence to `TaskController`; the editor itself never writes to Hive.
 
+### Shared Time Picker (`lib/core/widgets/time_picker/`)
+
+- **Entry point**: [`showNexusTimePicker(...)`](lib/core/widgets/time_picker/nexus_time_picker.dart), a reusable wheel-based bottom sheet returning `TimeOfDay`.
+- **Current consumers**:
+  - Reminder editor bottom sheet: [`reminder_editor_dialog.dart`](lib/features/reminders/presentation/widgets/reminder_editor_dialog.dart)
+  - Task due-time selection: [`task_editor_sheet.dart`](lib/features/task_editor/presentation/pages/task_editor_sheet.dart)
+- **Behavior guarantees**:
+  - Uses system 12h/24h preference (`MediaQuery.alwaysUse24HourFormat`).
+  - Emits haptic feedback while hour/minute/(AM/PM) wheels change.
+- **Picker selection rationale**:
+  - Chosen: [`wheel_picker`](https://pub.dev/packages/wheel_picker)
+  - Considered alternative: [`bottom_picker`](https://pub.dev/packages/bottom_picker)
+
 ## 9.2 Reminders
 
 ### Reminders Architecture
@@ -903,6 +916,11 @@ For a detailed technical explanation with code examples, see [`technical_concept
 
 - Creating/updating schedules a local notification via [`ReminderController.create()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L81) and [`update()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L107).
 - Completing/deleting cancels the scheduled notification via [`complete()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L136) and [`delete()`](lib/features/reminders/presentation/state_management/reminder_controller.dart#L130).
+- Reminder creation/edit UI is a bottom sheet with:
+  - autofocus on title input for keyboard-first entry,
+  - horizontally scrollable quick presets,
+  - manual wheel-based time selection.
+- Reminder time semantics: if the chosen clock time is already in the past for today, it is rolled to the same time on the next day.
 
 **Scheduling a reminder notification (typical shape):**
 
