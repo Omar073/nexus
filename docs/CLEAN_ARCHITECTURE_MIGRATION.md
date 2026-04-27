@@ -119,7 +119,7 @@ Here is every subfolder we use and which layer it belongs to:
 |-------|-----------|---------|---------|
 | `domain/` | `entities/` | Pure Dart business objects | `TaskEntity`, etc. (categories uses data model directly) |
 | `domain/` | `repositories/` | Abstract persistence contracts | `abstract class TaskRepositoryInterface` |
-| `domain/` | `use_cases/` | Single-responsibility business operations | `CreateTaskUseCase`, `DeleteTaskUseCase` |
+| `domain/` | `use_cases/` | Single-responsibility business operations | `CreateTaskUseCase`, `DeleteTaskUseCase`, `ResolveTaskConflictKeepLocalUseCase`, `RestoreTaskUseCase` |
 | `domain/` | *(root)* | Domain enums and value objects | `task_enums.dart`, `task_sort_option.dart` |
 | `data/` | `models/` | Hive/Firestore-annotated DTOs | `Task extends HiveObject`, `Category` |
 | `data/` | `mappers/` | Entity ↔ Model converters | `TaskMapper.toEntity()`, `TaskMapper.toModel()` |
@@ -361,8 +361,9 @@ class CreateTaskUseCase {
 **Key points:**
 - Depends on **repository interfaces** (`TaskRepository`), not implementations.
 - Lives in `domain/use_cases/`.
-- Contains the **business rules** (validation, entity creation, sync enqueueing).
+- Contains the **business rules** (validation, entity creation, sync enqueueing, conflict resolution, restore logic, attachment removal).
 - Controllers call use cases; use cases call repositories.
+- **All** operations that touch Hive, enqueue `SyncOperation`, or orchestrate side effects must live in use cases — never in presentation widgets or controllers directly.
 
 ---
 
@@ -574,9 +575,12 @@ lib/features/tasks/
       create_task_use_case.dart
       update_task_use_case.dart
       delete_task_use_case.dart
+      restore_task_use_case.dart
       toggle_task_completed_use_case.dart
       add_task_attachment_use_case.dart
       clear_category_on_tasks_use_case.dart
+      resolve_task_conflict_keep_local_use_case.dart
+      resolve_task_conflict_keep_remote_use_case.dart
     task_enums.dart
     task_sort_option.dart
   data/
@@ -670,7 +674,7 @@ All five checks passed for the final codebase.
 | Feature | `domain/` | `data/` | `presentation/` | Notes |
 |---------|:---------:|:-------:|:----------------:|-------|
 | **tasks** | entities, repos, use_cases, enums | models, mappers, repos, data_sources, sync | state_management, pages, widgets, utils, extensions | Most complete feature |
-| **notes** | entities, repos, use_cases | models, mappers, repos, data_sources, sync | state_management, pages, widgets | Includes sync handler |
+| **notes** | entities, repos, use_cases (incl. conflict/restore/attachment-removal) | models, mappers, repos, data_sources, sync | state_management, pages, widgets | Includes sync handler |
 | **reminders** | entities, repos, use_cases | models, mappers, repos, data_sources, services | state_management, pages, widgets | Has `data/services/` for timers |
 | **habits** | entities, repos, use_cases | models, mappers, repos, data_sources | state_management, pages, widgets | |
 | **settings** | entities, repos, use_cases | models, repos | state_management, pages, widgets | 13 use cases |
@@ -692,13 +696,14 @@ The following checks all pass on the final migrated codebase:
 | Check | Result |
 |-------|--------|
 | `flutter analyze` | No issues found |
-| `flutter test` | All 140 tests pass |
-| `.\scripts\run_ci_locally.ps1` (full CI) | All 8 steps pass |
+| `flutter test` | All 165 tests pass |
+| `.\scripts\run_ci_locally.ps1` (full CI) | All steps pass |
 | `flutter build apk --debug` | Builds successfully |
 | Domain → Data/Presentation imports | None found |
 | Data → Presentation imports | None found |
 | Old-path imports (`controllers/`, `views/`, `models/`, `sync/`) | None found in code (only in this doc) |
 | `legacy_mvc/` imports | None found |
+| `SyncOperation`/`Hive.box` in presentation widgets | None found |
 
 ---
 

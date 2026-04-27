@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive/hive_boxes.dart';
-import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:nexus/features/sync/presentation/state_management/sync_controller.dart';
+import 'package:nexus/features/tasks/data/mappers/task_mapper.dart';
 import 'package:nexus/features/tasks/data/models/task.dart';
-import 'package:nexus/features/tasks/domain/task_enums.dart';
+import 'package:nexus/features/tasks/domain/repositories/task_repository_interface.dart';
+import 'package:nexus/features/tasks/domain/use_cases/resolve_task_conflict_keep_local_use_case.dart';
+import 'package:nexus/features/tasks/domain/use_cases/resolve_task_conflict_keep_remote_use_case.dart';
 import 'package:nexus/features/tasks/presentation/widgets/task_conflict_snapshot_card.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 /// Resolves task edit conflicts (local vs remote).
 
@@ -38,7 +37,6 @@ class TaskConflictResolutionDialog extends StatefulWidget {
 class _TaskConflictResolutionDialogState
     extends State<TaskConflictResolutionDialog> {
   int _index = 0;
-  static const _uuid = Uuid();
 
   @override
   Widget build(BuildContext context) {
@@ -142,12 +140,9 @@ class _TaskConflictResolutionDialogState
     BuildContext context,
     SyncConflict<Task> conflict,
   ) async {
-    final tasksBox = Hive.box<Task>(HiveBoxes.tasks);
-    final remote = conflict.remote;
-    remote.isDirty = false;
-    remote.lastSyncedAt = DateTime.now();
-    remote.syncStatusEnum = SyncStatus.synced;
-    await tasksBox.put(remote.id, remote);
+    final repo = context.read<TaskRepositoryInterface>();
+    final useCase = ResolveTaskConflictKeepRemoteUseCase(repo);
+    await useCase.call(TaskMapper.toEntity(conflict.remote));
 
     if (!context.mounted) return;
     _removeConflict(context, conflict.entityId);
@@ -158,21 +153,8 @@ class _TaskConflictResolutionDialogState
     SyncConflict<Task> conflict,
   ) async {
     final syncService = context.read<SyncService>();
-    final local = conflict.local;
-    local.syncStatusEnum = SyncStatus.idle;
-    local.isDirty = true;
-    await local.save();
-
-    final op = SyncOperation(
-      id: _uuid.v4(),
-      type: SyncOperationType.update.index,
-      entityType: 'task',
-      entityId: local.id,
-      createdAt: DateTime.now(),
-      data: local.toFirestoreJson(),
-    );
-    await syncService.enqueueOperation(op);
-    await syncService.syncOnce();
+    final useCase = ResolveTaskConflictKeepLocalUseCase(syncService);
+    await useCase.call(conflict);
 
     if (!context.mounted) return;
     _removeConflict(context, conflict.entityId);

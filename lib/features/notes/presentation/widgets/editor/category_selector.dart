@@ -59,6 +59,7 @@ class CategorySelector extends StatelessWidget {
     NoteEntity note,
     CategoryController categoryController,
   ) {
+    final noteController = context.read<NoteController>();
     showNexusBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,10 +90,7 @@ class CategorySelector extends StatelessWidget {
                         leading: const Icon(Icons.block),
                         title: const Text('No Category'),
                         onTap: () {
-                          context.read<NoteController>().updateCategory(
-                            note,
-                            null,
-                          );
+                          noteController.updateCategory(note, null);
                           Navigator.pop(context);
                         },
                         selected: note.categoryId == null,
@@ -108,6 +106,7 @@ class CategorySelector extends StatelessWidget {
                             context,
                             categoryController,
                             note,
+                            noteController,
                           );
                         },
                       );
@@ -117,10 +116,7 @@ class CategorySelector extends StatelessWidget {
                       leading: const Icon(Icons.label_outline),
                       title: Text(category.name),
                       onTap: () {
-                        context.read<NoteController>().updateCategory(
-                          note,
-                          category.id,
-                        );
+                        noteController.updateCategory(note, category.id);
                         Navigator.pop(context);
                       },
                       selected: note.categoryId == category.id,
@@ -139,6 +135,7 @@ class CategorySelector extends StatelessWidget {
     BuildContext context,
     CategoryController controller,
     NoteEntity note,
+    NoteController noteController,
   ) {
     final textController = TextEditingController();
     showDialog(
@@ -161,7 +158,7 @@ class CategorySelector extends StatelessWidget {
               if (name.isNotEmpty) {
                 final cat = await controller.createCategory(name);
                 if (context.mounted) {
-                  context.read<NoteController>().updateCategory(note, cat.id);
+                  noteController.updateCategory(note, cat.id);
                   Navigator.pop(context);
                 }
               }

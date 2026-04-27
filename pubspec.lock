@@ -595,10 +595,10 @@ packages:
     dependency: "direct main"
     description:
       name: go_router
-      sha256: "5540e4a3f416dd4a93458257b908eb88353cbd0fb5b0a3d1bd7d849ba1e88735"
+      sha256: "08b742eef4f71c9df5af543751cd0b7f1c679c4088488f4223ecaddc1a813b79"
       url: "https://pub.dev"
     source: hosted
-    version: "17.2.1"
+    version: "17.2.2"
   google_cloud:
     dependency: transitive
     description:
@@ -723,10 +723,10 @@ packages:
     dependency: transitive
     description:
       name: hooks
-      sha256: e79ed1e8e1929bc6ecb6ec85f0cb519c887aa5b423705ded0d0f2d9226def388
+      sha256: "025f060e86d2d4c3c47b56e33caf7f93bf9283340f26d23424ebcfccf34f621e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.3"
   html:
     dependency: transitive
     description:
@@ -1292,6 +1292,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  record_use:
+    dependency: transitive
+    description:
+      name: record_use
+      sha256: "2551bd8eecfe95d14ae75f6021ad0248be5c27f138c2ec12fcb52b500b3ba1ed"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   record_web:
     dependency: transitive
     description:
@@ -1312,18 +1320,18 @@ packages:
     dependency: "direct main"
     description:
       name: rive
-      sha256: "61f37d2833730778d258e634d27eb7e447a354790a78287621833808e8c7cb28"
+      sha256: "4030119faa24050d0f5a49646e53f059121464e62662698c42c3d5886fe0ab27"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.5"
+    version: "0.14.6"
   rive_native:
     dependency: transitive
     description:
       name: rive_native
-      sha256: bfce5d976e1aa9a8ae53846c913ecc3a20805d918162965d67cad438b0090946
+      sha256: "05f59b4250410a634a3e4e8d07f97b2616ce20c24451b02ff814fb61135172bd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.5"
+    version: "0.1.6"
   rx:
     dependency: transitive
     description:

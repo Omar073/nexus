@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/colors/color_section.dart';
-import 'package:nexus/features/theme_customization/presentation/widgets/presets/save_preset_dialog.dart';
+import 'package:nexus/features/theme_customization/presentation/logic/theme_customization_logic.dart';
 
 /// Colors, presets, and nav bar style tuning.
 class ThemeCustomizationScreen extends StatefulWidget {
@@ -32,8 +32,7 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
     // Initialize TabController only once with correct initial index
     if (!_isControllerInitialized) {
       final settings = context.read<SettingsController>();
-      final isDark = settings.themeMode == ThemeMode.dark;
-      _currentTabIndex = isDark ? 1 : 0;
+      _currentTabIndex = initialThemeTabIndex(settings);
       _tabController = TabController(
         length: 2,
         vsync: this,
@@ -66,49 +65,10 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
     // Watch controller for changes to rebuild UI when colors change
     final settings = context.watch<SettingsController>();
     final isLight = _currentTabIndex == 0;
-
-    // Build theme colors based on current tab
-    final previewPrimary = isLight
-        ? (settings.lightColors.primary ?? const Color(0xFF3F51B5))
-        : (settings.darkColors.primary ?? const Color(0xFF9FA8DA));
-
-    // Create preview theme for the app bar
-    final previewTheme = isLight
-        ? ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: previewPrimary,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-            appBarTheme: AppBarTheme(
-              backgroundColor: Colors.grey[100],
-              foregroundColor: Colors.black87,
-              elevation: 0,
-            ),
-            tabBarTheme: TabBarThemeData(
-              labelColor: previewPrimary,
-              unselectedLabelColor: Colors.black54,
-              indicatorColor: previewPrimary,
-            ),
-          )
-        : ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: previewPrimary,
-              surface: const Color(0xFF000000),
-              onSurface: Colors.white,
-            ),
-            scaffoldBackgroundColor: const Color(0xFF000000),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            tabBarTheme: TabBarThemeData(
-              labelColor: previewPrimary,
-              unselectedLabelColor: Colors.white54,
-              indicatorColor: previewPrimary,
-            ),
-          );
+    final previewTheme = buildThemeCustomizationPreviewTheme(
+      settings: settings,
+      isLight: isLight,
+    );
 
     return AnimatedTheme(
       data: previewTheme,
@@ -120,27 +80,18 @@ class _ThemeCustomizationScreenState extends State<ThemeCustomizationScreen>
             title: const Text('Customize Appearance'),
             actions: [
               IconButton(
-                onPressed: () async {
-                  final name = await SavePresetDialog.show(context);
-                  if (name != null && context.mounted) {
-                    context.read<SettingsController>().saveCurrentAsPreset(
-                      name,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Saved preset "$name"')),
-                    );
-                  }
-                },
+                onPressed: () => saveThemePresetWithFeedback(
+                  context: context,
+                  settings: context.read<SettingsController>(),
+                ),
                 icon: const Icon(Icons.save_outlined),
                 tooltip: 'Save as preset',
               ),
               TextButton(
-                onPressed: () {
-                  context.read<SettingsController>().resetColors();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Colors reset to defaults')),
-                  );
-                },
+                onPressed: () => resetThemeColorsWithFeedback(
+                  context: context,
+                  settings: context.read<SettingsController>(),
+                ),
                 child: Text(
                   'Reset',
                   style: TextStyle(color: previewTheme.colorScheme.primary),

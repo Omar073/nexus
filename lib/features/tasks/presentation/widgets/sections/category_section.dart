@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
+import 'package:nexus/features/tasks/presentation/logic/category_section_logic.dart';
+import 'package:nexus/features/tasks/presentation/state/category_section_state.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sections/category_header.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sections/category_section_task_item.dart';
 import 'package:nexus/features/tasks/presentation/widgets/sections/subcategory_section.dart';
@@ -43,12 +45,9 @@ class CategorySection extends StatefulWidget {
 
 class _CategorySectionState extends State<CategorySection>
     with SingleTickerProviderStateMixin {
-  bool _isExpanded = true;
+  final CategorySectionState _sectionState = CategorySectionState();
   late final AnimationController _controller;
   late final Animation<double> _animation;
-
-  /// Map of subcategory ID to expansion state
-  final Map<String, bool> _subcategoryExpansion = {};
 
   @override
   void initState() {
@@ -68,9 +67,9 @@ class _CategorySectionState extends State<CategorySection>
   }
 
   void _toggleExpanded() {
+    _sectionState.toggleExpanded();
     setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
+      if (_sectionState.isExpanded) {
         _controller.forward();
       } else {
         _controller.reverse();
@@ -88,25 +87,13 @@ class _CategorySectionState extends State<CategorySection>
 
     final categoryController = context.watch<CategoryController>();
 
-    // Group tasks by subcategory
-    final rootTasks = <TaskEntity>[];
-    final subcategoryTasks = <String, List<TaskEntity>>{};
-
-    for (final task in widget.tasks) {
-      if (task.subcategoryId == null) {
-        rootTasks.add(task);
-      } else {
-        subcategoryTasks.putIfAbsent(task.subcategoryId!, () => []).add(task);
-      }
-    }
-
-    // Sort subcategories by name
-    final sortedSubIds = subcategoryTasks.keys.toList();
-    sortedSubIds.sort((a, b) {
-      final nameA = categoryController.getById(a)?.name ?? '';
-      final nameB = categoryController.getById(b)?.name ?? '';
-      return nameA.compareTo(nameB);
-    });
+    final buckets = bucketTasksBySubcategory(widget.tasks);
+    final rootTasks = buckets.rootTasks;
+    final subcategoryTasks = buckets.bySubcategory;
+    final sortedSubIds = sortSubcategoryIdsByName(
+      subcategoryIds: subcategoryTasks.keys,
+      resolveName: (id) => categoryController.getById(id)?.name ?? '',
+    );
 
     return Container(
       key: widget.sectionKey,
@@ -121,7 +108,7 @@ class _CategorySectionState extends State<CategorySection>
             child: CategoryHeader(
               title: widget.title,
               taskCount: widget.tasks.length,
-              isExpanded: _isExpanded,
+              isExpanded: _sectionState.isExpanded,
               onAddPressed: widget.categoryId != null ? _handleAddTask : null,
             ),
           ),
@@ -168,8 +155,7 @@ class _CategorySectionState extends State<CategorySection>
                       final tasks = subcategoryTasks[subId]!;
                       final subName =
                           categoryController.getById(subId)?.name ?? 'Unknown';
-                      final isSubExpanded =
-                          _subcategoryExpansion[subId] ?? true;
+                      final isSubExpanded = _sectionState.isSubExpanded(subId);
 
                       return SubcategorySection(
                         name: subName,
@@ -180,7 +166,7 @@ class _CategorySectionState extends State<CategorySection>
                         isExpanded: isSubExpanded,
                         onToggle: () {
                           setState(() {
-                            _subcategoryExpansion[subId] = !isSubExpanded;
+                            _sectionState.toggleSubExpanded(subId);
                           });
                         },
                         isCompletedTab: widget.isCompletedTab,

@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:nexus/core/data/sync_queue.dart';
-import 'package:uuid/uuid.dart';
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
@@ -14,6 +12,7 @@ import 'package:nexus/features/tasks/domain/use_cases/add_task_attachment_use_ca
 import 'package:nexus/features/tasks/domain/use_cases/clear_category_on_tasks_use_case.dart';
 import 'package:nexus/features/tasks/domain/use_cases/create_task_use_case.dart';
 import 'package:nexus/features/tasks/domain/use_cases/delete_task_use_case.dart';
+import 'package:nexus/features/tasks/domain/use_cases/restore_task_use_case.dart';
 import 'package:nexus/features/tasks/domain/use_cases/toggle_task_completed_use_case.dart';
 import 'package:nexus/features/tasks/domain/use_cases/update_task_use_case.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
@@ -68,6 +67,10 @@ class TaskController extends ChangeNotifier {
   final CreateTaskUseCase _createTask;
   final UpdateTaskUseCase _updateTask;
   final DeleteTaskUseCase _deleteTask;
+  late final RestoreTaskUseCase _restoreTask = RestoreTaskUseCase(
+    _repo,
+    _syncService,
+  );
   final ToggleTaskCompletedUseCase _toggleCompleted;
   final AddTaskAttachmentUseCase _addAttachment;
   final ClearCategoryOnTasksUseCase _clearCategory;
@@ -175,22 +178,7 @@ class TaskController extends ChangeNotifier {
   Future<void> deleteTask(TaskEntity task) => _deleteTask.call(task);
 
   /// Restore a previously deleted task (e.g. for undo).
-  Future<void> restoreTask(TaskEntity task) async {
-    await _repo.upsert(task);
-    final payload = _repo.getSyncPayload(task.id);
-    if (payload != null) {
-      final op = SyncOperation(
-        id: const Uuid().v4(),
-        type: SyncOperationType.create.index,
-        entityType: 'task',
-        entityId: task.id,
-        createdAt: DateTime.now(),
-        data: payload,
-      );
-      await _syncService.enqueueOperation(op);
-      unawaited(_syncService.syncOnce());
-    }
-  }
+  Future<void> restoreTask(TaskEntity task) => _restoreTask.call(task);
 
   Future<void> toggleCompleted(TaskEntity task, bool completed) =>
       _toggleCompleted.call(task, completed);

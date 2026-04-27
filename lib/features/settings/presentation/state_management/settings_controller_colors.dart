@@ -73,7 +73,7 @@ Future<void> settingsSaveCurrentAsPreset(
     createdAtIso: DateTime.now().toIso8601String(),
   );
   await self._savePreset.call(preset);
-  self._presets.add(SettingsController._presetFromEntity(preset));
+  self._presets.add(colorPresetFromEntity(preset));
 }
 
 void settingsApplyPreset(SettingsController self, ColorPreset preset) {

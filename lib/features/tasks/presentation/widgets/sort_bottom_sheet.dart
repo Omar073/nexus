@@ -7,21 +7,23 @@ import 'package:provider/provider.dart';
 
 /// Bottom sheet for selecting task and category sort options.
 void showSortBottomSheet(BuildContext context) {
+  final settings = context.read<SettingsController>();
   showNexusBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => const _SortBottomSheetContent(),
+    builder: (context) => _SortBottomSheetContent(settings: settings),
   );
 }
 
 class _SortBottomSheetContent extends StatelessWidget {
-  const _SortBottomSheetContent();
+  const _SortBottomSheetContent({required this.settings});
+
+  final SettingsController settings;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final settings = context.watch<SettingsController>();
 
     return Container(
       height: 500, // Fixed height for tabs

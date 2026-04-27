@@ -5,11 +5,11 @@ class TaskEditorHeader extends StatelessWidget {
   const TaskEditorHeader({
     super.key,
     required this.isNewTask,
-    required this.onClose,
+    required this.onConfirm,
   });
 
   final bool isNewTask;
-  final VoidCallback onClose;
+  final VoidCallback onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,30 @@ class TaskEditorHeader extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              IconButton(icon: const Icon(Icons.close), onPressed: onClose),
+              FilledButton(
+                onPressed: onConfirm,
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  visualDensity: VisualDensity.compact,
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  isNewTask ? 'Create Task' : 'Save Changes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

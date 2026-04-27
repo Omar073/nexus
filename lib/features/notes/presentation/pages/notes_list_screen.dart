@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
 import 'package:nexus/features/notes/domain/entities/note_entity.dart';
+import 'package:nexus/features/notes/presentation/logic/notes_bulk_actions_logic.dart';
 import 'package:nexus/features/notes/presentation/state_management/note_controller.dart';
+import 'package:nexus/features/notes/presentation/state/notes_selection_state.dart';
 import 'package:nexus/features/notes/presentation/pages/note_editor_screen.dart';
 import 'package:nexus/features/notes/presentation/widgets/list/notes_body.dart';
 import 'package:nexus/features/notes/presentation/widgets/list/notes_selection_bar.dart';
@@ -20,91 +22,43 @@ class NotesListScreen extends StatefulWidget {
 
 class _NotesListScreenState extends State<NotesListScreen> {
   final _searchController = TextEditingController();
-
-  bool _selectionMode = false;
-  final Set<String> _selectedNoteIds = <String>{};
+  final NotesSelectionState _selectionState = NotesSelectionState();
 
   void _enterSelection(String id) {
     setState(() {
-      _selectionMode = true;
-      _selectedNoteIds.add(id);
+      _selectionState.enter(id);
     });
   }
 
   void _toggleSelection(String id) {
     setState(() {
-      if (_selectedNoteIds.remove(id)) {
-        if (_selectedNoteIds.isEmpty) {
-          _selectionMode = false;
-        }
-      } else {
-        _selectionMode = true;
-        _selectedNoteIds.add(id);
-      }
+      _selectionState.toggle(id);
     });
   }
 
   void _clearSelection() {
     setState(() {
-      _selectionMode = false;
-      _selectedNoteIds.clear();
+      _selectionState.clear();
     });
   }
 
   void _selectAllNotes(Iterable<NoteEntity> notes) {
     setState(() {
-      _selectionMode = true;
-      _selectedNoteIds
-        ..clear()
-        ..addAll(notes.map((n) => n.id));
+      _selectionState.selectAll(notes);
     });
   }
 
   Future<void> _deleteSelected(NoteController controller) async {
-    final ids = _selectedNoteIds.toList();
+    final ids = _selectionState.selectedIds.toList();
     final notes = ids
         .map((id) => controller.byId(id))
         .whereType<NoteEntity>()
         .toList();
     _clearSelection();
-    for (final note in notes) {
-      await controller.delete(note);
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            for (final note in notes) {
-              await controller.restoreNote(note);
-            }
-            messenger.hideCurrentSnackBar();
-          },
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  notes.length == 1
-                      ? 'Note deleted'
-                      : '${notes.length} notes deleted',
-                ),
-              ),
-              Text(
-                'Click to undo',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.inversePrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
+    await deleteNotesWithUndo(
+      context: context,
+      controller: controller,
+      notes: notes,
     );
   }
 
@@ -147,15 +101,15 @@ class _NotesListScreenState extends State<NotesListScreen> {
               controller.setCategoryFilter(category.id);
             }
           },
-          selectionMode: _selectionMode,
-          selectedNoteIds: _selectedNoteIds,
+          selectionMode: _selectionState.selectionMode,
+          selectedNoteIds: _selectionState.selectedIds,
           onEnterSelection: _enterSelection,
           onToggleSelection: _toggleSelection,
           navBarStyle: navBarStyle,
           searchController: _searchController,
         ),
       ),
-      floatingActionButton: _selectionMode
+      floatingActionButton: _selectionState.selectionMode
           ? null
           : Padding(
               padding: EdgeInsets.only(bottom: navBarStyle.fabOffset(context)),
@@ -169,9 +123,9 @@ class _NotesListScreenState extends State<NotesListScreen> {
                 child: const Icon(Icons.add),
               ),
             ),
-      bottomNavigationBar: _selectionMode
+      bottomNavigationBar: _selectionState.selectionMode
           ? NotesSelectionBar(
-              selectedCount: _selectedNoteIds.length,
+              selectedCount: _selectionState.selectedIds.length,
               onSelectAll: () => _selectAllNotes(notes),
               onExitSelection: _clearSelection,
               onDelete: () => _deleteSelected(controller),

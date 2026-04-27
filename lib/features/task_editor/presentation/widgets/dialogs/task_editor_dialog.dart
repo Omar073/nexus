@@ -14,6 +14,8 @@ Future<void> showTaskEditorDialog(
   await showNexusBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => wrapTaskEditorSheetWithRequiredProviders(
       context,

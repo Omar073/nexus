@@ -14,8 +14,6 @@ class TaskCategorySelector extends StatelessWidget {
     required this.onCreateNewCategory,
     required this.onCreateNewSubcategory,
   });
-  // todo: should we extract this as a new class?
-
   final CategoryController categoryController;
   final String? selectedCategoryId;
   final String? selectedSubcategoryId;

@@ -3,8 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:nexus/core/services/storage/attachment_cleanup_service.dart';
-import 'package:nexus/core/data/sync_queue.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:nexus/core/services/storage/google_drive_service.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
@@ -14,6 +12,8 @@ import 'package:nexus/features/notes/domain/repositories/note_repository_interfa
 import 'package:nexus/features/notes/domain/use_cases/add_note_attachment_use_case.dart';
 import 'package:nexus/features/notes/domain/use_cases/create_empty_note_use_case.dart';
 import 'package:nexus/features/notes/domain/use_cases/delete_note_use_case.dart';
+import 'package:nexus/features/notes/domain/use_cases/remove_note_attachment_use_case.dart';
+import 'package:nexus/features/notes/domain/use_cases/restore_note_use_case.dart';
 import 'package:nexus/features/notes/domain/use_cases/save_note_use_case.dart';
 import 'package:nexus/features/notes/domain/use_cases/update_note_category_use_case.dart';
 
@@ -62,7 +62,18 @@ class NoteController extends ChangeNotifier {
   final SaveNoteUseCase _save;
   final UpdateNoteCategoryUseCase _updateCategory;
   final DeleteNoteUseCase _delete;
+  late final RestoreNoteUseCase _restore = RestoreNoteUseCase(
+    _repo,
+    _syncService,
+  );
   final AddNoteAttachmentUseCase _addAttachment;
+  late final RemoveNoteAttachmentUseCase _removeAttachment =
+      RemoveNoteAttachmentUseCase(
+        _repo,
+        _syncService,
+        _attachmentCleanup,
+        deviceId: _deviceId,
+      );
   StreamSubscription<void>? _subscription;
 
   String _query = '';
@@ -127,22 +138,7 @@ class NoteController extends ChangeNotifier {
   Future<void> delete(NoteEntity note) => _delete.call(note);
 
   /// Restore a previously deleted note (e.g. for undo).
-  Future<void> restoreNote(NoteEntity note) async {
-    await _repo.upsert(note);
-    final payload = _repo.getSyncPayload(note.id);
-    if (payload != null) {
-      final op = SyncOperation(
-        id: const Uuid().v4(),
-        type: SyncOperationType.create.index,
-        entityType: 'note',
-        entityId: note.id,
-        createdAt: DateTime.now(),
-        data: payload,
-      );
-      await _syncService.enqueueOperation(op);
-      unawaited(_syncService.syncOnce());
-    }
-  }
+  Future<void> restoreNote(NoteEntity note) => _restore.call(note);
 
   Future<void> addVoiceAttachment(
     NoteEntity note,
@@ -159,42 +155,7 @@ class NoteController extends ChangeNotifier {
   Future<void> removeAttachment({
     required String noteId,
     required String attachmentId,
-  }) async {
-    final existing = _repo.getById(noteId);
-    if (existing == null) return;
-
-    NoteAttachmentEntity? target;
-    for (final attachment in existing.attachments) {
-      if (attachment.id == attachmentId) {
-        target = attachment;
-        break;
-      }
-    }
-    if (target == null) return;
-
-    final updated = NoteEntity(
-      id: existing.id,
-      title: existing.title,
-      contentDeltaJson: existing.contentDeltaJson,
-      createdAt: existing.createdAt,
-      updatedAt: DateTime.now(),
-      lastModifiedByDevice: _deviceId,
-      attachments: existing.attachments
-          .where((a) => a.id != attachmentId)
-          .toList(),
-      isDirty: true,
-      lastSyncedAt: existing.lastSyncedAt,
-      syncStatus: 0,
-      categoryId: existing.categoryId,
-      isMarkdown: existing.isMarkdown,
-    );
-
-    await _repo.upsert(updated);
-    await _enqueueUpsert(updated.id);
-
-    _attachmentCleanup.deleteLocalInBackground(target.localUri);
-    await _attachmentCleanup.deleteDriveIfPresent(target.driveFileId);
-  }
+  }) => _removeAttachment.call(noteId: noteId, attachmentId: attachmentId);
 
   /// Backwards-compatible name (voice notes UI used this previously).
   Future<void> removeVoiceAttachment({
@@ -239,21 +200,6 @@ class NoteController extends ChangeNotifier {
 
     // Local cache only: do not enqueue sync.
     await _repo.upsert(updated);
-  }
-
-  Future<void> _enqueueUpsert(String noteId) async {
-    final payload = _repo.getSyncPayload(noteId);
-    if (payload == null) return;
-    final op = SyncOperation(
-      id: const Uuid().v4(),
-      type: SyncOperationType.update.index,
-      entityType: 'note',
-      entityId: noteId,
-      createdAt: DateTime.now(),
-      data: payload,
-    );
-    await _syncService.enqueueOperation(op);
-    unawaited(_syncService.syncOnce());
   }
 
   String _plainText(NoteEntity n) {

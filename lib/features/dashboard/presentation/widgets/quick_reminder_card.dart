@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/core/widgets/nexus_card.dart';
+import 'package:nexus/features/dashboard/presentation/models/quick_reminder_data.dart';
 
 /// Quick reminder card following Nexus design.
 /// Shows a left-colored border with time, title, and subtitle.
@@ -94,21 +95,4 @@ class QuickRemindersGrid extends StatelessWidget {
           .toList(),
     );
   }
-}
-
-/// View-model for a quick reminder card.
-class QuickReminderData {
-  const QuickReminderData({
-    required this.timeLabel,
-    required this.title,
-    required this.subtitle,
-    required this.accentColor,
-    this.onTap,
-  });
-
-  final String timeLabel;
-  final String title;
-  final String subtitle;
-  final Color accentColor;
-  final VoidCallback? onTap;
 }

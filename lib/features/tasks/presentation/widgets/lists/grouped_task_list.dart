@@ -76,6 +76,7 @@ class GroupedTaskList extends StatelessWidget {
       if (categoryTasks.isNotEmpty) {
         sections.add(
           CategorySection(
+            key: ValueKey('category_section_${tabIndex}_${category.id}'),
             sectionKey: categoryKeys['$tabIndex:${category.id}']!,
             title: category.name,
             tasks: categoryTasks,
@@ -96,6 +97,7 @@ class GroupedTaskList extends StatelessWidget {
     if (groupedTasks[null]?.isNotEmpty ?? false) {
       sections.add(
         CategorySection(
+          key: ValueKey('category_section_${tabIndex}_uncategorized'),
           sectionKey: categoryKeys['$tabIndex:null']!,
           title: 'Uncategorized',
           tasks: groupedTasks[null]!,

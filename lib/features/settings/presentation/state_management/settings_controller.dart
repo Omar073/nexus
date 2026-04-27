@@ -20,6 +20,7 @@ import 'package:nexus/features/settings/domain/use_cases/update_completed_retent
 import 'package:nexus/features/settings/data/models/custom_colors_store.dart';
 import 'package:nexus/features/settings/data/models/color_preset.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
+import 'package:nexus/features/settings/presentation/logic/settings_entity_mapper.dart';
 import 'package:nexus/features/tasks/domain/task_sort_option.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 
@@ -106,24 +107,13 @@ class SettingsController extends ChangeNotifier {
   }
 
   void _applyEntity(AppSettingsEntity e) {
-    _themeMode = e.themeMode == 'light' ? ThemeMode.light : ThemeMode.dark;
+    _themeMode = mapThemeMode(e.themeMode);
     _completedRetentionDays = e.completedRetentionDays;
     _autoDeleteCompletedTasks = e.autoDeleteCompletedTasks;
-    _navBarStyle = NavBarStyle.values.firstWhere(
-      (s) => s.name == e.navBarStyle,
-      orElse: () => NavBarStyle.standard,
-    );
-    _darkPalette = e.darkPalette == 'amoled'
-        ? DarkPalette.amoled
-        : DarkPalette.navy;
-    _taskSortOption = TaskSortOption.values.firstWhere(
-      (o) => o.name == e.taskSortOption,
-      orElse: () => TaskSortOption.recentlyModified,
-    );
-    _categorySortOption = CategorySortOption.values.firstWhere(
-      (o) => o.name == e.categorySortOption,
-      orElse: () => CategorySortOption.defaultOrder,
-    );
+    _navBarStyle = mapNavBarStyle(e.navBarStyle);
+    _darkPalette = mapDarkPalette(e.darkPalette);
+    _taskSortOption = mapTaskSortOption(e.taskSortOption);
+    _categorySortOption = mapCategorySortOption(e.categorySortOption);
     _lightColors = CustomColors(
       primary: e.lightPrimary != null ? Color(e.lightPrimary!) : null,
       secondary: e.lightSecondary != null ? Color(e.lightSecondary!) : null,
@@ -132,29 +122,14 @@ class SettingsController extends ChangeNotifier {
       primary: e.darkPrimary != null ? Color(e.darkPrimary!) : null,
       secondary: e.darkSecondary != null ? Color(e.darkSecondary!) : null,
     );
-    _presets = List<ColorPreset>.from(e.presets.map(_presetFromEntity));
+    _presets = List<ColorPreset>.from(e.presets.map(colorPresetFromEntity));
     _navigationIcons = Map<String, int>.from(e.navigationIcons);
   }
-
-  static ColorPreset _presetFromEntity(ColorPresetEntity e) {
-    return ColorPreset(
-      id: e.id,
-      name: e.name,
-      lightPrimary: Color(e.lightPrimary),
-      lightSecondary: Color(e.lightSecondary),
-      darkPrimary: Color(e.darkPrimary),
-      darkSecondary: Color(e.darkSecondary),
-      createdAt: DateTime.parse(e.createdAtIso),
-    );
-  }
-
-  static String _themeModeToString(ThemeMode mode) =>
-      mode == ThemeMode.light ? 'light' : 'dark';
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     notifyListeners();
-    await _updateThemeMode.call(_themeModeToString(mode));
+    await _updateThemeMode.call(themeModeToStorage(mode));
   }
 
   Future<void> setCompletedRetentionDays(int days) async {

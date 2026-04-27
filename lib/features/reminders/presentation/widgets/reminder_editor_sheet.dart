@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nexus/core/widgets/time_picker/nexus_time_picker.dart';
 import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
+import 'package:nexus/features/reminders/presentation/logic/reminder_editor_logic.dart';
 import 'package:nexus/features/reminders/presentation/utils/reminder_quick_presets_store.dart';
 import 'package:nexus/features/reminders/presentation/utils/reminder_time_utils.dart';
-import 'package:nexus/features/reminders/presentation/widgets/reminder_editor_result.dart';
+import 'package:nexus/features/reminders/presentation/models/reminder_editor_result.dart';
 import 'package:nexus/features/reminders/presentation/widgets/reminder_quick_preset_editor_sheet.dart';
 
 class ReminderEditorSheet extends StatefulWidget {
@@ -22,7 +23,7 @@ class _ReminderEditorSheetState extends State<ReminderEditorSheet> {
 
   late final TextEditingController _titleController;
   late DateTime _selected;
-  List<_QuickPreset> _quickPresets = [];
+  List<ReminderQuickPreset> _quickPresets = [];
   bool _didRequestFocus = false;
 
   bool get _canSave => _titleController.text.trim().isNotEmpty;
@@ -95,7 +96,9 @@ class _ReminderEditorSheetState extends State<ReminderEditorSheet> {
                       label: preset.label,
                       onTap: () {
                         setState(() {
-                          _selected = DateTime.now().add(preset.duration);
+                          _selected = DateTime.now().add(
+                            Duration(minutes: preset.durationMinutes),
+                          );
                         });
                       },
                     ),
@@ -134,24 +137,24 @@ class _ReminderEditorSheetState extends State<ReminderEditorSheet> {
   }
 
   Future<void> _loadQuickPresets() async {
-    final minutes = await _quickPresetsStore.loadPresetMinutes();
+    final presets = await loadReminderQuickPresets(_quickPresetsStore);
     if (!mounted) return;
     setState(() {
-      _quickPresets = minutes.map(_QuickPreset.fromMinutes).toList();
+      _quickPresets = presets;
     });
   }
 
   Future<void> _editQuickPresets() async {
-    final updatedMinutes = await showReminderQuickPresetEditorSheet(
-      context,
-      initialMinutes: _quickPresets.map((preset) => preset.minutes).toList(),
+    final updatedPresets = await editReminderQuickPresets(
+      store: _quickPresetsStore,
+      currentPresets: _quickPresets,
+      showEditor: (currentMinutes) => showReminderQuickPresetEditorSheet(
+        context,
+        initialMinutes: currentMinutes,
+      ),
     );
-    if (updatedMinutes == null) return;
-
-    setState(() {
-      _quickPresets = updatedMinutes.map(_QuickPreset.fromMinutes).toList();
-    });
-    await _quickPresetsStore.savePresetMinutes(updatedMinutes);
+    if (updatedPresets == null) return;
+    setState(() => _quickPresets = updatedPresets);
   }
 
   Future<void> _pickManualTime() async {
@@ -224,36 +227,4 @@ class _QuickTimeChip extends StatelessWidget {
       labelStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
     );
   }
-}
-
-class _QuickPreset {
-  const _QuickPreset({
-    required this.label,
-    required this.duration,
-    required this.minutes,
-  });
-
-  factory _QuickPreset.fromMinutes(int minutes) {
-    final clamped = minutes.clamp(1, 24 * 60);
-    return _QuickPreset(
-      label: _formatQuickPresetLabel(clamped),
-      duration: Duration(minutes: clamped),
-      minutes: clamped,
-    );
-  }
-
-  final String label;
-  final Duration duration;
-  final int minutes;
-}
-
-String _formatQuickPresetLabel(int minutes) {
-  if (minutes < 60) {
-    return '$minutes ${minutes == 1 ? 'min' : 'mins'}';
-  }
-  if (minutes % 60 == 0) {
-    final hours = minutes ~/ 60;
-    return '$hours ${hours == 1 ? 'hour' : 'hours'}';
-  }
-  return '$minutes mins';
 }

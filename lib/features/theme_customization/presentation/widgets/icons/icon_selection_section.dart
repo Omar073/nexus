@@ -1,19 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/presentation/utils/nav_icon_mapper.dart';
+import 'package:nexus/features/theme_customization/presentation/logic/icon_selection_logic.dart';
 import 'package:provider/provider.dart';
-
-/// Shell destinations that support custom nav icons (order matches tab strip).
-const _kNavIconTabs = <({String id, String label})>[
-  (id: 'dashboard', label: 'Dashboard'),
-  (id: 'tasks', label: 'Tasks'),
-  (id: 'reminders', label: 'Reminders'),
-  (id: 'notes', label: 'Notes'),
-  (id: 'settings', label: 'Settings'),
-  (id: 'habits', label: 'Habits'),
-  (id: 'calendar', label: 'Calendar'),
-  (id: 'analytics', label: 'Analytics'),
-];
 
 class IconSelectionSection extends StatefulWidget {
   const IconSelectionSection({super.key});
@@ -30,7 +19,7 @@ class _IconSelectionSectionState extends State<IconSelectionSection>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: _kNavIconTabs.length,
+      length: navIconTabs.length,
       vsync: this,
       initialIndex: 0,
     );
@@ -55,7 +44,7 @@ class _IconSelectionSectionState extends State<IconSelectionSection>
       (c) => c.navigationIcons,
     );
     final theme = Theme.of(context);
-    final pageId = _kNavIconTabs[_tabController.index].id;
+    final pageId = navIconTabs[_tabController.index].id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +63,7 @@ class _IconSelectionSectionState extends State<IconSelectionSection>
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          tabs: [for (final t in _kNavIconTabs) Tab(text: t.label)],
+          tabs: [for (final t in navIconTabs) Tab(text: t.label)],
         ),
         const SizedBox(height: 8),
         _IconGridForPage(pageId: pageId, selections: selections),
@@ -82,17 +71,6 @@ class _IconSelectionSectionState extends State<IconSelectionSection>
       ],
     );
   }
-}
-
-List<IconData> _dedupeByCodePoint(Iterable<IconData> icons) {
-  final seen = <int>{};
-  final result = <IconData>[];
-  for (final icon in icons) {
-    if (seen.add(icon.codePoint)) {
-      result.add(icon);
-    }
-  }
-  return result;
 }
 
 /// Fixed height: 4 rows of icon cells + spacing; scrolls horizontally.
@@ -111,7 +89,7 @@ class _IconGridForPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentIcon = NavIconMapper.getIconForPage(pageId, selections);
-    final options = _dedupeByCodePoint([
+    final options = dedupeIconsByCodePoint([
       currentIcon,
       ...NavIconMapper.allSelectableIcons,
     ]);

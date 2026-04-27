@@ -164,20 +164,40 @@ Currently **categories** are local-only (no Firestore sync). So custom category 
 ### Offline-first data flow
 
 1) UI triggers an action on a controller (e.g., create task)
-2) Controller writes to **Hive** immediately (instant UX)
-3) Controller enqueues a **SyncOperation** (local queue)
+2) Controller delegates business logic to a **domain use case**
+3) Use case writes to local storage through repository interfaces
+4) Use case enqueues a **SyncOperation** when needed (local queue)
 4) `SyncService` pushes queued ops to Firestore when online
 5) `SyncService` pulls remote changes and updates Hive
 6) Conflicts are surfaced via conflict dialogs (user chooses local vs remote)
 
-**Local-first write pattern (controller → repo → Hive) (simplified):**
+**Local-first write pattern (controller → use_case → repo → Hive) (simplified):**
 
-- **Controller layer**: orchestrates user intent and business rules. It validates input, decides *what* should happen (e.g. “create a task and mark it dirty”), calls the repository, and then updates in-memory state and calls `notifyListeners()` so the UI rebuilds. *("Dirty" means the entity has local changes that haven't been synced to the cloud yet—it flags records for the sync queue.)*
+- **Controller layer**: receives user intent, manages UI state (`notifyListeners`, selection/filter state), and calls a dedicated use case for business operations.
+- **Use-case layer (`domain/use_cases`)**: contains business orchestration (build/update entities, mark dirty/sync status, enqueue sync ops, invoke side effects like attachment cleanup).
 - **Repository layer**: acts as a **gateway/abstraction layer** that encapsulates *how* data is stored and fetched. The controller calls simple methods like `upsert` *(insert-or-update: creates a new record if it doesn't exist, or updates it if it does)*, `getAll`, `delete` without knowing whether the data is going to Hive, Firestore, or any other backend. This separation means:
-  - **Controller stays focused on business logic**: it decides *what* should happen (e.g., "save this task and mark it dirty") but never deals with Hive box operations, Firestore document writes, or JSON serialization.
+  - **Controller stays focused on presentation logic** and never deals with Hive box operations, Firestore document writes, or JSON serialization.
   - **Repository handles all storage details**: it knows how to talk to `TaskLocalDatasource` (for Hive) or format data for Firestore sync. It also handles the mapping between Dart models and raw storage formats (Hive objects, JSON, etc.).
   - **Easy to swap or extend**: if you ever need to change how data is stored (e.g., switch databases or add caching), you only modify the repository—controllers remain untouched.
 - **Hive**: the on-device database and **source of truth**. Repositories ultimately read/write Hive boxes so all controllers and services see a consistent local state, even while offline.
+
+### Presentation structure convention
+
+To avoid long and messy presentation files, use this split inside each feature:
+
+- `presentation/pages` and `presentation/widgets`: UI composition/rendering only.
+- `presentation/state`: mutable UI state containers (selection state, tab state, expansion state, etc.).
+- `presentation/logic`: interaction/orchestration helpers (callback flows, sheet/dialog wiring helpers, UI mappers/formatters).
+
+Extraction default:
+
+- Extract when a file is over ~220 lines or mixes rendering with more than 3 interaction helper methods (`_onX`, `_startY`, `_commitZ`, ...).
+- Keep helpers local only when a file is small and clearly cohesive.
+
+Root-route safety rule:
+
+- For root sheets/dialogs/routes, capture providers from caller context and pass dependencies explicitly into route content.
+- Avoid reading feature-scoped providers inside root route builders.
 
 ```dart
 // Shape only — method names/types may differ in this project.
@@ -1343,12 +1363,12 @@ If `TaskConflictDetector` or `NoteConflictDetector` determines that the user has
 Conflict detection is implemented in the sync layer; `SyncController` exposes conflicts. Conflict-resolution UI is available via:
 
 - **`TaskConflictResolutionDialog`** (`lib/features/tasks/presentation/widgets/task_conflict_resolution_dialog.dart`): Dialog for resolving task conflicts, accessible from the Sync section in Settings when task conflicts exist.
-- **`NoteConflictResolutionDialog`** (`lib/features/notes/presentation/widgets/note_conflict_resolution_dialog.dart`): Dialog for resolving note conflicts, accessible from the Sync section in Settings when note conflicts exist.
+- **`NoteConflictResolutionDialog`** (`lib/features/notes/presentation/widgets/dialogs/note_conflict_resolution_dialog.dart`): Dialog for resolving note conflicts, accessible from the Sync section in Settings when note conflicts exist.
 
 Both dialogs follow the same pattern:
 - UI presents **Local** vs **Remote** cards (title, preview for notes; full task fields for tasks).
-- **Keep Remote**: write remote to Hive, clear dirty/sync status, remove conflict from controller.
-- **Keep Local**: save local, re-enqueue local as a new `SyncOperation` (update), set dirty, remove conflict from controller.
+- **Keep Remote**: call a domain use case that accepts remote and persists a synced local snapshot, then remove conflict from controller.
+- **Keep Local**: call a domain use case that preserves local, re-enqueues local as a new `SyncOperation` (update), then remove conflict from controller.
 
 ---
 

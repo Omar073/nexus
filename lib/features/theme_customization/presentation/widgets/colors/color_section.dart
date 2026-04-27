@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/data/models/custom_colors_store.dart';
+import 'package:nexus/features/theme_customization/presentation/logic/color_section_logic.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/colors/color_option_grid.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/nav_bar_styles/nav_bar_style_section.dart';
 import 'package:nexus/features/theme_customization/presentation/widgets/presets/preset_list_section.dart';
@@ -28,9 +29,12 @@ class ColorSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.read<SettingsController>();
     final isLight = brightness == Brightness.light;
     final textColor = isLight ? Colors.black87 : Colors.white;
     final bgColor = isLight ? const Color(0xFFF8FAFC) : const Color(0xFF000000);
+    final primaryCopy = colorSectionCopy(isPrimary: true);
+    final secondaryCopy = colorSectionCopy(isPrimary: false);
 
     return Container(
       color: bgColor,
@@ -50,7 +54,7 @@ class ColorSection extends StatelessWidget {
 
           // Primary Color Section
           Text(
-            'Primary Color',
+            primaryCopy.title,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -59,7 +63,7 @@ class ColorSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Used for buttons, highlights, and key elements',
+            primaryCopy.subtitle,
             style: TextStyle(
               fontSize: 12,
               color: textColor.withValues(alpha: 0.6),
@@ -71,9 +75,10 @@ class ColorSection extends StatelessWidget {
             selectedColor: currentPrimary ?? defaultPrimary,
             defaultColor: defaultPrimary,
             onColorSelected: (color) {
-              context.read<SettingsController>().updatePrimaryColor(
-                brightness,
-                color,
+              applyPrimaryColorSelection(
+                settings: settings,
+                brightness: brightness,
+                color: color,
               );
             },
           ),
@@ -81,7 +86,7 @@ class ColorSection extends StatelessWidget {
 
           // Secondary Color Section
           Text(
-            'Secondary Color',
+            secondaryCopy.title,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -90,7 +95,7 @@ class ColorSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Used for accents and secondary actions',
+            secondaryCopy.subtitle,
             style: TextStyle(
               fontSize: 12,
               color: textColor.withValues(alpha: 0.6),
@@ -102,9 +107,10 @@ class ColorSection extends StatelessWidget {
             selectedColor: currentSecondary ?? defaultSecondary,
             defaultColor: defaultSecondary,
             onColorSelected: (color) {
-              context.read<SettingsController>().updateSecondaryColor(
-                brightness,
-                color,
+              applySecondaryColorSelection(
+                settings: settings,
+                brightness: brightness,
+                color: color,
               );
             },
           ),

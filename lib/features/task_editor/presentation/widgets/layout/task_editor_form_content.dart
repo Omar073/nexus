@@ -32,10 +32,7 @@ class TaskEditorFormContent extends StatelessWidget {
     required this.onCreateNewSubcategory,
     required this.onPriorityChanged,
     required this.onDifficultyChanged,
-    required this.onSave,
   });
-  // todo: we should extract this as a new class?
-
   final MediaQueryData mediaQuery;
   final bool isNewTask;
   final TextEditingController titleController;
@@ -59,7 +56,6 @@ class TaskEditorFormContent extends StatelessWidget {
   final VoidCallback onCreateNewSubcategory;
   final ValueChanged<TaskPriority?> onPriorityChanged;
   final ValueChanged<TaskDifficulty?> onDifficultyChanged;
-  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
@@ -106,26 +102,7 @@ class TaskEditorFormContent extends StatelessWidget {
               onPriorityChanged: onPriorityChanged,
               onDifficultyChanged: onDifficultyChanged,
             ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: onSave,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  isNewTask ? 'Create Task' : 'Save Changes',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

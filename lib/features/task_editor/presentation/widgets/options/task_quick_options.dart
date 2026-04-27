@@ -16,8 +16,6 @@ class TaskQuickOptions extends StatelessWidget {
     required this.onPickDueTime,
     required this.onPickRecurrence,
   });
-  // todo: should we extract this as a new class?
-
   final DateTime? startDate;
   final DateTime? dueDate;
   final TimeOfDay? dueTime;

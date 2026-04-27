@@ -25,6 +25,12 @@ changing existing behavior), refresh these docs so work matches Nexus patterns:
 
 - Prefer **feature-first** layout under `lib/features/<feature>/` with `domain/`,
   `data/`, `presentation/` where applicable.
+- Put business orchestration in `domain/use_cases/`; keep presentation widgets
+  and controllers focused on UI state and coordination.
+- Within presentation, keep screens/sheets focused on composition:
+  - move mutable UI state containers to `presentation/state/`
+  - move interaction/orchestration helpers to `presentation/logic/`
+  - keep `presentation/widgets/` UI-only (rendering/styling).
 - Reuse existing **Provider + ChangeNotifier** patterns; respect **shell vs root
   navigator** patterns (note editor / theme flows).
 - Put cross-cutting logic in `lib/core/` **only** when it is truly shared;

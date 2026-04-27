@@ -3,15 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nexus/core/services/sync/models/sync_conflict.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:nexus/core/data/hive/hive_boxes.dart';
-import 'package:nexus/core/data/sync_queue.dart';
 import 'package:nexus/core/services/sync/sync_service.dart';
+import 'package:nexus/features/notes/data/mappers/note_mapper.dart';
 import 'package:nexus/features/notes/data/models/note.dart';
+import 'package:nexus/features/notes/domain/repositories/note_repository_interface.dart';
+import 'package:nexus/features/notes/domain/use_cases/resolve_note_conflict_keep_local_use_case.dart';
+import 'package:nexus/features/notes/domain/use_cases/resolve_note_conflict_keep_remote_use_case.dart';
 import 'package:nexus/features/sync/presentation/state_management/sync_controller.dart';
-import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 /// Lets the user pick local vs remote when a note conflicts.
 
@@ -41,7 +40,6 @@ class NoteConflictResolutionDialog extends StatefulWidget {
 class _NoteConflictResolutionDialogState
     extends State<NoteConflictResolutionDialog> {
   int _index = 0;
-  static const _uuid = Uuid();
 
   @override
   /// Builds the conflict resolution dialog: dropdown to pick conflict, side-by-side note cards, and Keep Local/Remote actions.
@@ -131,12 +129,9 @@ class _NoteConflictResolutionDialogState
     BuildContext context,
     SyncConflict<Note> conflict,
   ) async {
-    final notesBox = Hive.box<Note>(HiveBoxes.notes);
-    final remote = conflict.remote;
-    remote.isDirty = false;
-    remote.lastSyncedAt = DateTime.now();
-    remote.syncStatusEnum = SyncStatus.synced;
-    await notesBox.put(remote.id, remote);
+    final repo = context.read<NoteRepositoryInterface>();
+    final useCase = ResolveNoteConflictKeepRemoteUseCase(repo);
+    await useCase.call(NoteMapper.toEntity(conflict.remote));
     if (!context.mounted) return;
     _removeConflict(context, conflict.entityId);
   }
@@ -147,21 +142,8 @@ class _NoteConflictResolutionDialogState
     SyncConflict<Note> conflict,
   ) async {
     final syncService = context.read<SyncService>();
-    final local = conflict.local;
-    local.isDirty = true;
-    local.syncStatusEnum = SyncStatus.idle;
-    await local.save();
-
-    final op = SyncOperation(
-      id: _uuid.v4(),
-      type: SyncOperationType.update.index,
-      entityType: 'note',
-      entityId: local.id,
-      createdAt: DateTime.now(),
-      data: local.toFirestoreJson(),
-    );
-    await syncService.enqueueOperation(op);
-    await syncService.syncOnce();
+    final useCase = ResolveNoteConflictKeepLocalUseCase(syncService);
+    await useCase.call(conflict);
     if (!context.mounted) return;
     _removeConflict(context, conflict.entityId);
   }

@@ -4,7 +4,7 @@ import 'package:nexus/core/widgets/common_snackbar.dart';
 import 'package:nexus/features/reminders/domain/entities/reminder_entity.dart';
 import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:nexus/features/reminders/presentation/utils/reminder_time_utils.dart';
-import 'package:nexus/features/reminders/presentation/widgets/reminder_editor_result.dart';
+import 'package:nexus/features/reminders/presentation/models/reminder_editor_result.dart';
 import 'package:nexus/features/reminders/presentation/widgets/reminder_editor_sheet.dart';
 import 'package:provider/provider.dart';
 

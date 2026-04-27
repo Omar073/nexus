@@ -28,7 +28,7 @@ guidance, feature implementation nuance, and operational procedures, use
 | **Architecture** | Feature-first layout with Clean Architecture **layers** inside each feature (`domain` / `data` / `presentation`) |
 | **DI** | `provider`: `Provider` and `ChangeNotifierProvider`, composed at startup via `AppProviderFactory` |
 | **Routing** | `go_router`: `lib/app/router/app_router.dart`, path constants in `lib/app/router/app_routes.dart` |
-| **State in UI** | `ChangeNotifier` controllers under each feature’s `presentation/state_management/` |
+| **State in UI** | `ChangeNotifier` controllers under each feature’s `presentation/state_management/` plus feature-local presentation state in `presentation/state/` and interaction helpers in `presentation/logic/` |
 | **Local persistence** | **Hive** typed boxes per domain area; **SharedPreferences** for user settings via `SettingsStore` |
 | **Remote sync** | Firestore + offline-first queue (`HiveBoxes.syncOps`) processed by `SyncService` |
 | **Domain vs data** | Domain **entities** are plain Dart; **Hive** models and mappers live in `data/` |
@@ -178,6 +178,7 @@ Nexus does not use a single global `domain/` folder. Instead, **each feature** t
 - **`entities/`** — Immutable (or clearly bounded) **business objects** such as `TaskEntity`, `NoteEntity`, `HabitEntity`, `ReminderEntity`, `AppSettingsEntity`.
 - **`repositories/`** — **Interfaces only**, named `*RepositoryInterface`. They describe *what* the app can do with data, not *how* it is stored.
 - **`use_cases/`** — One class per meaningful operation (`SaveNoteUseCase`, `CreateTaskUseCase`, …). Use cases depend on repository **interfaces** and entity types.
+  - Include conflict/restore operations when they contain business orchestration (for example task/note conflict keep-local/keep-remote and restore flows).
 - **Shared domain files** — Enums and value objects (`task_sort_option.dart`, `category_sort_option.dart`, …).
 
 **`data/`** is the **middle** layer: how persistence and sync actually work.
@@ -191,7 +192,7 @@ Nexus does not use a single global `domain/` folder. Instead, **each feature** t
 
 **`presentation/`** is the **outer** layer: Flutter UI and **controller** state.
 
-- **`state_management/`** — `ChangeNotifier` **controllers** (`TaskController`, `NoteController`, …). They subscribe to repositories (via interfaces), expose lists and filters to widgets, and call use cases where appropriate. They should not embed raw Hive calls.
+- **`state_management/`** — `ChangeNotifier` **controllers** (`TaskController`, `NoteController`, …). They subscribe to repositories (via interfaces), expose lists and filters to widgets, and call use cases. They should not embed raw Hive calls or sync-operation orchestration.
 - **`pages/`** — Route-level screens (`TasksScreen`, `NotesListScreen`, …).
 - **`widgets/`** — Everything from list tiles to dialogs to the **note editor** subtree (`presentation/widgets/editor/...`).
 - **`utils/`** — Formatting and UI helpers.

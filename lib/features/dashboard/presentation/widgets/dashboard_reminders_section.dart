@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:nexus/features/dashboard/presentation/models/quick_reminder_data.dart';
 import 'package:nexus/features/dashboard/presentation/widgets/quick_reminder_card.dart';
 import 'package:nexus/features/reminders/presentation/state_management/reminder_controller.dart';
 import 'package:provider/provider.dart';

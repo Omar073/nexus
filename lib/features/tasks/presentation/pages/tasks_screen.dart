@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:nexus/core/widgets/bottom_sheet/nexus_bottom_sheet.dart';
 import 'package:nexus/features/categories/data/models/category.dart';
 import 'package:nexus/features/categories/domain/category_sort_option.dart';
 import 'package:nexus/features/categories/presentation/state_management/category_controller.dart';
-import 'package:nexus/features/categories/presentation/widgets/category_drawer.dart';
 import 'package:nexus/features/settings/presentation/state_management/settings_controller.dart';
 import 'package:nexus/features/settings/data/models/nav_bar_style.dart';
 import 'package:nexus/features/tasks/domain/task_enums.dart';
 import 'package:nexus/features/tasks/domain/entities/task_entity.dart';
+import 'package:nexus/features/tasks/presentation/logic/tasks_screen_logic.dart';
 import 'package:nexus/features/tasks/presentation/state/task_selection_state.dart';
 import 'package:nexus/features/tasks/presentation/state_management/task_controller.dart';
 import 'package:nexus/features/tasks/presentation/utils/task_bulk_actions.dart';
@@ -70,24 +69,13 @@ class _TasksScreenState extends State<TasksScreen>
     List<Category> sortedCategories,
   ) {
     final taskController = context.read<TaskController>();
-    showNexusBottomSheet(
+    showTasksCategoryDrawer(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.6,
-        maxChildSize: 0.6,
-        minChildSize: 0.25,
-        builder: (context, scrollController) => CategoryDrawer(
-          scrollController: scrollController,
-          onCategorySelected: (categoryId) =>
-              _scrollHelper.scrollToCategory(categoryId, mounted: mounted),
-          taskCountByCategory: taskCounts,
-          sortedCategories: sortedCategories,
-          onClearTasks: taskController.clearCategoryOnTasks,
-        ),
-      ),
+      taskController: taskController,
+      scrollHelper: _scrollHelper,
+      mounted: mounted,
+      taskCounts: taskCounts,
+      sortedCategories: sortedCategories,
     );
   }
 
@@ -151,12 +139,12 @@ class _TasksScreenState extends State<TasksScreen>
           ? TaskSelectionBar(
               selectedCount: selectedIds.length,
               onSelectAll: () {
-                final tasksForTab = switch (_tabController.index) {
-                  0 => pendingTasks,
-                  1 => allTasks,
-                  2 => completedTasks,
-                  _ => allTasks,
-                };
+                final tasksForTab = tasksForCurrentTab(
+                  tabIndex: _tabController.index,
+                  pendingTasks: pendingTasks,
+                  allTasks: allTasks,
+                  completedTasks: completedTasks,
+                );
                 _selectionState.selectAll(tasksForTab);
                 setState(() {});
               },
